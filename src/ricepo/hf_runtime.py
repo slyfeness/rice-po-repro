@@ -256,7 +256,7 @@ def _train(config,deployment,root,attempt_dir,resume):
     effective_parser = parser_options(deployment)
     if effective_parser.get("boundary_rule") == "native_body_coverage_v1" and plan["native_span_parser"] != "configured_native_body_coverage_v1":
         raise ValueError("resolved recipe differs from deployed native body coverage")
-    resolved["effective_generation"] = dict(parser=effective_parser, output_parser_mode=deployment["output_parser_mode"],
+    effective_generation = dict(parser=effective_parser, output_parser_mode=deployment["output_parser_mode"],
         turn_protocol=turn_protocol(deployment), prompt=plan["prompt_artifact"], seed_schedule="controlled_v2")
     with operation("asset_binding"):
         frozen = verify_bundle(deployment)
@@ -329,6 +329,7 @@ def _train(config,deployment,root,attempt_dir,resume):
     binding["behavior"]["seed_schedule"] = "controlled_v2"
     bound = bind_run(root,binding,resume=resume)
     fixed_files = {"config.json":config,"deployment.json":deployment,"recipe.json":resolved,
+                   "effective-generation.json":effective_generation,
                    "model-sources.json":model_sources,"retriever-sources.json":sources,"sources.json":_source_hashes()}
     for name,value in fixed_files.items():
         if resume:

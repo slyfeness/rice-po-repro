@@ -6,6 +6,8 @@ The current run used tagged structure, body coverage, empty Think allowed, nativ
 
 The baseline CLI accepts --split development or test. Development chooses the bound development manifest, identities and labels. Trained formal test selection still requires the selected checkpoint. The earlier 174196 private development script actually read the frozen development manifest directly. Its failed result had coverage 0/1.
 
+A follow-up source check reproduced a recipe-storage mismatch before asset loading: training appended effective generation settings to the stored research report, while checkpoint assessment compared that file with the plain resolved recipe. Runtime settings now have their own effective-generation.json artifact. The targeted regression failed before this change and passed afterward. The executed GPU runs listed below predate this storage correction. Its checkpoint end-to-end validation remains pending because no complete online checkpoint exists from this phase.
+
 ## Executed data and tests
 
 CPU job 174207 built a separate Biology bundle with 128 training, 32 development and 103 official test queries. Selection sorted the SHA256 of fixed seed 20261105 and upstream row index, excluded official test text, required every positive to map into the full Biology corpus, and deduplicated canonical text. The existing corpus vectors were reused. The bundle receipt SHA256 is 56b57c5dc5a22fe521eff09380ad02248372401b5be57760ea540a82ed32b303. Count policy is report_only. Author training membership remains unavailable.
