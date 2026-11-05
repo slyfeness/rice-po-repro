@@ -60,6 +60,15 @@ def test_named_unwrapped_summary_adapter_preserves_native_ids_without_inserting_
         parser(prefilled=True)(ids, "stop")
 
 
+def test_named_unwrapped_summary_adapter_still_prefers_the_strict_tagged_path():
+    ids = (2, 3, 4, 5, 6, 7)
+    result = NativeTagParser(PieceTokenizer(), prefilled_think=True, malformed_policy="raise",
+                             summary_mode="prefilled_unwrapped_summary_ablation_v1")(ids, "stop")
+    assert result.token_ids is ids
+    assert result.reasoning_span == Span(0, 1)
+    assert result.summary_span == Span(3, 4)
+
+
 def test_parser_rejects_inside_token_and_ambiguous_native_boundaries():
     with pytest.raises(MalformedGenerationError, match="inside a native token"):
         parser()((9, 3, 4, 5, 6), "stop")

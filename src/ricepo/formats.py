@@ -56,7 +56,9 @@ class NativeTagParser:
         while content_end and token_ids[content_end - 1] in terminal_ids:
             content_end -= 1
         text = decode(token_ids[:content_end])
-        if self.summary_mode == self.PREFILLED_UNWRAPPED_SUMMARY:
+        unwrapped = self.summary_mode == self.PREFILLED_UNWRAPPED_SUMMARY
+        has_summary_tag = "<summary>" in text or "</summary>" in text
+        if unwrapped and not has_summary_tag:
             # This is a separately named non-paper format adapter.  It maps
             # the model's EOS-terminated text after a native </think> token
             # boundary to the summary span; it never inserts, re-encodes, or
