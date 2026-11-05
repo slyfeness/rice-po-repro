@@ -28,7 +28,7 @@ from .preparation import load_vector_bundle
 from .policy_identity import identify
 from .state import (writer, bind_run, recovery_checkpoint, publish_checkpoint, verify_checkpoint,
                     read_json, complete_stage, selected_so_far, finish_development)
-from .contracts import Generation
+from .contracts import Generation, InvalidGeneration
 from .data import QueryExample
 from .formats import CHAT_TURN, NativeTagParser, PromptRenderer, action_closed, native_summary_mode, turn_protocol, parser_options
 from .modeling import sampled_old_log_probs, make_forward
@@ -57,12 +57,15 @@ class HFNativeGenerator:
                  policy_version_getter: Any, max_new_tokens: int,
                  max_context_tokens: int, prefilled_think: bool, precision_context: Any,
                  summary_mode: str = NativeTagParser.STRICT_TAGGED, structured_stop: bool = False,
-                 parser_settings=None):
+                 parser_settings=None, failure_semantics="raise"):
         self.model, self.tokenizer, self.device = model, tokenizer, device
         self._policy_version_getter = policy_version_getter
         self.max_new_tokens, self.max_context_tokens = max_new_tokens, max_context_tokens
         self.precision_context = precision_context
         self.closed = action_closed if structured_stop else lambda text: "</summary>" in text
+        if failure_semantics not in ("raise","invalid_action_terminal_zero_v1"):
+            raise ValueError("unsupported failure semantics")
+        self.failure_semantics = failure_semantics
         self.parser = NativeTagParser(tokenizer, prefilled_think=prefilled_think, malformed_policy="raise",
                                       summary_mode=summary_mode, **(parser_settings or {}))
         # A supplied GenerationConfig is authoritative for the explicit fields
@@ -166,8 +169,17 @@ class HFNativeGenerator:
         reason = "stop" if closed else engine_reason
         event("completion_diagnosis", finish_reason=reason, decoded_preview=text[:400])
         if reason != "stop" and at_limit:
+            if self.failure_semantics == "invalid_action_terminal_zero_v1":
+                return InvalidGeneration(native,engine_reason,"generation_length",
+                                         "generation ceiling reached before a valid action")
             raise GenerationTruncated("generation exhausted its configured length before closing the summary")
-        return self.parser(native, reason)
+        try:
+            return self.parser(native, reason)
+        except Exception as exc:
+            if (self.failure_semantics == "invalid_action_terminal_zero_v1"
+                    and getattr(exc,"code",None) in {"tag_structure","empty_span"}):
+                return InvalidGeneration(native,engine_reason,exc.code,str(exc))
+            raise
 
 
 def _local_file(value: Any, name: str, *, large: bool = True) -> Path:
@@ -257,7 +269,8 @@ def _train(config,deployment,root,attempt_dir,resume):
     if effective_parser.get("boundary_rule") == "native_body_coverage_v1" and plan["native_span_parser"] != "configured_native_body_coverage_v1":
         raise ValueError("resolved recipe differs from deployed native body coverage")
     effective_generation = dict(parser=effective_parser, output_parser_mode=deployment["output_parser_mode"],
-        turn_protocol=turn_protocol(deployment), prompt=plan["prompt_artifact"], seed_schedule="controlled_v2")
+        turn_protocol=turn_protocol(deployment), prompt=plan["prompt_artifact"], seed_schedule="controlled_v2",
+        failure_semantics=plan["format_failure_policy"])
     with operation("asset_binding"):
         frozen = verify_bundle(deployment)
         domain_specs = deployment["domains"]
@@ -327,6 +340,7 @@ def _train(config,deployment,root,attempt_dir,resume):
     binding["behavior"]["parser_settings"] = effective_parser
     binding["behavior"]["prompt_sha256"] = file_sha256(prompt_path)
     binding["behavior"]["seed_schedule"] = "controlled_v2"
+    binding["behavior"]["failure_semantics"] = plan["format_failure_policy"]
     bound = bind_run(root,binding,resume=resume)
     fixed_files = {"config.json":config,"deployment.json":deployment,"recipe.json":resolved,
                    "effective-generation.json":effective_generation,
@@ -388,13 +402,15 @@ def _train(config,deployment,root,attempt_dir,resume):
     generator = HFNativeGenerator(model=actor,tokenizer=tokenizer,device=actor_device,
         policy_version_getter=lambda:version["value"],max_new_tokens=plan["max_new_tokens_per_step"],
         max_context_tokens=plan["max_context_tokens"],prefilled_think=True,precision_context=autocast,
-        summary_mode=parser_mode, structured_stop=protocol == CHAT_TURN, parser_settings=effective_parser)
+        summary_mode=parser_mode, structured_stop=protocol == CHAT_TURN, parser_settings=effective_parser,
+        failure_semantics=plan["format_failure_policy"])
     reward = PyTrecReward(qrels)
     runners = {domain:RolloutRunner(generator=generator,retriever=backend,reward_scorer=reward,
         query_composer=ExplicitQueryComposer(**plan["query_composition"]),rules=RolloutRules(
         frozenset({"stop"}),plan["max_new_tokens_per_step"],plan["max_context_tokens"],plan["rollout_depth"]),
         should_stop=lambda steps:False,final_reward=lambda steps:steps[-1].local_reward,
         render_next_turn=renderer.next_user_turn if protocol == CHAT_TURN else None,
+        failure_semantics=plan["format_failure_policy"],
         excluded_ids_by_query={q:ex.excluded_ids for q,ex in examples.items() if ex.domain==domain})
         for domain,backend in retrievers.items()}
     scoring = make_forward(reference_model=reference,device=actor_device,logit_chunk_size=deployment["logit_chunk_size"],
@@ -432,6 +448,7 @@ def _train(config,deployment,root,attempt_dir,resume):
                 identity = f"{i}-{fingerprint(q)}-{n}"
                 yield runners[ex.domain].run(query_id=q,trajectory_id=identity,original_query=ex.query,
                     initial_prefix_token_ids=prefix,old_policy_version=policy_version,
+                    initial_ndcg=reward.score(q,tuple(d.document_id for d in initial.documents)),
                     seeds=tuple(stable_seed(seed,"original",i,ex.domain,q,n,d) for d in range(1,plan["rollout_depth"]+1)))
 
     def collect_branches(t,a):
@@ -519,6 +536,14 @@ def _train(config,deployment,root,attempt_dir,resume):
     for i in range(start,plan["total_updates"]):
         run_iteration(components,iteration=i,policy_version=version["value"],output_root=root,recipe=plan,root_seed=seed)
         finish(i)
+        if plan["method"] == "ricepo" and plan["format_failure_policy"] == "invalid_action_terminal_zero_v1":
+            evidence = read_json(root/f"iteration-{i:06d}"/"credit-diagnostics.json")
+            if evidence["estimable_anchor_count"] == 0:
+                result = dict(status="paused_no_estimable_rice_credit",completed_updates=i+1,
+                              last_policy_version=version["value"],
+                              reason="All selected anchors were not estimable; do not spend further RICE training budget.")
+                atomic_json(root/"stopped.json",result)
+                return result
     best = selected_so_far(root,plan["checkpoint_selection"])
     if not best:
         raise ValueError("no eligible checkpoint with complete development results")

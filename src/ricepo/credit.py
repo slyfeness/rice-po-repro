@@ -122,6 +122,11 @@ def _validate_trajectories(trajectories: Sequence[Trajectory]) -> None:
             if any(trajectory.generated_mask[end:observation_end]):
                 raise ValueError("tool observation tokens must be excluded from the loss")
             previous_end = observation_end
+        if trajectory.failure:
+            from .failure_zero import validate_trajectory
+            validate_trajectory(trajectory, max(len(trajectory.steps)+1, trajectory.failure.depth))
+            start = len(trajectory.failure.prefix_token_ids)
+            expected_mask[start:] = [True] * (size-start)
         if tuple(expected_mask) != trajectory.generated_mask:
             raise ValueError("generated_mask must mark exactly the recorded native generations")
 

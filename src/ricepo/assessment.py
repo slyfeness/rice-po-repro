@@ -118,13 +118,18 @@ def evaluate_queries(*, examples, expected_ids, split, phase, method, root_seed,
                     trajectory = runners[domain].run(
                         query_id=key, trajectory_id=trace_id, original_query=example.query,
                         initial_prefix_token_ids=renderer.initial(example.query, initial.documents),
-                        seeds=seeds, old_policy_version=policy_version)
+                        seeds=seeds, old_policy_version=policy_version,initial_ndcg=initial_score)
+                    zero = getattr(runners[domain],"failure_semantics","raise") == "invalid_action_terminal_zero_v1"
                     if (trajectory.policy_version != policy_version or trajectory.query_id != key
-                            or len(trajectory.steps) != rollout_depth):
+                            or not zero and len(trajectory.steps) != rollout_depth):
                         raise ValueError("evaluation trajectory differs from the frozen policy, query or horizon")
-                    ranked = tuple(doc.document_id for doc in trajectory.steps[-1].retrieval.documents)
-                    final_score = reward.score(key, ranked)
-                    if trajectory.final_reward != final_score:
+                    if zero:
+                        from .failure_zero import validate_trajectory
+                        validate_trajectory(trajectory,rollout_depth)
+                    ranked = (tuple(doc.document_id for doc in trajectory.steps[-1].retrieval.documents)
+                              if trajectory.steps else ranked)
+                    final_score = trajectory.final_reward if zero else reward.score(key, ranked)
+                    if not zero and trajectory.final_reward != final_score:
                         raise ValueError("last ranking's NDCG disagrees with recorded trajectory reward")
                     trace_path = f"trajectories/{serial:06d}.json"
                     artifacts[trace_path] = atomic_json(output / trace_path, trajectory)
@@ -134,10 +139,30 @@ def evaluate_queries(*, examples, expected_ids, split, phase, method, root_seed,
                        "behavior_sha256": behavior_sha256, "retrieval_set_sha256": retrieval_set_sha256,
                        "initial_ndcg_at_10": initial_score, "ndcg_at_10": final_score,
                        "ranked_ids": ranked, "generation_seeds": seeds, "artifact_sha256": artifacts}
+                if generate and zero:
+                    row.update(failure_semantics="invalid_action_terminal_zero_v1",
+                        failed=trajectory.failure is not None,failure_adjusted_task_score=final_score,
+                        last_valid_ndcg=trajectory.last_valid_ndcg,
+                        failure_terminal_reward=trajectory.failure_terminal_reward,
+                        ndcg_at_10=None if trajectory.failure else final_score)
                 rows.append(row)
                 atomic_json(output / "queries" / f"{serial:06d}.json", row)
-                event("evaluation_query_scored", ndcg_at_10=final_score)
-    aggregate = summarize_assessment(rows, expected, split=split, manifest_sha256=manifest_sha256, scope=scope)
+                event("evaluation_query_scored", ndcg_at_10=row["ndcg_at_10"],
+                      failure_adjusted_task_score=row.get("failure_adjusted_task_score"))
+    if generate and zero:
+        aggregate = summarize_assessment([{**r,"ndcg_at_10":r["failure_adjusted_task_score"]} for r in rows],
+            expected,split=split,manifest_sha256=manifest_sha256,scope=scope)
+        aggregate.update(metric="failure_adjusted_task_score",
+            failure_semantics="invalid_action_terminal_zero_v1",
+            failed_queries=sum(r["failed"] for r in rows),
+            legitimate_complete_queries=sum(not r["failed"] for r in rows),
+            legitimate_complete_fraction=sum(not r["failed"] for r in rows)/len(rows),
+            legitimate_final_ndcg=[r["ndcg_at_10"] for r in rows if not r["failed"]],
+            d0_macro=sum(sum(r["initial_ndcg_at_10"] for r in rows if r["domain"]==d)/
+                sum(r["domain"]==d for r in rows) for d in {r["domain"] for r in rows})/
+                len({r["domain"] for r in rows}))
+    else:
+        aggregate = summarize_assessment(rows, expected, split=split, manifest_sha256=manifest_sha256, scope=scope)
     atomic_json(output / "results-by-query.json", rows)
     atomic_json(output / "summary.json", aggregate)
     return aggregate

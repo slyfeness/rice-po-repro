@@ -36,6 +36,8 @@ from .contracts import (
     RewardScorer,
     Span,
     Trajectory,
+    InvalidGeneration,
+    FailureAction,
 )
 
 
@@ -128,8 +130,12 @@ class RolloutRunner:
         final_reward: Callable[[tuple[RetrievalStep, ...]], float],
         excluded_ids_by_query: Mapping[str, frozenset[str]] | None = None,
         render_next_turn: Callable | None = None,
+        failure_semantics: str = "raise",
     ) -> None:
         self.generator = generator
+        if failure_semantics not in ("raise","invalid_action_terminal_zero_v1"):
+            raise ValueError("unsupported failure semantics")
+        self.failure_semantics = failure_semantics
         self.render_next_turn = render_next_turn
         self.retriever = retriever
         self.reward_scorer = reward_scorer
@@ -191,6 +197,10 @@ class RolloutRunner:
         return values
 
     def _validate_saved_history(self, original: Trajectory) -> None:
+        if self.failure_semantics == "invalid_action_terminal_zero_v1":
+            from .failure_zero import validate_trajectory
+            validate_trajectory(original,self.rules.depth)
+            return
         history = _tokens(original.steps[0].prefix_token_ids, label="saved initial prefix")
         if not history:
             raise ValueError("original trajectory must have a nonempty initial prefix")
@@ -227,6 +237,7 @@ class RolloutRunner:
         seeds: tuple[int, ...],
         final_depth: int,
         honor_stop: bool,
+        initial_ndcg: float | None = None,
     ) -> Trajectory:
         self._check_policy(policy_version)
         history = token_ids
@@ -244,6 +255,19 @@ class RolloutRunner:
                            seed=seed, depth=depth, input_tokens=len(prefix), policy_version=policy_version, prefix_sha256=fingerprint(prefix)):
                 generation = self.generator.generate(prefix, seed=seed)
             self._check_policy(policy_version)
+            if isinstance(generation,InvalidGeneration):
+                if self.failure_semantics != "invalid_action_terminal_zero_v1":
+                    raise MalformedGenerationError("unexpected invalid-action result")
+                ids = _tokens(generation.token_ids,label="failed native generation")
+                if not ids or len(ids)>self.rules.max_new_tokens:
+                    raise MalformedGenerationError("invalid failure evidence size")
+                self._check_length(prefix+ids)
+                last = steps[-1].local_reward if steps else initial_ndcg
+                _finite_reward(last,label="last valid retrieval NDCG")
+                failure = FailureAction(depth,prefix,generation,seed,policy_version)
+                return Trajectory(query_id,trajectory_id,policy_version,prefix+ids,
+                    mask+(True,)*len(ids),tuple(steps),0.0,"invalid_action_terminal_zero_v1",
+                    failure,initial_ndcg,last,0.0)
             generated_ids = self._validate_generation(generation)
             self._check_length(prefix + generated_ids)
             query = self.query_composer.compose(original_query, generation.summary_text)
@@ -310,6 +334,8 @@ class RolloutRunner:
             steps=frozen_steps,
             final_reward=reward,
             termination=termination,
+            initial_ndcg=initial_ndcg,
+            last_valid_ndcg=reward if self.failure_semantics=="invalid_action_terminal_zero_v1" else None,
         )
 
     def run(
@@ -321,6 +347,7 @@ class RolloutRunner:
         initial_prefix_token_ids: Sequence[int],
         seeds: Sequence[int],
         old_policy_version: str,
+        initial_ndcg: float | None = None,
     ) -> Trajectory:
         """Run at most five retrievals; the caller explicitly defines early stopping."""
         if not query_id or not trajectory_id or not original_query:
@@ -339,6 +366,7 @@ class RolloutRunner:
             seeds=self._validate_seeds(seeds, self.rules.depth),
             final_depth=self.rules.depth,
             honor_stop=True,
+            initial_ndcg=initial_ndcg,
         )
 
     def branch(
@@ -359,12 +387,12 @@ class RolloutRunner:
         """
         if (anchor.query_id, anchor.trajectory_id) != (original.query_id, original.trajectory_id):
             raise ValueError("anchor does not identify the original trajectory")
-        final_depth = len(original.steps)
-        if not 1 <= anchor.depth <= final_depth <= self.rules.depth:
+        final_depth = self.rules.depth if self.failure_semantics=="invalid_action_terminal_zero_v1" else len(original.steps)
+        if not 1 <= anchor.depth <= len(original.steps) <= final_depth <= self.rules.depth:
             raise ValueError("anchor/original depth is outside the configured rollout")
         if final_depth != self.rules.depth:
             raise ValueError(f"credit branches require an original at the full {self.rules.depth}-step horizon")
-        if tuple(step.depth for step in original.steps) != tuple(range(1, final_depth + 1)):
+        if tuple(step.depth for step in original.steps) != tuple(range(1, len(original.steps) + 1)):
             raise ValueError("original steps must have contiguous one-based depths")
         self._validate_saved_history(original)
         selected = original.steps[anchor.depth - 1]
@@ -414,13 +442,15 @@ class RolloutRunner:
                 seeds=seeds,
                 final_depth=final_depth,
                 honor_stop=False,
+                initial_ndcg=original.initial_ndcg,
             )
             saved_item('counterfactual', trajectory.trajectory_id, trajectory)
             trajectories.append(trajectory)
             outcomes.append(BranchOutcome(
                 branch_id=request.trajectory_id,
                 is_original=False,
-                local_reward=trajectory.steps[anchor.depth - 1].local_reward,
+                local_reward=(trajectory.steps[anchor.depth - 1].local_reward
+                              if len(trajectory.steps)>=anchor.depth else None),
                 final_reward=trajectory.final_reward,
                 policy_version=trajectory.policy_version,
                 prefix_token_ids=prefix,

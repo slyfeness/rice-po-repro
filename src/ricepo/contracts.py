@@ -43,6 +43,23 @@ class Generation:
 
 
 @dataclass(frozen=True)
+class InvalidGeneration:
+    token_ids: tuple[int, ...]
+    finish_reason: str
+    category: str
+    reason: str
+
+
+@dataclass(frozen=True)
+class FailureAction:
+    depth: int
+    prefix_token_ids: tuple[int, ...]
+    generation: InvalidGeneration
+    seed: int
+    policy_version: str
+
+
+@dataclass(frozen=True)
 class RetrievalStep:
     depth: int
     prefix_token_ids: tuple[int, ...]
@@ -63,6 +80,10 @@ class Trajectory:
     steps: tuple[RetrievalStep, ...]
     final_reward: float
     termination: str
+    failure: FailureAction | None = None
+    initial_ndcg: float | None = None
+    last_valid_ndcg: float | None = None
+    failure_terminal_reward: float | None = None
 
 
 @dataclass(frozen=True)
@@ -79,7 +100,7 @@ class Anchor:
 class BranchOutcome:
     branch_id: str
     is_original: bool
-    local_reward: float
+    local_reward: float | None
     final_reward: float
     policy_version: str
     prefix_token_ids: tuple[int, ...]

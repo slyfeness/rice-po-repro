@@ -1,0 +1,5 @@
+{
+  "schema_version": 1,
+  "extends": "failure_zero_ricepo.json",
+  "method": "grpo"
+}

@@ -94,6 +94,7 @@ def _validate_branch_rollouts(branch_rollouts, anchors, originals, total_branche
 
 
 def _collect_credit(components, grouped, originals, root, policy_version, recipe, seed, iteration):
+    zero = recipe["format_failure_policy"] == "invalid_action_terminal_zero_v1"
     def grouped_baseline():
         return [trajectory_advantages(g, epsilon=recipe["normalization_epsilon"]) for g in grouped.values()]
     if recipe["method"] == "grpo":
@@ -108,8 +109,11 @@ def _collect_credit(components, grouped, originals, root, policy_version, recipe
         for t in group:
             if provider.policy_version != policy_version:
                 raise ValueError("entropy provider changed policy within the iteration")
-            with operation("entropy", query=q, trajectory=t.trajectory_id, input_tokens=len(t.token_ids)-1, model_passes=1):
-                entropy[t.trajectory_id] = tuple(provider.token_entropies(t))
+            if zero and not t.steps:
+                entropy[t.trajectory_id] = (float("nan"),)*len(t.token_ids)
+            else:
+                with operation("entropy", query=q, trajectory=t.trajectory_id, input_tokens=len(t.token_ids)-1, model_passes=1):
+                    entropy[t.trajectory_id] = tuple(provider.token_entropies(t))
             if provider.policy_version != policy_version:
                 raise ValueError("entropy provider changed policy during teacher forcing")
             for step in t.steps:
@@ -119,7 +123,7 @@ def _collect_credit(components, grouped, originals, root, policy_version, recipe
         candidates = select_anchors(group, {t.trajectory_id:entropy[t.trajectory_id] for t in group},
                                     top_k=sum(len(t.steps) for t in group))
         k = recipe["anchors_per_query"]
-        if len(candidates) < k:
+        if len(candidates) < k and not zero:
             raise ValueError("fewer eligible actions than configured anchor budget")
         if recipe["anchor_selection"] == "random":
             candidates = sorted(candidates, key=lambda a: stable_seed(seed, "random_anchor", iteration,
@@ -138,8 +142,13 @@ def _collect_credit(components, grouped, originals, root, policy_version, recipe
         saved_item("branch_group", [iteration,a.trajectory_id,a.depth], collection)
         collections.append(collection)
     total = recipe["total_branches_including_original"]
-    _validate_branch_rollouts(collections, anchors, originals, total)
-    branches = [item.group for item in collections]
+    if zero:
+        from .failure_zero import validate_collections
+        validate_collections(collections,anchors,originals,total,recipe["rollout_depth"])
+    else:
+        _validate_branch_rollouts(collections, anchors, originals, total)
+    all_branches = [item.group for item in collections]
+    branches = [b for b in all_branches if all(o.local_reward is not None for o in b.outcomes)]
     digest = atomic_json(root / "counterfactual-trajectories.json", collections)
     stage_receipt(root, "branches_complete", policy_version=policy_version,
                   artifacts={"counterfactual-trajectories.json":digest})
@@ -149,7 +158,21 @@ def _collect_credit(components, grouped, originals, root, policy_version, recipe
              local_normalization=recipe["local_advantage_normalization"], gate_mode=recipe["gate_mode"],
              variance_threshold=recipe["influence_threshold"], residual_threshold=recipe["residual_threshold"])
              for q,group in grouped.items()]
-    atomic_json(root / "credit-diagnostics.json", credit_report(grouped, branches, parts, recipe, iteration))
+    report = credit_report(grouped, branches, parts, recipe, iteration)
+    if zero:
+        report["failure_semantics"] = recipe["format_failure_policy"]
+        report["selected_anchor_count"] = len(anchors)
+        report["estimable_anchor_count"] = len(branches)
+        report["gate_pass_count"] = sum(r.propagate for part in parts for r in part.records)
+        report["local_replacement_count"] = len(branches)
+        report["nonzero_local_credit_count"] = sum(r.summary_advantage!=0 for part in parts for r in part.records)
+        report["fallback"] = [dict(anchor=b.anchor,status="not_estimable",
+            reason="missing_counterfactual_anchor_summary",
+            missing_local_branch_ids=[o.branch_id for o in b.outcomes if o.local_reward is None])
+            for b in all_branches if any(o.local_reward is None for o in b.outcomes)]
+        report["original_failure_count"] = sum(t.failure is not None for t in originals.values())
+        report["original_count"] = len(originals)
+    atomic_json(root / "credit-diagnostics.json", report)
     return parts
 
 
@@ -164,7 +187,10 @@ def run_iteration(components, *, iteration, policy_version, output_root, recipe,
         for trajectory in components.rollout_batch(iteration,policy_version):
             if trajectory.trajectory_id in originals or trajectory.policy_version != policy_version:
                 raise ValueError("duplicate trajectory or mixed behavior policy")
-            if len(trajectory.steps) != recipe["rollout_depth"] or trajectory.final_reward != trajectory.steps[-1].local_reward:
+            if recipe["format_failure_policy"] == "invalid_action_terminal_zero_v1":
+                from .failure_zero import validate_trajectory
+                validate_trajectory(trajectory,recipe["rollout_depth"])
+            elif len(trajectory.steps) != recipe["rollout_depth"] or trajectory.final_reward != trajectory.steps[-1].local_reward:
                 raise ValueError("incomplete configured horizon or final reward differs from last retrieval")
             saved_item("original", trajectory.trajectory_id, trajectory)
             originals[trajectory.trajectory_id] = trajectory

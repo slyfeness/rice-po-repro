@@ -134,7 +134,8 @@ def _actor_runtime(path, tokenizer_path, prompt, settings, deployment, policy_ve
         prefilled_think=True, precision_context=lambda: torch.autocast(
             device_type="cuda", dtype=torch.bfloat16, enabled=(precision == "bfloat16")),
         summary_mode=native_summary_mode(deployment["output_parser_mode"]),
-        structured_stop=turn_protocol(deployment) == CHAT_TURN, parser_settings=parser_options(deployment))
+        structured_stop=turn_protocol(deployment) == CHAT_TURN, parser_settings=parser_options(deployment),
+        failure_semantics=settings["format_failure_policy"])
     tokenizer_behavior = {"tokenizer_length": len(tokenizer), "special_ids": tokenizer.all_special_ids,
                           "chat_template_sha256": fingerprint(tokenizer.chat_template)}
     return renderer, generator, tokenizer_behavior
@@ -208,6 +209,7 @@ def _evaluate(config, deployment, *, command, output_root, checkpoint_dir=None, 
                 behavior["parser_settings"] = parser_options(deployment)
                 behavior["prompt_sha256"] = file_sha256(prompt)
                 behavior["seed_schedule"] = "controlled_v2"
+                behavior["failure_semantics"] = settings["format_failure_policy"]
                 if turn_protocol(deployment) == CHAT_TURN:
                     behavior["turn_protocol"] = CHAT_TURN
                 if local_model_identity(tokenizer_path) != models["actor_model_path"]:
@@ -231,6 +233,7 @@ def _evaluate(config, deployment, *, command, output_root, checkpoint_dir=None, 
                     runners[domain] = RolloutRunner(
                         generator=generator, retriever=backend, reward_scorer=reward,
                         render_next_turn=renderer.next_user_turn if turn_protocol(deployment) == CHAT_TURN else None,
+                        failure_semantics=settings["format_failure_policy"],
                         query_composer=ExplicitQueryComposer(**settings["query_composition"]),
                         rules=RolloutRules(frozenset({"stop"}), settings["max_new_tokens_per_step"],
                                            settings["max_context_tokens"], depth=settings["rollout_depth"]),
