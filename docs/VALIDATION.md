@@ -2,7 +2,11 @@
 
 The first authorized trial is recorded in [FIRST_TRIAL.md](FIRST_TRIAL.md). After a shared-filesystem publication fix, the CPU suite recorded 219 passed and 2 skipped. A separate real 1.5B model diagnostic completed with zero optimizer steps. The source-only account below describes the preceding revision phase; full interactive RICE-PO validation remains pending.
 
-**本次仅做静态审查。测试源码已编写，未执行。** 未导入项目模块、运行测试、下载资产、安装依赖、构建索引、训练、评估或提交 Slurm。模板执行开关和运行验证字段为 false。
+最新审核材料见 [reviews/first-smoke/SUMMARY.md](reviews/first-smoke/SUMMARY.md)。以下为此前源码修订阶段的历史状态，不能代表后续有限试跑未执行，也不能将有限试跑扩大为完整流程通过。
+
+## 历史：源码修订阶段
+
+**当时仅做静态审查，测试源码已编写但未执行。** 当时未导入项目模块、运行测试、下载资产、安装依赖、构建索引、训练、评估或提交 Slurm。公开模板执行开关和运行验证字段继续为 false。
 
 | 范围 | 交付证据 | 后续需授权验证 |
 |---|---|---|

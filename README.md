@@ -1,6 +1,6 @@
 # RICE-PO 独立复现
 
-面向祝融，目标为 DeepSeek-R1-Distill-Qwen-1.5B 和 BRIGHT。此修订基于 `d4b490a96f8ceb31392ca55abf31325bedb7078c`。本次交付限于源码、配置、测试源码与静态审查。运行验证和实验结果留待另行授权。[论文 v3](https://arxiv.org/html/2605.26352v3) · [逐项修改表](docs/REVISION_MATRIX.csv) · [验证状态](docs/VALIDATION.md)
+面向祝融，目标为 DeepSeek-R1-Distill-Qwen-1.5B 和 BRIGHT。源码修订基于 `d4b490a96f8ceb31392ca55abf31325bedb7078c`。随后获授权的有限试跑完成了 CPU 测试和真实模型数值诊断；完整 RICE-PO 交互、训练与评测尚未验证。[论文 v3](https://arxiv.org/html/2605.26352v3) · [逐项修改表](docs/REVISION_MATRIX.csv) · [验证状态](docs/VALIDATION.md) · [首次试跑审核材料](docs/reviews/first-smoke/SUMMARY.md)
 
 ## 配置和方法
 

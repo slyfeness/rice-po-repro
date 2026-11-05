@@ -1,0 +1,401 @@
+{
+  "schema_version": 1,
+  "review_stage": "first-smoke",
+  "publication_only": true,
+  "baseline_commit": "6f878583fa90dcf5ee975a5098a3851ef481a230",
+  "initial_tested_source_commit": "bd6ca976565bae53bd16f713e73a1b4acec9edfb",
+  "historical_run_date_timezone": "2026-11-05 America/Chicago",
+  "new_compute_during_review_packaging": false,
+  "raw_artifacts": [
+    {
+      "artifact_id": "ENV-REPORT-01",
+      "sha256": "3f62961b8555826f0aaf359a6a38012319b5a6ddc2cef40e5ef0b0ab616d8920",
+      "bytes": 1201,
+      "description": "environment inventory; not public",
+      "location": "private independent project storage; original mapping retained privately"
+    },
+    {
+      "artifact_id": "CPU-LOG-03",
+      "sha256": "9a557a4f45d486ec03d0b62e46ff93aedd640fb229e51626bdf2a8845ba695ca",
+      "bytes": 6018,
+      "description": "pre-fix CPU output; not public",
+      "location": "private independent project storage; original mapping retained privately"
+    },
+    {
+      "artifact_id": "CPU-LOG-04",
+      "sha256": "2ebb9c764381688666ad2f907e5c351f9643dccabb7808b042e5cba34641d04f",
+      "bytes": 776,
+      "description": "post-fix CPU output; not public",
+      "location": "private independent project storage; original mapping retained privately"
+    },
+    {
+      "artifact_id": "CPU-JUNIT-04",
+      "sha256": "99e67d159972370bb741e659b5f183020c54269dfeed4379f6001d680089883b",
+      "bytes": 31304,
+      "description": "post-fix per-test JUnit; not public",
+      "location": "private independent project storage; original mapping retained privately"
+    },
+    {
+      "artifact_id": "GPU-REPORT-01",
+      "sha256": "1017834b64a4eeedc9fc8e46c3731ade799f79c0bc2dd986733c92054b2695e0",
+      "bytes": 1660,
+      "description": "short real-model numerical report; not public",
+      "location": "private independent project storage; original mapping retained privately"
+    },
+    {
+      "artifact_id": "GPU-SOURCE-01",
+      "sha256": "a9710df3b965863a69b5d7088a9b902f40f91aaaa4ea0586ed3f400ceb172b97",
+      "bytes": 3440,
+      "description": "original diagnostic source with private paths; not public",
+      "location": "private independent project storage; original mapping retained privately"
+    },
+    {
+      "artifact_id": "CPU-BATCH-04",
+      "sha256": "f8d9e89ba4cc8e93784354b1f232e4f8a5b5ce7179ceca5adb4cc4330f951eb8",
+      "bytes": 1675,
+      "description": "original post-fix job script; not public",
+      "location": "private independent project storage; original mapping retained privately"
+    },
+    {
+      "artifact_id": "GPU-BATCH-01",
+      "sha256": "fe2165766796e4ff24e0cfa934468da82b348e8de2f0d390e3784401087e08cd",
+      "bytes": 922,
+      "description": "original GPU job script; not public",
+      "location": "private independent project storage; original mapping retained privately"
+    },
+    {
+      "artifact_id": "FIX-PATCH-01",
+      "sha256": "70fbf163ef4494133fbb36f17eec844b8ff49f775171380718687cf784db72a1",
+      "bytes": 1669,
+      "description": "patch applied before CPU-TEST-04; not public",
+      "location": "private independent project storage; original mapping retained privately"
+    }
+  ],
+  "jobs": [
+    {
+      "id": "CPU-ENV-01",
+      "state": "FAILED",
+      "exit_code": 1,
+      "batch_elapsed_seconds": 46,
+      "result": "inventory completed; pytest launcher unavailable",
+      "artifacts": [
+        "ENV-REPORT-01"
+      ]
+    },
+    {
+      "id": "CPU-LAUNCH-02",
+      "state": "FAILED",
+      "exit_code": 1,
+      "batch_elapsed_seconds": 1,
+      "result": "missing reused py.py; tests not collected",
+      "artifacts": [],
+      "evidence_limit": "historical trial record only; raw launcher/scheduler records not included in this public package"
+    },
+    {
+      "id": "CPU-TEST-03",
+      "state": "FAILED",
+      "exit_code": 1,
+      "batch_elapsed_seconds": 80,
+      "pytest_seconds": 77.19,
+      "passed": 217,
+      "failed": 2,
+      "skipped": 2,
+      "artifacts": [
+        "CPU-LOG-03"
+      ]
+    },
+    {
+      "id": "CPU-TEST-04",
+      "state": "COMPLETED",
+      "exit_code": 0,
+      "batch_elapsed_seconds": 21,
+      "pytest_seconds": 18.2,
+      "passed": 219,
+      "failed": 0,
+      "error": 0,
+      "skipped": 2,
+      "artifacts": [
+        "CPU-LOG-04",
+        "CPU-JUNIT-04",
+        "CPU-BATCH-04",
+        "FIX-PATCH-01"
+      ]
+    },
+    {
+      "id": "GPU-PROBE-01",
+      "state": "COMPLETED",
+      "exit_code": 0,
+      "batch_elapsed_seconds": 135,
+      "optimizer_steps": 0,
+      "requested_gpus": 2,
+      "model_devices": [
+        "cuda:0"
+      ],
+      "artifacts": [
+        "GPU-REPORT-01",
+        "GPU-SOURCE-01",
+        "GPU-BATCH-01"
+      ]
+    }
+  ],
+  "scheduler_evidence_limit": "States and batch elapsed times were inspected during the historical run. No standalone raw sacct export is bundled here; scheduler identities remain private. Queue wait is not reconstructed.",
+  "cpu_test_results": {
+    "total_collected": 221,
+    "totals": {
+      "passed": 219,
+      "failed": 0,
+      "error": 0,
+      "skipped": 2
+    },
+    "per_module": {
+      "tests.test_assessment": {
+        "passed": 14,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_asset_binding": {
+        "passed": 9,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_attempt_identity": {
+        "passed": 2,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_backends": {
+        "passed": 12,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_config": {
+        "passed": 9,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_config_recipes": {
+        "passed": 16,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_credit": {
+        "passed": 29,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_data": {
+        "passed": 8,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_dataset_bundle": {
+        "passed": 11,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_evaluation": {
+        "passed": 6,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_formats": {
+        "passed": 11,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_holdout_selection": {
+        "passed": 1,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_modeling": {
+        "passed": 12,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_native_evidence": {
+        "passed": 11,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_objective": {
+        "passed": 9,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_opt_in_assets": {
+        "passed": 0,
+        "failed": 0,
+        "error": 0,
+        "skipped": 2
+      },
+      "tests.test_recovery": {
+        "passed": 5,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_reference_compare": {
+        "passed": 3,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_resource_estimate": {
+        "passed": 2,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_retrieval": {
+        "passed": 8,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_rollout": {
+        "passed": 20,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_training_plan": {
+        "passed": 10,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_workflow": {
+        "passed": 11,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      }
+    },
+    "skips": [
+      {
+        "test": "tests.test_opt_in_assets::test_opt_in_actual_tokenizer_template_native_boundaries",
+        "reason": "no explicitly supplied RICEPO_TOKENIZER_FIXTURE and independent SHA-256"
+      },
+      {
+        "test": "tests.test_opt_in_assets::test_opt_in_gpu_chunked_entropy_against_full_forward_on_same_native_ids",
+        "reason": "no explicitly supplied RICEPO_GPU_ENTROPY_FIXTURE and independent SHA-256"
+      }
+    ],
+    "source": "CPU-JUNIT-04; summary cross-checked against CPU-LOG-04"
+  },
+  "environment": {
+    "python": "3.11.16",
+    "packages": {
+      "gensim": null,
+      "numpy": "2.2.6",
+      "pyjnius": null,
+      "pyserini": null,
+      "pytest": null,
+      "pytrec-eval": null,
+      "safetensors": "0.8.0",
+      "tokenizers": "0.22.2",
+      "torch": "2.10.0",
+      "transformers": "5.5.1",
+      "vllm": "0.19.1"
+    },
+    "torch_compiled_cuda": "12.8",
+    "driver": "580.65.06",
+    "device_model": "A800-SXM4-80GB",
+    "jvm": "FileNotFoundError",
+    "pytest_runtime_version": "not separately captured; imported read-only through private project compatibility path"
+  },
+  "actor": {
+    "model_id": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+    "declared_revision": "ad9f0ae0864d7fbcd1cd905e3c6c5b069cc8b562",
+    "local_content_identity": {
+      "schema_version": 1,
+      "file_sha256": {
+        ".gitattributes": "11ad7efa24975ee4b0c3c3a38ed18737f0658a5f75a0a96787b576a78a023361",
+        "LICENSE": "1c8f573e830ca9b3ebfeb7ace1823146e22b66f99ee223840e7637c9e745e1c7",
+        "README.md": "d26d26ddb518fee60c6c6bf7a708bd751b1619d93a4944f188143693d956c77f",
+        "config.json": "37bd455e9679d2959536270fed49d25cc7c290a64f6e52abb97c71345a9cee41",
+        "generation_config.json": "72cbec1015da9ed03ad025483005cbf6481403abf947adfd54e504d1a66a2126",
+        "model.safetensors": "58858233513d76b8703e72eed6ce16807b523328188e13329257fb9594462945",
+        "tokenizer.json": "88145e3c3249adc2546ede277e9819d6e405e19072456e4b521cbc724bd60773",
+        "tokenizer_config.json": "8ac8c85fb242563c2260baec0909debd69d718af6a0b3d90e6cab62b4d341cd5",
+        "figures/benchmark.jpg": "96fa3297b31b53a21a283886d9f6d5759433e7523bd63b09d5ac43e9422dae97"
+      },
+      "payload_sha256": "972c28b609f0a8f8b16d47c488d9f46da6292f50c1ad2936186b1c74716eedaf",
+      "upstream_verification": "not_verified"
+    },
+    "dtype": "float32",
+    "model_mode": "eval",
+    "reference_frozen": true,
+    "scoring_positions": 4,
+    "numerical_report": {
+      "kind": "actor_only_numerical_diagnostic",
+      "optimizer_steps": 0,
+      "tokens": 14,
+      "entropy_max_abs_error": 1.1563301086425781e-05,
+      "old_current_max_abs_error": 0.0,
+      "reference_kl_max_abs": 0.0,
+      "gradient_norm": 57.766197204589844,
+      "allocated_peak_bytes": 21364740096,
+      "reserved_peak_bytes": 21791506432,
+      "model_init_seconds": 71.84341003000736,
+      "total_seconds": 78.33467777818441,
+      "full_ricepo_smoke_validated": false
+    },
+    "input": "synthetic short diagnostic sentence; no benchmark data",
+    "entropy_tolerance": {
+      "atol": 0.0002,
+      "rtol": 2e-05
+    },
+    "old_current_tolerance": {
+      "atol": 1e-05,
+      "rtol": 1e-05
+    },
+    "kl_max_abs_threshold": 1e-05
+  },
+  "source_files_sha256": {
+    "src/ricepo/preparation.py": "7ab5918c03b09c17655bb66c24f3a03a7cf279998190af48631f738862eae772",
+    "src/ricepo/backends.py": "feb99d39b25f97da853e6ff6d67e620bc3220bb79252d08ebd88b9ba68ccb5bc",
+    "src/ricepo/modeling.py": "2fee278c252c725aa510a81f186c809afbdccef323e6635d292a0f52cfc50000",
+    "src/ricepo/asset_identity.py": "35545356ea538bf4e5c97c1822afba249cfea12f8a1c4e8188dbb2468e14636c",
+    "configs/paper.json": "8aff5723628ce2f611c7a1a4301948fa12ebd7ef3f72c1b29efe157f8b932a8c",
+    "configs/smoke.json": "ab15b92cf3c4765de403cc85c48f6dbc123854c005222a058279c3b10f401610"
+  },
+  "not_run": [
+    "real retrieval parity",
+    "real dataset split/leakage audit",
+    "native rollout generation",
+    "counterfactual retrieval groups",
+    "optimizer step",
+    "checkpoint and development selection",
+    "formal benchmark evaluation",
+    "two-device full interactive workflow",
+    "four-GPU/distributed validation"
+  ],
+  "runtime_validated": false,
+  "four_gpu_validated": false,
+  "redactions": [
+    "scheduler numeric IDs",
+    "account/partition identifiers",
+    "private paths/usernames",
+    "server addresses/hostnames",
+    "GPU UUIDs",
+    "raw log/JUnit headers",
+    "native token sequence"
+  ]
+}
