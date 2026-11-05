@@ -12,7 +12,8 @@ PROFILES = ("paper_reference", "smoke", "ablation")
 CONFIG_FIELDS = {"schema_version", "profile", "method", "reference_plan", "reference_research_settings",
                  "implementation_provenance", "paper", "author_code", "execution", "paper_constants",
                  "batch_unit", "batch_unit_evidence", "model", "required_research_settings",
-                 "setting_evidence", "deviations"}
+                 "setting_evidence", "deviations", "runtime_bindings"}
+RUNTIME_BINDING_FIELDS = frozenset({"total_updates", "train_split_manifest", "development_split_manifest"})
 PAPER_FIELDS = {
     "anchors_per_query": "anchor_top_k", "rollout_depth": "max_retrieval_depth",
     "influence_threshold": "influence_threshold", "residual_threshold": "residual_threshold",
@@ -124,8 +125,12 @@ def _reference(config, constants, key):
         return (value if config.get("reference_plan") == "single_process_v1" else None,
                 _source("implementation_choice", reason))
     name = LEGACY_NAMES.get(key, key)
-    return (config.get("required_research_settings", {}).get(name),
-            config.get("setting_evidence", {}).get(name, {}))
+    declared = config.get("required_research_settings", {}).get(name)
+    if declared is None and name in RUNTIME_BINDING_FIELDS:
+        binding = config.get("runtime_bindings", {}).get(name)
+        if binding is not None:
+            return binding, _source("runtime_binding", "Explicit run-local binding for an otherwise unresolved field.")
+    return declared, config.get("setting_evidence", {}).get(name, {})
 
 
 def _positive_int(value):
@@ -154,7 +159,7 @@ def _derived(key, values, has_plan):
 
 def _validate_evidence(key, source, issues):
     status = source.get("status") if isinstance(source, dict) else None
-    if status in ("implementation_choice", "experiment_override", "derived"):
+    if status in ("implementation_choice", "experiment_override", "derived", "runtime_binding"):
         if not isinstance(source.get("reason"), str) or not source["reason"].strip():
             issues.append(f"undocumented implementation choice: {key}")
     elif status in ("paper_explicit", "author_code_explicit", "upstream_explicit"):
@@ -265,6 +270,18 @@ def _declared_changes(config, profile, fields, issues):
     return parsed
 
 
+def _runtime_bindings(config, issues):
+    bindings = config.get("runtime_bindings", {})
+    if not isinstance(bindings, dict):
+        issues.append("runtime_bindings must be an object")
+        return
+    for key, value in bindings.items():
+        if key not in RUNTIME_BINDING_FIELDS:
+            issues.append(f"unsupported runtime binding: {key}")
+        elif value is None or (isinstance(value, str) and not value.strip()):
+            issues.append(f"runtime binding {key} must be nonempty")
+
+
 def expand(config, command, constants, independent_settings=None):
     issues = []
     method = config.get("method", "ricepo")
@@ -305,6 +322,7 @@ def expand(config, command, constants, independent_settings=None):
     if independent_settings is not None and not isinstance(independent_settings, dict):
         issues.append("reference_research_settings must be a settings object")
         independent_settings = {}
+    _runtime_bindings(config, issues)
     fields, deployment = _scope(method, command)
     method_fields, _ = _scope(method, dispatch)
     # A deviation can describe training while a holdout or encoding command uses
