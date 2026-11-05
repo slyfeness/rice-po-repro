@@ -1,0 +1,55 @@
+# Sanitized path-parameterized transcription of GPU-SOURCE-01, not the original bytes.
+# Text attachment only; not executed during review packaging.
+import os,json,time
+from pathlib import Path
+from types import SimpleNamespace
+assert os.environ.get("SLURM_JOB_ID")
+root=Path(os.environ["PROJECT_ROOT"])
+out=Path(os.environ["REPORT_ROOT"]);out.mkdir()
+from ricepo.environment import configure_caches
+configure_caches(root/"cache")
+import torch
+from transformers import AutoModelForCausalLM,AutoTokenizer
+from ricepo.asset_identity import local_model_identity
+from ricepo.backends import TransformersEntropyProvider
+from ricepo.modeling import sampled_old_log_probs,causal_token_scores
+model_path=Path(os.environ["LOCAL_ACTOR"])
+start=time.perf_counter()
+print("MODEL_INIT_START",flush=True)
+identity=local_model_identity(model_path)
+tok=AutoTokenizer.from_pretrained(model_path,local_files_only=True,trust_remote_code=False)
+actor=AutoModelForCausalLM.from_pretrained(model_path,local_files_only=True,trust_remote_code=False,torch_dtype=torch.float32).to("cuda:0").eval()
+ref=AutoModelForCausalLM.from_pretrained(model_path,local_files_only=True,trust_remote_code=False,torch_dtype=torch.float32).to("cuda:0").eval()
+ref.requires_grad_(False)
+loaded=time.perf_counter()
+print("MODEL_INIT_COMPLETE",loaded-start,flush=True)
+ids=tuple(tok.encode("Explain why the sky appears blue when sunlight passes through the atmosphere.",add_special_tokens=True))
+mask=(False,)*(len(ids)-4)+(True,)*4
+t=SimpleNamespace(policy_version=identity["payload_sha256"],token_ids=ids,generated_mask=mask)
+provider=TransformersEntropyProvider(model=actor,policy_version_getter=lambda:t.policy_version,device="cuda:0",chunk_size=4,max_context_tokens=256,model_call_kwargs={})
+ent=torch.tensor(provider.token_entropies(t)[1:],device="cuda:0")
+x=torch.tensor([ids[:-1]],device="cuda:0")
+with torch.no_grad():
+ logits=actor(input_ids=x,attention_mask=torch.ones_like(x),use_cache=False).logits[0].float()
+ lp=torch.log_softmax(logits,dim=-1)
+ full=-(lp.exp()*lp).sum(-1)
+ diff=float((ent-full).abs().max())
+ assert torch.allclose(ent,full,atol=2e-4,rtol=2e-5),diff
+ old=sampled_old_log_probs(actor,ids,mask,device="cuda:0",logit_chunk_size=4,max_context_tokens=256,policy_call_kwargs={})
+current,kl=causal_token_scores(actor,ref,ids,mask,device="cuda:0",logit_chunk_size=4,max_context_tokens=256,policy_call_kwargs={},reference_call_kwargs={})
+score_diff=float((old-current.detach()).abs().max())
+assert torch.allclose(old,current.detach(),atol=1e-5,rtol=1e-5)
+assert float(kl.detach().abs().max())<1e-5
+loss=-current[0,-4:].mean()+0.001*kl.sum()
+loss.backward()
+grad=float(torch.nn.utils.clip_grad_norm_(actor.parameters(),1e9))
+assert grad>0 and torch.isfinite(torch.tensor(grad))
+assert all(p.grad is None for p in ref.parameters())
+report=dict(kind="actor_only_numerical_diagnostic",optimizer_steps=0,tokens=len(ids),native_ids=ids,
+ actor_asset_identity=identity,entropy_max_abs_error=diff,old_current_max_abs_error=score_diff,
+ reference_kl_max_abs=float(kl.detach().abs().max()),gradient_norm=grad,
+ allocated_peak_bytes=torch.cuda.max_memory_allocated(),reserved_peak_bytes=torch.cuda.max_memory_reserved(),
+ model_init_seconds=loaded-start,total_seconds=time.perf_counter()-start,
+ full_ricepo_smoke_validated=False)
+(out/"result.json").write_text(json.dumps(report,indent=2))
+print(json.dumps({k:v for k,v in report.items() if k!="actor_asset_identity"}),flush=True)

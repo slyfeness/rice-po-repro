@@ -4,11 +4,13 @@ The source under test was bd6ca976565bae53bd16f713e73a1b4acec9edfb. Trial artifa
 
 | Job | Stage | Result |
 |---|---|---|
-| 173710 | Existing environment inventory and first test launch | Inventory completed; pytest launcher failed because the Python 3.11 environment lacked pytest |
-| 173711 | Reuse installed pure-Python pytest through project-local symlinks | Launcher identified a missing existing py.py dependency; no tests collected |
-| 173712 | CPU suite with complete project-local pytest import path | 217 passed, 2 failed, 2 skipped in 77.19 seconds |
-| 173715 | CPU suite after publication compatibility fix | 219 passed, 2 skipped in 18.20 seconds; COMPLETED/0 |
-| 173714 | Real local 1.5B actor/reference numerical diagnostic | COMPLETED/0; zero optimizer steps |
+| CPU-ENV-01 | Existing environment inventory and first test launch | Inventory completed; pytest launcher failed because the Python 3.11 environment lacked pytest |
+| CPU-LAUNCH-02 | Reuse installed pure-Python pytest through project-local symlinks | Launcher identified a missing existing py.py dependency; no tests collected |
+| CPU-TEST-03 | CPU suite with complete project-local pytest import path | 217 passed, 2 failed, 2 skipped in 77.19 seconds |
+| CPU-TEST-04 | CPU suite after publication compatibility fix | 219 passed, 2 skipped in 18.20 seconds; COMPLETED/0 |
+| GPU-PROBE-01 | Real local 1.5B actor/reference numerical diagnostic | COMPLETED/0; zero optimizer steps |
+
+Public aliases replace scheduler IDs in the current tree; original IDs and raw reports remain private. Historical commits are not rewritten. The stage review, sanitized commands, evidence digests and limitations are in [reviews/first-smoke/SUMMARY.md](reviews/first-smoke/SUMMARY.md).
 
 The two CPU failures both came from the shared storage rejecting renameat2(RENAME_NOREPLACE) with EINVAL. The publisher now holds a stable sibling flock, checks for any existing destination, and atomically renames the complete staging directory. All cooperating publishers must follow this protocol. The existing empty-target and failure/retry fixtures passed on the mounted filesystem after the change. Shared environments were reused without installation or modification.
 
