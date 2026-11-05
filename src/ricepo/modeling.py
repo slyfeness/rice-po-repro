@@ -17,7 +17,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
-from .objective import exact_reference_kl
+from .objective import _log_probabilities, exact_reference_kl
 
 if TYPE_CHECKING:
     from torch import Tensor
@@ -35,7 +35,7 @@ def _validate_kwargs(kwargs: Mapping[str, Any], label: str) -> dict[str, Any]:
     return dict(kwargs)
 
 
-def causal_token_scores(
+def _native_scores(
     policy_model: Any,
     reference_model: Any,
     token_ids: Sequence[int],
@@ -46,7 +46,8 @@ def causal_token_scores(
     max_context_tokens: int,
     policy_call_kwargs: Mapping[str, Any],
     reference_call_kwargs: Mapping[str, Any],
-) -> tuple[Tensor, Tensor]:
+    compact: bool,
+) -> tuple[Tensor, Tensor | None]:
     """Return [1,N] sampled policy log-probabilities and exact KL(policy||ref).
 
     Index zero has no causal predecessor and is explicitly zero padded. Prompt
@@ -76,9 +77,9 @@ def causal_token_scores(
         raise ValueError("trajectory exceeds explicit context limit; truncation is forbidden")
     if policy_model is reference_model:
         raise ValueError("policy and frozen reference must be separate models")
-    if getattr(reference_model, "training", True):
+    if reference_model is not None and getattr(reference_model, "training", True):
         raise ValueError("reference model must already be in eval mode")
-    if any(parameter.requires_grad for parameter in reference_model.parameters()):
+    if reference_model is not None and any(parameter.requires_grad for parameter in reference_model.parameters()):
         raise ValueError("reference model parameters must already have requires_grad=False")
     policy_kwargs = _validate_kwargs(policy_call_kwargs, "policy_call_kwargs")
     reference_kwargs = _validate_kwargs(reference_call_kwargs, "reference_call_kwargs")
@@ -86,7 +87,10 @@ def causal_token_scores(
     # Optional dependency is loaded only during an explicitly requested forward.
     import torch
 
-    inputs = torch.tensor([ids[:-1]], dtype=torch.long, device=device)
+    # A causal actor cannot use observations beyond its final scored action.
+    # Keep every earlier native token, including masked intermediate observations.
+    horizon = max(i for i, scored in enumerate(mask_values) if scored) if compact else len(ids) - 1
+    inputs = torch.tensor([ids[:horizon]], dtype=torch.long, device=device)
     attention = torch.ones_like(inputs)
     # Call the supplied wrapper itself, preserving DDP/FSDP hooks and gradients.
     policy_output = policy_model(
@@ -94,52 +98,81 @@ def causal_token_scores(
         return_dict=True, **policy_kwargs,
     )
     logits = policy_output.logits
-    with torch.no_grad():
-        reference_output = reference_model(
-            input_ids=inputs, attention_mask=attention, use_cache=False,
-            return_dict=True, **reference_kwargs,
-        )
-        reference_logits = reference_output.logits.detach()
-    if logits.ndim != 3 or tuple(logits.shape[:2]) != (1, len(ids) - 1):
+    reference_logits = None
+    if reference_model is not None:
+        with torch.no_grad():
+            reference_logits = reference_model(
+                input_ids=inputs, attention_mask=attention, use_cache=False,
+                return_dict=True, **reference_kwargs,
+            ).logits.detach()
+        if (reference_logits.shape != logits.shape or not reference_logits.is_floating_point()
+                or reference_logits.device != logits.device):
+            raise ValueError("policy and reference must return identical full-vocabulary shapes on one device")
+    if logits.ndim != 3 or tuple(logits.shape[:2]) != (1, horizon):
         raise ValueError("policy logits must cover every native causal predecessor")
-    if not logits.is_floating_point() or not reference_logits.is_floating_point():
-        raise ValueError("policy and reference logits must be floating-point tensors")
-    if logits.shape[-1] == 0 or reference_logits.shape != logits.shape:
-        raise ValueError("policy and reference must return identical full-vocabulary shapes")
-    if logits.device != reference_logits.device or logits.device != inputs.device:
-        raise ValueError("policy/reference logits and native inputs must share the explicit device")
+    if not logits.is_floating_point() or logits.shape[-1] == 0 or logits.device != inputs.device:
+        raise ValueError("expected full-vocabulary floating-point logits on the explicit device")
     targets = torch.tensor(ids[1:], dtype=torch.long, device=logits.device)
     if bool((targets >= logits.shape[-1]).any()):
         raise ValueError("native target token ID exceeds the shared model vocabulary")
     mask = torch.tensor(mask_values[1:], dtype=torch.bool, device=logits.device)
     score_dtype = torch.float32 if logits.dtype in (torch.float16, torch.bfloat16) else logits.dtype
-    reference_dtype = (torch.float32 if reference_logits.dtype in (torch.float16, torch.bfloat16)
-                       else reference_logits.dtype)
+    reference_dtype = score_dtype if reference_logits is None else reference_logits.dtype
+    if reference_dtype in (torch.bfloat16, torch.float16):
+        reference_dtype = torch.float32
     kl_dtype = torch.promote_types(score_dtype, reference_dtype)
     sampled_chunks = [torch.zeros(1, dtype=score_dtype, device=logits.device)]
-    kl_chunks = [torch.zeros(1, dtype=kl_dtype, device=logits.device)]
-    for start in range(0, len(ids) - 1, logit_chunk_size):
-        stop = min(start + logit_chunk_size, len(ids) - 1)
+    kl_chunks = [torch.zeros(1, dtype=kl_dtype, device=logits.device)] if reference_model is not None else []
+    for start in range(0, horizon, logit_chunk_size):
+        stop = min(start + logit_chunk_size, horizon)
         positions = torch.nonzero(mask[start:stop], as_tuple=False).flatten()
         sampled = torch.zeros(stop - start, dtype=score_dtype, device=logits.device)
-        divergence = torch.zeros(stop - start, dtype=kl_dtype, device=logits.device)
+        if reference_logits is not None:
+            divergence = torch.zeros(stop - start, dtype=kl_dtype, device=logits.device)
         if positions.numel():
             policy_rows = logits[0, start:stop].index_select(0, positions)
-            reference_rows = reference_logits[0, start:stop].index_select(0, positions)
-            if not bool(torch.isfinite(policy_rows).all()):
-                raise ValueError("generated-token policy logits must be finite")
-            log_probabilities = torch.log_softmax(policy_rows.to(score_dtype), dim=-1)
+            log_probabilities = _log_probabilities(policy_rows)
             selected_targets = targets[start:stop].index_select(0, positions)
             selected_scores = log_probabilities.gather(1, selected_targets[:, None]).squeeze(1)
-            selected_kl = exact_reference_kl(
-                policy_rows, reference_rows, chunk_size=logit_chunk_size,
-            )
             # index_copy remains differentiable with respect to the policy rows.
             sampled = sampled.index_copy(0, positions, selected_scores)
-            divergence = divergence.index_copy(0, positions, selected_kl)
+            if reference_logits is not None:
+                reference_rows = reference_logits[0, start:stop].index_select(0, positions)
+                if compact:
+                    ref_lp = _log_probabilities(reference_rows)
+                    selected_kl = (log_probabilities.exp() * (log_probabilities - ref_lp)).sum(-1)
+                else:
+                    selected_kl = exact_reference_kl(policy_rows, reference_rows, chunk_size=logit_chunk_size)
+                divergence = divergence.index_copy(0, positions, selected_kl)
         sampled_chunks.append(sampled)
-        kl_chunks.append(divergence)
-    return torch.cat(sampled_chunks)[None, :], torch.cat(kl_chunks)[None, :]
+        if reference_logits is not None:
+            kl_chunks.append(divergence)
+    tail = len(ids) - horizon - 1
+    sampled = torch.nn.functional.pad(torch.cat(sampled_chunks), (0, tail))[None, :]
+    kl = torch.nn.functional.pad(torch.cat(kl_chunks), (0, tail))[None, :] if kl_chunks else None
+    return sampled, kl
+
+
+def causal_token_scores(policy_model, reference_model, token_ids, generated_mask, *, device, logit_chunk_size,
+                       max_context_tokens, policy_call_kwargs, reference_call_kwargs) -> tuple[Tensor, Tensor]:
+    """Full-sequence comparator with independent full-vocabulary KL normalization."""
+    if reference_model is None:
+        raise ValueError("causal_token_scores requires a frozen reference")
+    return _native_scores(policy_model, reference_model, token_ids, generated_mask, device=device,
+                          logit_chunk_size=logit_chunk_size, max_context_tokens=max_context_tokens,
+                          policy_call_kwargs=policy_call_kwargs, reference_call_kwargs=reference_call_kwargs,
+                          compact=False)
+
+
+def sampled_old_log_probs(policy, token_ids, generated_mask, *, device, logit_chunk_size, max_context_tokens,
+                          policy_call_kwargs) -> Tensor:
+    """Cache detached sampled action log probabilities with one policy-only forward."""
+    import torch
+    with torch.no_grad():
+        scores, _ = _native_scores(policy, None, token_ids, generated_mask, device=device,
+                                   logit_chunk_size=logit_chunk_size, max_context_tokens=max_context_tokens,
+                                   policy_call_kwargs=policy_call_kwargs, reference_call_kwargs={}, compact=True)
+    return scores
 
 
 def make_forward(
@@ -159,13 +192,15 @@ def make_forward(
     """
     policy_kwargs = _validate_kwargs(policy_call_kwargs, "policy_call_kwargs")
     reference_kwargs = _validate_kwargs(reference_call_kwargs, "reference_call_kwargs")
+    if reference_model is None:
+        raise ValueError("PPO scoring requires a separate frozen reference")
 
     def forward(model: Any, item: UpdateItem) -> tuple[Tensor, Tensor]:
-        return causal_token_scores(
+        return _native_scores(
             model, reference_model, item.token_ids, item.generated_mask,
             device=device, logit_chunk_size=logit_chunk_size,
             max_context_tokens=max_context_tokens,
-            policy_call_kwargs=policy_kwargs, reference_call_kwargs=reference_kwargs,
+            policy_call_kwargs=policy_kwargs, reference_call_kwargs=reference_kwargs, compact=True,
         )
 
     return forward

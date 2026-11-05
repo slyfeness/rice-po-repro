@@ -5,7 +5,7 @@
 #SBATCH --account=professors
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --gres=gpu:4
+#SBATCH --gres=gpu:2
 #SBATCH --cpus-per-task=24
 #SBATCH --mem=384G
 #SBATCH --time=48:00:00
@@ -43,6 +43,5 @@ export PYTHONDONTWRITEBYTECODE=1
 export PYTHONPATH="$RICEPO_CONTROL_ROOT/src${PYTHONPATH:+:$PYTHONPATH}"
 export OMP_NUM_THREADS=24
 cd "$RICEPO_CONTROL_ROOT"
-# Sequential HF reference runtime uses two devices. Four-GPU allocation does
-# not establish four-rank training correctness; see docs/REFERENCE_RUNTIME.md.
+# Sequential HF reference backend: one process, two visible devices.
 srun "$RICEPO_PYTHON" -m ricepo.cli train --config "$RICEPO_CONFIG" --deployment "$RICEPO_DEPLOYMENT"

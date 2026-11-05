@@ -13,6 +13,14 @@ dataset processing, training, benchmark, distributed run, or cluster job was
 executed as part of this task. Static inspection and source-file provenance
 are distinct from runtime validation.
 
+## Controls in the revised checkout
+
+Before sampling, `verify_bundle` checks the externally pinned receipt, preparation plan, three manifest byte streams and label-free membership records. The selected train/dev manifests must belong to this same bundle. Distinct official test tasks remain identifiable even when different domains share the same query text. The independent train and development counts, source selection and collision policy are recorded separately.
+
+Experiments bind source, resolved recipe, dataset, actual model/tokenizer contents, prompt, retrieval index and behavior settings. D0, prompting, GRPO and RICE-PO share the evaluation component. Index consistency is verified against local bytes. Authentication of the upstream model payload requires independent evidence.
+
+Label a result with its profile, selected checkpoint, exact evaluated IDs and costs. Equal original-query and trajectory budgets include RICE-PO's extra branches and entropy computations. Equal-compute comparisons require measured budgets and accounting for failures and replay. Freeze all choices before accessing test scores. [Runtime contract](REFERENCE_RUNTIME.md) · [Retrieval comparison](RETRIEVAL_AUDIT.md) · [Change ledger](IMPLEMENTATION_LEDGER.md)
+
 ## Evidence and frozen inputs
 
 [`provenance/sources.json`](../provenance/sources.json) is the machine-readable
@@ -144,17 +152,48 @@ does not disclose a BRIGHT development split or justify a particular 406-row
 holdout. Do not invent an author-equivalent development set. Fix its source,
 size, seed, and checkpoint-selection rule before training.
 
-The [explicit manifest builder](../src/ricepo/manifest.py) accepts a local
-JSON plan and a JSONL selection list. Each selected training/development row
-identifies its split, domain, zero-based ReasonIR HQ source row index, and
-query ID. The builder uses every BRIGHT reference example in the declared
-domains for test, verifies expected SHA-256 values as it reads each input,
-joins qrels against the corresponding domain corpus, checks all three splits
-for query leakage, and writes per-domain counts and output hashes. The new
-output directory becomes visible after the complete bundle is ready. Its
-selection plan, data exports, and outputs stay on cluster storage. The module
-docstring specifies the future Slurm entry point and plan fields. No plan or
-dataset was executed for this delivery.
+The [manifest builder](../src/ricepo/manifest.py) takes an offline JSON plan
+and an explicit membership JSONL. Each membership row supplies split, domain,
+assigned query ID, and a zero-based nonblank record index in the declared ReasonIR
+HQ export. A v2 plan also declares a selection rule, filter list, and seed
+(integer or null) separately for train and development. The source adapter
+takes the query from `query[1]` and joins every `pos[*][1]` to the domain
+document ID. A missing document, empty positive set, or positive also marked
+excluded aborts preparation. Development uses independently nominated HQ
+rows. For test the builder preserves every record of each declared BRIGHT
+examples export, including its native ID, `query`, `gold_ids`, and exclusions.
+The declared dataset revision and verified export bytes establish the local
+input identity. Authenticating the exports' origin requires acquisition records.
+
+Preparation writes train, development, and test JSONL, the original bytes of
+`preparation-plan.json` and a v2 `receipt.json` together in a new directory.
+The receipt binds plan and input digests, role and
+path of each local export, counts before selection, all domain counts after
+selection, projection and join rules, the exact selected IDs, source and
+selection row indices/digests, normalized query digests and split hashes.
+Per-row positive IDs live in the corresponding split manifest's qrels.
+Counts include the paper's zero for TheoremQA questions training and separate
+booleans for agreement with the paper's train and test counts.
+
+Collision records distinguish repeated domain-qualified IDs, reuse of HQ
+source rows, within-split repeated text and train/development/test overlap.
+If distinct official tasks in different test domains share normalized text,
+both records are retained and reported. Other collisions stop publication
+and write a sibling `*.overlap-*.json` audit listing every implicated task.
+Each task retains its own corpus, positives and per-domain contribution.
+
+Pin the byte SHA-256 of the preparation receipt in deployment alongside
+the receipt path and the three sibling manifest paths. The
+[bundle verifier](../src/ricepo/dataset_bundle.py) checks that pin, all three
+file digests, per-domain corpus identity, complete source-index coverage,
+the overlap audit, and expected task membership. It verifies test bytes
+without parsing test judgments. The training runtime receives identities and
+hashes, and reads only train/development rows for optimization and selection.
+Both selection and final evaluation aggregate against the receipt's exact
+domain/query-ID pairs. A missing query in an otherwise represented domain
+invalidates a complete macro. Explicit diagnostics publish a separate
+`partial_macro`, expected/actual counts and missing IDs. The preparation and
+verification interfaces are authored for future authorized Slurm use.
 
 The public BRIGHT test set is reserved for final evaluation. Do not tune
 thresholds, hyperparameters, reconstruction rules, or checkpoint selection on

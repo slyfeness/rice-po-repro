@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "extends": "../paper_reference.json",
+  "profile": "ablation",
+  "deviations": {
+    "gate_mode": {
+      "value": "always",
+      "reason": "All selected reasoning spans receive their paired summary credit."
+    }
+  }
+}

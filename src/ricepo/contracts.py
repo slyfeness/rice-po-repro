@@ -19,6 +19,10 @@ class RankedDocument:
     document_id: str
     score: float
     text: str = ""
+    dense_raw: float | None = None
+    sparse_raw: float | None = None
+    dense_normalized: float | None = None
+    sparse_normalized: float | None = None
 
 
 @dataclass(frozen=True)

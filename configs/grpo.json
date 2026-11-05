@@ -1,0 +1,5 @@
+{
+  "schema_version": 1,
+  "extends": "paper_reference.json",
+  "method": "grpo"
+}

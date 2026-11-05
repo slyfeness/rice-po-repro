@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "extends": "paper_reference.json",
+  "profile": "smoke",
+  "deviations": {
+    "queries_per_update": {
+      "value": 1,
+      "reason": "Exercise one complete query group. Keep the reference group size, branch count, gate, horizon and optimization rule."
+    }
+  }
+}

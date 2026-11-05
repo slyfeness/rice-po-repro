@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "extends": "../paper_reference.json",
+  "profile": "ablation",
+  "deviations": {
+    "ppo_epochs": {
+      "value": 2,
+      "reason": "Make a second PPO pass using the same old log probabilities, reference and advantages."
+    }
+  }
+}

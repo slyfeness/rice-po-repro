@@ -1,11 +1,14 @@
 """Fixed-retriever primitives; unspecified RICE composition/fusion is explicit."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from itertools import chain
 import math
 from typing import Callable, Mapping, Sequence
 
 from .contracts import RankedDocument, RetrievalResult
+from .asset_identity import implementation_class, local_model_identity, package_versions, source_sha256
+from .artifacts import require_cluster_storage, require_slurm
+from .data import content_sha256
 
 
 @dataclass(frozen=True)
@@ -37,10 +40,10 @@ def minmax(scores: Mapping[str, float]) -> dict[str, float]:
     return {key: (value - low) / (high - low) for key, value in scores.items()}
 
 
-def hybrid_rank(dense: Mapping[str, float], sparse: Mapping[str, float], *,
+def _fusion(dense: Mapping[str, float], sparse: Mapping[str, float], *,
                 normalization: Callable[[Mapping[str, float]], Mapping[str, float]],
                 excluded_ids: frozenset[str], exclude_before_normalization: bool,
-                top_k: int) -> tuple[RankedDocument, ...]:
+                top_k: int):
     """Diver §2.3 equal-weight fusion. Caller specifies normalization semantics."""
     if type(top_k) is not int or top_k <= 0 or set(dense) != set(sparse):
         raise ValueError("positive top_k and matching complete scoring domains required")
@@ -60,8 +63,16 @@ def hybrid_rank(dense: Mapping[str, float], sparse: Mapping[str, float], *,
         raise ValueError("normalization changed the scoring domain")
     if any(not math.isfinite(x) or not 0 <= x <= 1 for x in chain(left.values(), right.values())):
         raise ValueError("Diver requires normalized scores in [0,1]")
-    result = [RankedDocument(k, 0.5 * left[k] + 0.5 * right[k]) for k in candidates]
-    return tuple(sorted(result, key=lambda item: (-item.score, item.document_id))[:top_k])
+    fused = {k: 0.5 * left[k] + 0.5 * right[k] for k in candidates}
+    ids = sorted(fused, key=lambda k: (-fused[k], k))[:top_k]
+    ranked = tuple(RankedDocument(k, fused[k], dense_raw=dense[k], sparse_raw=sparse[k],
+                                  dense_normalized=left[k], sparse_normalized=right[k]) for k in ids)
+    return {"dense_raw": dense, "sparse_raw": sparse, "dense_normalized": left,
+            "sparse_normalized": right, "fused": fused, "ranking": ranked}
+
+
+def hybrid_rank(dense, sparse, **kwargs) -> tuple[RankedDocument, ...]:
+    return _fusion(dense, sparse, **kwargs)["ranking"]
 
 
 class FixedHybridRetriever:
@@ -85,18 +96,33 @@ class FixedHybridRetriever:
         self.top_k, self.render_observation = top_k, render_observation
         self.backend_version = backend_version
 
-    def retrieve(self, query: str, *, excluded_ids: frozenset[str]) -> RetrievalResult:
+    def recipe(self):
+        """Bind the scorers actually in use, including normalization and cutoffs."""
+        return {
+            "dense": self.dense_score.recipe(), "sparse": self.sparse_score.recipe(),
+            "candidate_domain": "all_domain_corpus_rows", "backend_version": self.backend_version,
+            "normalization": self.normalization.__name__,
+            "normalization_source_sha256": source_sha256(self.normalization),
+            "fusion_source_sha256": source_sha256(_fusion), "weights": [0.5, 0.5],
+            "ties": "score_desc_then_document_id_lexicographic_ascending",
+            "exclusion": "fixed_dataset_ids_each_query",
+            "exclude_before_normalization": self.exclude_before_normalization,
+            "cutoff": self.top_k, "reward": "pytrec_eval.ndcg_cut_10_raw_fraction",
+            "packages": package_versions(("numpy", "gensim", "scipy", "pyserini", "pyjnius", "pytrec-eval")),
+        }
+
+    def score_trace(self, query: str, *, excluded_ids: frozenset[str]):
         if not isinstance(query, str) or not query:
             raise ValueError("retrieval query must be a nonempty string")
         dense, sparse = self.dense_score(query), self.sparse_score(query)
         if set(dense) != set(self.corpus) or set(sparse) != set(self.corpus):
             raise ValueError("scorer/corpus mismatch; no silent candidate-pool change")
-        ranking = hybrid_rank(dense, sparse, normalization=self.normalization,
-                              excluded_ids=excluded_ids,
-                              exclude_before_normalization=self.exclude_before_normalization,
-                              top_k=self.top_k)
-        documents = tuple(RankedDocument(d.document_id, d.score, self.corpus[d.document_id])
-                          for d in ranking)
+        return _fusion(dense, sparse, normalization=self.normalization, excluded_ids=excluded_ids,
+                       exclude_before_normalization=self.exclude_before_normalization, top_k=self.top_k)
+
+    def retrieve(self, query: str, *, excluded_ids: frozenset[str]) -> RetrievalResult:
+        ranking = self.score_trace(query, excluded_ids=excluded_ids)["ranking"]
+        documents = tuple(replace(d, text=self.corpus[d.document_id]) for d in ranking)
         observation = tuple(self.render_observation(documents))
         if any(type(t) is not int or t < 0 for t in observation):
             raise ValueError("invalid observation token IDs")
@@ -173,6 +199,10 @@ class DenseVectorScorer:
             raise ValueError("corpus vectors must be floating point")
         self.vectors, self.encode_query, self.chunk_size = vectors, encode_query, chunk_size
 
+    def recipe(self):
+        return {"method": "exact_float32_cosine", "chunk_rows": self.chunk_size,
+                "source_sha256": source_sha256(type(self))}
+
     def __call__(self, query: str) -> dict[str, float]:
         import numpy as np
         query_vector = np.asarray(self.encode_query(query), dtype=np.float32)
@@ -207,6 +237,7 @@ class LuceneBM25Scorer:
     """
 
     def __init__(self, corpus: Mapping[str, str]):
+        require_slurm()
         from gensim.corpora import Dictionary
         from gensim.models import LuceneBM25Model
         from gensim.similarities import SparseMatrixSimilarity
@@ -214,8 +245,11 @@ class LuceneBM25Scorer:
         if not corpus:
             raise ValueError("empty BM25 corpus")
         self.ids = tuple(corpus)
-        self.analyzer = analysis.Analyzer(analysis.get_lucene_analyzer())
+        java_analyzer = analysis.get_lucene_analyzer()
+        self.analyzer_class = str(java_analyzer.getClass().getName())
+        self.analyzer = analysis.Analyzer(java_analyzer)
         tokens = [self.analyzer.analyze(corpus[key]) for key in self.ids]
+        self.analyzed_sha256 = content_sha256([content_sha256(row) for row in tokens])
         self.dictionary = Dictionary(tokens)
         if len(self.dictionary) == 0:
             raise ValueError("corpus has no analyzed terms")
@@ -224,6 +258,14 @@ class LuceneBM25Scorer:
         self.index = SparseMatrixSimilarity(weighted, num_docs=len(tokens),
                                              num_terms=len(self.dictionary),
                                              normalize_queries=False, normalize_documents=False)
+
+    def recipe(self):
+        return {"method": "gensim.LuceneBM25Model", "k1": 0.9, "b": 0.4,
+                "analyzer": "pyserini.analysis.get_lucene_analyzer(defaults)",
+                "analyzer_class": self.analyzer_class, "analyzed_rows_sha256": self.analyzed_sha256,
+                "transform_queries": True, "transform_documents": True,
+                "index_normalize_queries": False, "index_normalize_documents": False,
+                "source_sha256": source_sha256(type(self))}
 
     def __call__(self, query: str) -> dict[str, float]:
         weighted = self.model[self.dictionary.doc2bow(self.analyzer.analyze(query))]
@@ -244,14 +286,73 @@ class DiverEncoder:
             raise ValueError("Diver must be in eval mode with an explicit length")
         self.model, self.tokenizer, self.device = model, tokenizer, device
         self.max_length, self.document_prefix = max_length, document_prefix
+        self._identity = None
 
-    def encode(self, texts: Sequence[str], *, is_query: bool):
+    @classmethod
+    def from_local(cls, deployment):
+        """Only this loader produces a receipt-capable encoder."""
+        require_slurm()
+        from .environment import configure_caches
+        configure_caches(deployment["cache_root"])
+        import torch
+        from transformers import AutoModel, AutoTokenizer
+
+        path = require_cluster_storage(deployment["retriever_model_path"])
+        assets = local_model_identity(path)
+        dtype_name = deployment["dtype"]
+        dtype = {"float32": torch.float32, "bfloat16": torch.bfloat16}[dtype_name]
+        args = dict(local_files_only=True, trust_remote_code=False)
+        tokenizer = AutoTokenizer.from_pretrained(str(path), **args)
+        model, load_info = AutoModel.from_pretrained(str(path), torch_dtype=dtype,
+                                                     output_loading_info=True, **args)
+        if any(load_info.get(key) for key in ("missing_keys", "mismatched_keys", "error_msgs")):
+            raise ValueError("incomplete local encoder weight load")
+        device = deployment["retriever_device"]
+        model.to(device).eval()
+        model.requires_grad_(False)
+        if model.dtype != dtype or local_model_identity(path) != assets:
+            raise ValueError("retriever precision mismatch or snapshot changed during load")
+        encoder = cls(model, tokenizer, device=device, max_length=deployment["retriever_max_length"],
+                      document_prefix=deployment["document_prefix"])
+        if not isinstance(encoder.document_prefix, str):
+            raise ValueError("explicit document prefix required")
+        impl = {
+            "encoder_source_sha256": source_sha256(cls, last_token_embeddings),
+            "model": implementation_class(model), "tokenizer": implementation_class(tokenizer),
+            "packages": package_versions(("torch", "transformers", "tokenizers", "safetensors", "numpy")),
+            "dtype": dtype_name, "output_dtype": "float32", "hidden_size": model.config.hidden_size,
+            "attention_implementation": getattr(model.config, "_attn_implementation", None),
+            "pooling": "last_nonpadding_token", "normalization": "float32_l2_last_dimension",
+            "query_prefix": encoder.QUERY_PREFIX, "document_prefix": encoder.document_prefix,
+            "padding": "longest_in_batch", "padding_side": tokenizer.padding_side,
+            "truncation": True, "truncation_side": tokenizer.truncation_side,
+            "max_length": encoder.max_length, "add_special_tokens": True,
+            "all_special_ids": tokenizer.all_special_ids, "pad_token_id": tokenizer.pad_token_id,
+            "chat_template_sha256": content_sha256(getattr(tokenizer, "chat_template", None)),
+        }
+        encoder._identity = {"assets": assets, "implementation": impl,
+                             "sha256": content_sha256([assets, impl])}
+        return encoder
+
+    @property
+    def identity(self):
+        if self._identity is None:
+            raise ValueError("vector bundles require an encoder loaded by DiverEncoder.from_local")
+        return self._identity
+
+    def tokenize(self, texts: Sequence[str], *, is_query: bool):
         prefix = self.QUERY_PREFIX if is_query else self.document_prefix
-        inputs = self.tokenizer([prefix + text for text in texts], padding=True,
-                                truncation=True, max_length=self.max_length, return_tensors="pt")
+        return self.tokenizer([prefix + text for text in texts], padding=True,
+                              truncation=True, max_length=self.max_length,
+                              add_special_tokens=True, return_tensors="pt")
+
+    def encode_inputs(self, inputs):
         vectors = last_token_embeddings(self.model, inputs["input_ids"].to(self.device),
                                         inputs["attention_mask"].to(self.device))
         return vectors.cpu().numpy()
+
+    def encode(self, texts: Sequence[str], *, is_query: bool):
+        return self.encode_inputs(self.tokenize(texts, is_query=is_query))
 
     def query(self, text: str):
         return self.encode([text], is_query=True)[0]

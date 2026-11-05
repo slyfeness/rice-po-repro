@@ -21,7 +21,7 @@ reports/      # 环境、静态/运行验收与结果报告
 
 ## 资源与程序拓扑
 
-`slurm/reference_train.sbatch` 采用四卡申请上限对应的候选配套：gre/professors、1 节点、1 task、gpu:4、24 CPU、384G、48 小时。不约束节点或 GPU 型号，不逐张试卡。
+`slurm/reference_train.sbatch` 针对 HF 参考程序申请 gre/professors、1 节点、1 task、gpu:2、24 CPU、384G、48 小时。四卡候选额度另列于 configs/zhurong.json。不约束节点或 GPU 型号，不逐张试卡。
 
 参考训练器使用两个显式设备：actor/reference 在一个设备，固定检索器在另一个设备。它重在完整可核对的方法链路，尚未验证吞吐、显存和依赖兼容性；不会声称利用了四张卡。`training.wrap_fsdp` 与分布式 PPO 归一化是另行提供的组件，并未接入一个已验收的四进程生产训练器。获配四卡和程序支持四卡必须分别验收。
 
@@ -37,4 +37,4 @@ reports/      # 环境、静态/运行验收与结果报告
 
 ## 入口（仅供以后获准时使用）
 
-`ricepo inspect` 读取配置并列出未决参数；`python -m ricepo.manifest` 依据显式样本清单产生独立 train/dev/test 数据清单；`ricepo encode-corpus` 构建本地 Diver 语料向量；`ricepo train` 启动 HF 参考链路；`ricepo evaluate` 只评估开发集已选定的 checkpoint；`ricepo summarize` 汇总已有评估记录。计算入口要求 Slurm；准备和训练阶段分别需要相应配置和授权。此交付没有执行其中任何命令。
+`ricepo expand` 按命令静态展开配置和来源，`ricepo preflight` 供未来 Slurm 环境盘点，`ricepo baseline` 评估 D0 或初始策略，`ricepo inspect` 读取配置并列出未决参数；`python -m ricepo.manifest` 依据显式样本清单产生独立 train/dev/test 数据清单；`ricepo encode-corpus` 构建本地 Diver 语料向量；`ricepo train` 启动 HF 参考链路；`ricepo evaluate` 只评估开发集已选定的 checkpoint；`ricepo summarize` 汇总已有评估记录。计算入口要求 Slurm；准备和训练阶段分别需要相应配置和授权。此交付没有执行其中任何命令。

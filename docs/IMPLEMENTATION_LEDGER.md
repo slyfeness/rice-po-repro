@@ -1,16 +1,16 @@
-# Source implementation phase — 2026-11-04
+# Revision ledger
 
-Scope: implement the framework and key files from the paper and publish a public repository. No execution of project code, tests, models, builds, experiment jobs, or benchmarks in this phase.
+审查基准为 `d4b490a96f8ceb31392ca55abf31325bedb7078c`。开始时本地 main、origin/main 与远端公布的 main 均指向该提交，工作区干净。所有修改发生在独立 worktree 的 `revision/auditable-reference` 分支。本次交付使用独立本地提交和源码 ZIP。
 
-| Interface | Invariant checked by source review |
-|---|---|
-| Original rollout → entropy | Same query, policy version, and native generated tokens. Full-vocabulary distributions; no truncated-logprob proxy. |
-| Entropy → branches | One pooled top-four selection per query; alternatives begin at the saved history before the paired reasoning. |
-| Retrieval → credit | Original and alternatives share a five-step horizon. Per-query benchmark exclusions are fixed across time. Final reward is from the last summary. |
-| Credit → update | Population variances, inclusive gate, selected-span replacement, prompt/tool tokens masked, old-policy likelihood and frozen reference separated. |
-| Runtime → storage | Immutable stage receipts, source and manifest identities; all large artifacts go to storage-backed paths within Slurm. |
-| Publication | Dedicated public repository; no credentials, model/data payloads, cluster logs, trained weights or invented results. |
+逐项表 [REVISION_MATRIX.csv](REVISION_MATRIX.csv) 按任务原编号列出基准依据、改动类别、文件和函数、算法影响、测试源码、静态状态与未决事项。已有保护项也列入表内。实现选择的细节见 [PAPER_TO_CODE.md](PAPER_TO_CODE.md)。
 
-Static review caught and corrected two method-changing hazards: selecting anchors/normalizing rewards across a mixed-query batch, and removing previously retrieved documents from future rounds. The implementation now groups both selection and advantages by query and keeps benchmark exclusions separate from history. A counterfactual credit group requires the same full horizon for every outcome.
+| 范围 | 基准已有 | 本次变化 |
+|---|---|---|
+| 算法 | 原生 token 和掩码、分组熵与优势、原锚前缀、总体矩、双门控 | 保留这些语义；从有效配置传阈值、选点数、深度；GRPO 在分支之前分流 |
+| 数据/检索 | 文件 SHA、显式 ReasonIR 选择、固定排除和 NDCG | 实际编码资产和目录发布、外部固定三清单、带身份的精确评测成员检查 |
+| 训练 | 因果评分、PPO 剪裁、冻结参考、一次整批更新 | 独立旧概率路径、显式更新计划、探针和实际权重指纹、分项诊断 |
+| 状态 | 原有分阶段 JSON，开发评估包在更新回调中 | 逐条证据、解析前原始结果、锁、原子 checkpoint、独立开发重试、完整提交点恢复 |
+| 评估/成本 | 开发选模、正式测试、域宏平均 | D0 与初始 prompting 真基线、单一评估流、按阶段统计请求、失败、重放和时间 |
+| 后续验证 | 未运行 | 测试源码已编写，未执行；模型数值、挂载点原子性、内存、GPU 和分布式仍需实测 |
 
-Use `configs/paper.json` for reported constants and `configs/implementation_choices.json` for the independent numerical conventions. No verified author RICE-PO code is claimed. The absent author code does not prevent a paper-based implementation. The unresolved experimental inputs are the train/dev sample manifests, the actual local assets, and the training budget. See [verification status](VALIDATION.md) before interpreting any component as runtime-tested.
+`configs/paper.json` 和第三方许可保留基准字节。ZIP 的 `DELIVERY/` 目录包含提交身份、独立补丁、成员清单和 SHA-256；ZIP 自身的 SHA-256 在交付时按实际文件计算。

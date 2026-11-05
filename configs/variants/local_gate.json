@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "extends": "../paper_reference.json",
+  "profile": "ablation",
+  "deviations": {
+    "gate_mode": {
+      "value": "influence_only",
+      "reason": "Only the influence threshold decides reasoning propagation."
+    }
+  }
+}

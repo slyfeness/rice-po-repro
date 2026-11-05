@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "extends": "implementation_choices.json",
+  "profile": "paper_reference",
+  "method": "prompting"
+}

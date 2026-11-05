@@ -21,6 +21,14 @@ sources. Their existence does not make this repository official RICE-PO code.
 Pins and the bounded author-code search are in
 [`provenance/sources.json`](../provenance/sources.json).
 
+## Changes relative to d4b490a
+
+The formula primitives below were present at the review baseline. Their callers now consume a resolved recipe. Equation (1) still uses the entire vocabulary and Eq. (2) pools only one query. GRPO stops at the shared trajectory-level advantage. RICE-PO verifies the complete original and branch groups before replacing token advantages. The reference horizon, raw NDCG, original outcome inclusion, population moments, paired reasoning fallback and fixed initial reference follow the original contract.
+
+The variants in `configs/variants/` change one factor. Random anchor selection uses a seeded ordering of the query's candidates and the same K budget, retaining entropy measurement for diagnosis. Five gate variants use the same anchors: both conditions, influence only, residual only, unconditional propagation, or summary replacement alone. Final-depth anchors have R = r and therefore zero residual, and are reported separately. Variant names describe their exact independent definitions.
+
+`modeling.sampled_old_log_probs`, `causal_token_scores`, the compact callback and `training.ppo_plan_update` separate old sampling probabilities, the fixed reference and the current model. The [revision matrix](REVISION_MATRIX.csv) and [runtime contract](REFERENCE_RUNTIME.md) identify their consumers and validation fixtures.
+
 ## Objects and one iteration
 
 [`contracts.py`](../src/ricepo/contracts.py) represents native token spans,
@@ -72,7 +80,7 @@ the independent implementation.
 | [(8)](https://arxiv.org/html/2605.26352v3#S4.E8) | Selected summary tokens receive local A_sum; paired reasoning receives A_think; other generated tokens retain A_i. | `credit.build_advantages` initializes the trajectory baseline then **replaces** selected span values. It does not add local credit to A_i. Prompt/tool tokens have false loss masks and zero advantages. |
 | [(9)](https://arxiv.org/html/2605.26352v3#S4.E9) | A_think = A_sum when both gates pass; otherwise A_think = A_i. | `credit.build_advantages`. A rejected reasoning span keeps the trajectory baseline; it is not zeroed. The selected summary still gets local credit when propagation is rejected. |
 | [(10)](https://arxiv.org/html/2605.26352v3#S4.E10) | Token ratio ρ = π_current(a\|h) / π_old(a\|h). | `objective.ppo_loss` computes exp(current log p − detached old log p). [`training.UpdateItem`](../src/ricepo/training.py) requires matching policy version and native token alignment. Re-tokenized text or probabilities of another rollout policy would change this ratio. |
-| [(11)](https://arxiv.org/html/2605.26352v3#S4.E11) | Maximize the clipped token surrogate minus β_KL KL(current\|reference). | `objective.ppo_loss` minimizes its negative and adds the KL penalty. `exact_reference_kl` computes full-vocabulary conditional KL. `training.ppo_update` keeps a declared global reduction across distributed ranks. Appendix A.1 fixes β_KL=0.001; clipping coefficient and numerical reduction are not reported. |
+| [(11)](https://arxiv.org/html/2605.26352v3#S4.E11) | Maximize the clipped token surrogate minus β_KL KL(current\|reference). | `objective.ppo_loss` minimizes its negative and adds the KL penalty. `exact_reference_kl` computes full-vocabulary conditional KL. `training.ppo_plan_update` uses the resolved minibatch denominator. The separate distributed helper retains its global reduction. Appendix A.1 fixes β_KL=0.001; clipping coefficient and numerical reduction are not reported. |
 
 ### Advantage conventions and the proposition
 

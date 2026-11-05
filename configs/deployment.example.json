@@ -17,16 +17,18 @@
   "retriever_max_length": 512,
   "document_prefix": "",
   "retrieval_top_k": 10,
-  "max_grad_norm": 1.0,
   "expected_development_domains": null,
   "test_scope": "bright_full_12_domains",
   "expected_test_domains": null,
   "domains": {
     "DOMAIN_NAME": {
       "corpus_jsonl": "/file_storage01/home/USERNAME/data/DOMAIN_NAME/corpus.jsonl",
-      "corpus_vectors_npy": "/file_storage01/home/USERNAME/data/DOMAIN_NAME/vectors.npy",
-      "vector_document_ids_json": "/file_storage01/home/USERNAME/data/DOMAIN_NAME/vector_document_ids.json",
+      "corpus_vectors_npy": "/file_storage01/home/USERNAME/data/DOMAIN_NAME/encoder-bundle-v2/vectors.npy",
+      "vector_document_ids_json": "/file_storage01/home/USERNAME/data/DOMAIN_NAME/encoder-bundle-v2/vector_document_ids.json",
       "backend_version": "REPLACE_WITH_PINNED_DOMAIN_RETRIEVER_IDENTITY"
     }
-  }
+  },
+  "test_manifest_path": null,
+  "dataset_receipt_path": null,
+  "dataset_receipt_sha256": null
 }

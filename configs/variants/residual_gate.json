@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "extends": "../paper_reference.json",
+  "profile": "ablation",
+  "deviations": {
+    "gate_mode": {
+      "value": "residual_only",
+      "reason": "Only the residual threshold decides reasoning propagation."
+    }
+  }
+}

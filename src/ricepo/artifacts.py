@@ -47,7 +47,9 @@ def file_sha256(path: str | Path) -> str:
 
 
 def stage_receipt(root: Path, stage: str, *, policy_version: str, artifacts: dict) -> None:
-    if stage not in {"rollout", "entropy", "branches", "credit", "update", "evaluation"}:
+    if stage not in {"rollout_complete", "entropy", "branches_complete", "credit_complete",
+                     "optimizer_step_committed", "checkpoint_complete", "development_complete",
+                     "iteration_complete", "evaluation"}:
         raise ValueError("unknown workflow stage")
     atomic_json(root / f"{stage}.receipt.json", {
         "schema_version": 1, "stage": stage, "policy_version": policy_version,

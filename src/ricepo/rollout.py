@@ -39,6 +39,8 @@ from .contracts import (
 )
 
 
+from .audit import operation, fingerprint, saved_item, logical_request_id
+
 MAX_RETRIEVAL_DEPTH = 5
 
 
@@ -52,6 +54,7 @@ class PolicyVersionError(RolloutError):
 
 class MalformedGenerationError(RolloutError):
     """Native token output or its supplied segmentation is invalid."""
+    code = "tag_structure"
 
 
 class RolloutLengthError(RolloutError):
@@ -67,6 +70,7 @@ class RolloutRules:
     accepted_finish_reasons: frozenset[str]
     max_new_tokens: int
     max_context_tokens: int
+    depth: int = MAX_RETRIEVAL_DEPTH
 
     def __post_init__(self) -> None:
         if not self.accepted_finish_reasons or any(
@@ -74,7 +78,7 @@ class RolloutRules:
             for reason in self.accepted_finish_reasons
         ):
             raise ValueError("explicit accepted_finish_reasons are required")
-        for name in ("max_new_tokens", "max_context_tokens"):
+        for name in ("max_new_tokens", "max_context_tokens", "depth"):
             value = getattr(self, name)
             if type(value) is not int or value <= 0:
                 raise ValueError(f"{name} must be an explicit positive integer")
@@ -232,14 +236,20 @@ class RolloutRunner:
             prefix = history
             self._check_length(prefix)
             self._check_policy(policy_version)
-            generation = self.generator.generate(prefix, seed=seed)
+            kind = "original_generation" if honor_stop else "branch_generation"
+            request_id = logical_request_id(policy_version, query_id, trajectory_id, depth, seed)
+            with operation(kind, request_id=request_id, query_id=query_id, trajectory_id=trajectory_id,
+                           seed=seed, depth=depth, input_tokens=len(prefix), policy_version=policy_version, prefix_sha256=fingerprint(prefix)):
+                generation = self.generator.generate(prefix, seed=seed)
             self._check_policy(policy_version)
             generated_ids = self._validate_generation(generation)
             self._check_length(prefix + generated_ids)
             query = self.query_composer.compose(original_query, generation.summary_text)
             if not isinstance(query, str) or not query:
                 raise RetrievalContractError("query composer must return a nonempty string")
-            retrieval = self.retriever.retrieve(query, excluded_ids=frozenset(excluded))
+            with operation("retrieval_followup", query_id=query_id, trajectory_id=trajectory_id,
+                           depth=depth, request_id=request_id, query=query, excluded_ids=sorted(excluded)):
+                retrieval = self.retriever.retrieve(query, excluded_ids=frozenset(excluded))
             if not isinstance(retrieval, RetrievalResult):
                 raise RetrievalContractError("retriever must return RetrievalResult")
             if retrieval.query != query:
@@ -321,8 +331,8 @@ class RolloutRunner:
             token_ids=prefix,
             generated_mask=(False,) * len(prefix),
             previous_steps=(),
-            seeds=self._validate_seeds(seeds, MAX_RETRIEVAL_DEPTH),
-            final_depth=MAX_RETRIEVAL_DEPTH,
+            seeds=self._validate_seeds(seeds, self.rules.depth),
+            final_depth=self.rules.depth,
             honor_stop=True,
         )
 
@@ -345,10 +355,10 @@ class RolloutRunner:
         if (anchor.query_id, anchor.trajectory_id) != (original.query_id, original.trajectory_id):
             raise ValueError("anchor does not identify the original trajectory")
         final_depth = len(original.steps)
-        if not 1 <= anchor.depth <= final_depth <= MAX_RETRIEVAL_DEPTH:
-            raise ValueError("anchor/original depth is outside the five-step rollout")
-        if final_depth != MAX_RETRIEVAL_DEPTH:
-            raise ValueError("credit branches require an original at the full five-step horizon")
+        if not 1 <= anchor.depth <= final_depth <= self.rules.depth:
+            raise ValueError("anchor/original depth is outside the configured rollout")
+        if final_depth != self.rules.depth:
+            raise ValueError(f"credit branches require an original at the full {self.rules.depth}-step horizon")
         if tuple(step.depth for step in original.steps) != tuple(range(1, final_depth + 1)):
             raise ValueError("original steps must have contiguous one-based depths")
         self._validate_saved_history(original)
@@ -400,6 +410,7 @@ class RolloutRunner:
                 final_depth=final_depth,
                 honor_stop=False,
             )
+            saved_item('counterfactual', trajectory.trajectory_id, trajectory)
             trajectories.append(trajectory)
             outcomes.append(BranchOutcome(
                 branch_id=request.trajectory_id,

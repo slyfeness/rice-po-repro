@@ -217,3 +217,19 @@ def test_reject_overlapping_or_unaligned_spans_and_duplicate_trajectory_ids():
         build_advantages([replace(source, steps=(bad_step,))], [], **kwargs)
     with pytest.raises(ValueError, match="unique"):
         build_advantages([source, source], [], **kwargs)
+
+
+@pytest.mark.parametrize("gate,expected",[("paper",False),("influence_only",True),
+                                         ("residual_only",False),("always",True),("never",False)])
+def test_gate_ablation_keeps_anchor_and_local_credit(gate, expected):
+    source = trajectory(final=0.0,locals_=(1.0,))
+    record = credit(group_for(source,[(0.0,1.0)]),gate_mode=gate)
+    assert record.summary_advantage == 0.5
+    assert record.propagate is expected
+
+
+def test_last_step_has_zero_residual_for_each_independent_outcome():
+    source = trajectory(final=1.0,locals_=(1.0,))
+    record = credit(group_for(source,[(0.0,0.0),(0.0,0.0)]))
+    assert record.residual_mean == record.residual_variance == 0
+    assert record.local_mean == pytest.approx(1/3)

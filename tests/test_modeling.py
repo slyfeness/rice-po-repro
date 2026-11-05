@@ -2,7 +2,7 @@
 
 import pytest
 
-from ricepo.modeling import causal_token_scores, make_forward
+from ricepo.modeling import causal_token_scores, make_forward, sampled_old_log_probs
 from ricepo.training import UpdateItem
 
 
@@ -109,6 +109,60 @@ def test_exact_kl_alone_contributes_policy_gradients():
     _, kl = score(policy, reference)
     kl.sum().backward()
     assert policy.weight.grad.abs().sum().item() > 0
+    assert reference.weight.grad is None
+
+
+def test_policy_only_old_cache_keeps_intermediate_context_and_skips_unscored_tail():
+    torch = pytest.importorskip("torch")
+    policy, reference = fake_models(torch)
+    ids, mask = (1, 2, 3, 0, 2, 1, 3), (False, True, False, False, True, False, False)
+    kwargs = dict(device="cpu", logit_chunk_size=2, max_context_tokens=20, policy_call_kwargs={})
+    old = sampled_old_log_probs(policy, ids, mask, **kwargs)
+    assert not old.requires_grad and reference.calls == []
+    assert policy.calls[0][0].tolist() == [list(ids[:4])]
+    assert policy.calls[0][-1] is False
+    full, _ = causal_token_scores(policy, reference, ids, mask, **kwargs, reference_call_kwargs={})
+    torch.testing.assert_close(old, full)
+    assert old[0, 5:].tolist() == [0., 0.]
+
+
+def test_compact_full_vocabulary_loss_gradients_match_full_history_on_shared_context():
+    torch = pytest.importorskip("torch")
+    from types import SimpleNamespace
+    from ricepo.objective import ppo_loss
+
+    class History(torch.nn.Module):
+        def __init__(self, shift):
+            super().__init__()
+            table = torch.arange(25, dtype=torch.float64).reshape(5, 5) * .01
+            self.weight = torch.nn.Parameter(table + torch.arange(5, dtype=torch.float64) * shift)
+
+        def forward(self, *, input_ids, **kwargs):
+            return SimpleNamespace(logits=self.weight[input_ids].cumsum(dim=1))
+
+    ids, active = (1, 2, 3, 0, 2, 4, 4), (False, True, False, False, True, False, False)
+    old = (0., -1.5, 0., 0., -1.4, 0., 0.)
+    adv = (0., 1., 0., 0., -1., 0., 0.)
+    item = UpdateItem("id", "old", ids, active, adv, old)
+    reference = History(.03).eval().requires_grad_(False)
+    direct, compact = History(0), History(0)
+    kwargs = dict(device="cpu", logit_chunk_size=2, max_context_tokens=20,
+                  policy_call_kwargs={}, reference_call_kwargs={})
+    full_scores, full_kl = causal_token_scores(direct, reference, ids, active, **kwargs)
+    compact_scores, compact_kl = make_forward(reference_model=reference, **kwargs)(compact, item)
+    for actual, expected in ((compact_scores, full_scores), (compact_kl, full_kl)):
+        torch.testing.assert_close(actual, expected)
+    def loss(current, kl):
+        return ppo_loss(current, torch.tensor([old], dtype=current.dtype),
+                        torch.tensor([adv], dtype=current.dtype), torch.tensor([active]),
+                        clip_epsilon=.2, kl_coefficient=.1, reference_kl=kl, reduction="token_mean")
+    left, right = loss(full_scores, full_kl), loss(compact_scores, compact_kl)
+    torch.testing.assert_close(left, right)
+    left.backward()
+    right.backward()
+    torch.testing.assert_close(direct.weight.grad, compact.weight.grad)
+    assert compact.weight.grad[3].abs().sum() > 0  # intermediate masked history still affects the next action
+    assert compact.weight.grad[4].abs().sum() == 0  # only appears in trailing observations
     assert reference.weight.grad is None
 
 

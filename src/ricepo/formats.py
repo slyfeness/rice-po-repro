@@ -11,6 +11,18 @@ from .contracts import Generation, Span
 from .rollout import MalformedGenerationError
 
 
+class EmptySpanError(MalformedGenerationError):
+    code = "empty_span"
+
+
+class InsideTokenError(MalformedGenerationError):
+    code = "tag_inside_token"
+
+
+class AmbiguousBoundaryError(MalformedGenerationError):
+    code = "ambiguous_tokenizer_boundary"
+
+
 class NativeTagParser:
     """Strict reference parser: prefix decoding may take quadratic work.
 
@@ -45,8 +57,10 @@ class NativeTagParser:
         # follow the closing tag. Ordinary tokens spelling '<eos>' do not count.
         if tail.strip():
             raise MalformedGenerationError("unexpected generated text after summary")
-        if not match.group(1).strip() or not match.group(2).strip():
-            raise MalformedGenerationError("strict parsing requires nonempty reasoning and summary")
+        if not match.group(1).strip():
+            raise EmptySpanError("strict parsing requires nonempty reasoning")
+        if not match.group(2).strip():
+            raise EmptySpanError("strict parsing requires nonempty summary")
         if any(tag in match.group(1) or tag in match.group(2)
                for tag in ("<think>", "</think>", "<summary>", "</summary>",
                            "<tool_response>", "</tool_response>")):
@@ -60,9 +74,9 @@ class NativeTagParser:
             if len(prefix) in targets and text.startswith(prefix):
                 boundaries.setdefault(len(prefix), []).append(end)
         if not targets.issubset(boundaries):
-            raise MalformedGenerationError("tag/content boundary lies inside a native token")
+            raise InsideTokenError("tag/content boundary lies inside a native token")
         if any(len(boundaries[target]) != 1 for target in targets):
-            raise MalformedGenerationError("tag/content boundary has ambiguous native token offsets")
+            raise AmbiguousBoundaryError("tag/content boundary has ambiguous native token offsets")
         reasoning = Span(boundaries[match.start(1)][0], boundaries[match.end(1)][0])
         summary = Span(boundaries[match.start(2)][0], boundaries[match.end(2)][0])
         return Generation(token_ids, reasoning, summary, match.group(2), finish_reason)

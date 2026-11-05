@@ -11,3 +11,5 @@
 Every experimental interpretation should carry an evidence category: `paper_explicit`, `dependency_explicit`, or `reimplementation_choice`. A runnable implementation or future test pass does not establish that an undocumented choice matches the authors' setup.
 
 This directory contains no personal contact details, cluster access settings, credentials, private records, experiment data, or model weights. No third-party source was imported or executed when creating it.
+
+The review base and revision provenance are recorded in [revision.json](revision.json). The pinned upstream blobs and original license files are preserved.

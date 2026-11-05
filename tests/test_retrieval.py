@@ -26,6 +26,18 @@ def test_exclusion_order_changes_normalization_only_when_explicitly_selected():
     assert [doc.document_id for doc in before] == ["b", "a"]
     assert before[0].score == 1.0
     assert after[0].score == pytest.approx(0.26)
+    assert (before[0].dense_raw, before[0].sparse_raw) == (5.0, 2.0)
+    assert (after[0].dense_normalized, after[0].sparse_normalized) == pytest.approx((0.5, 0.02))
+
+
+def test_constant_component_tie_uses_document_id_and_preserves_raw_scores():
+    dense = {"z": 3., "a": 3., "hidden": 500.}
+    sparse = {"z": 0., "a": 0., "hidden": 800.}
+    ranking = hybrid_rank(dense, sparse, normalization=minmax, excluded_ids=frozenset({"hidden"}),
+                          exclude_before_normalization=True, top_k=2)
+    assert [d.document_id for d in ranking] == ["a", "z"]
+    assert [(d.score, d.dense_raw, d.sparse_raw, d.dense_normalized, d.sparse_normalized)
+            for d in ranking] == [(0., 3., 0., 0., 0.)] * 2
 
 
 def test_hybrid_fusion_requires_complete_domains_finite_scores_and_explicit_mode():

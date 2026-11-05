@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "extends": "../paper_reference.json",
+  "profile": "ablation",
+  "deviations": {
+    "anchor_selection": {
+      "value": "random",
+      "reason": "Select the same number of candidates by a seeded ordering within each query. Conditional entropies are retained for the comparison."
+    }
+  }
+}

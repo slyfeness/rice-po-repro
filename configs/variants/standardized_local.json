@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "extends": "../paper_reference.json",
+  "profile": "ablation",
+  "deviations": {
+    "local_advantage_normalization": {
+      "value": "center_std",
+      "reason": "Divide centered local credit by population standard deviation plus epsilon."
+    }
+  }
+}

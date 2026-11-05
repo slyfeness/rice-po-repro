@@ -8,6 +8,7 @@ from collections.abc import Callable, Mapping, Sequence
 from math import nan
 from typing import Any
 
+from .audit import raw_completion
 from .contracts import Generation, Trajectory
 from .rollout import MalformedGenerationError, PolicyVersionError, RolloutLengthError, _tokens
 
@@ -63,17 +64,21 @@ class VLLMGenerator:
             sampling_params=params,
             **self.engine_generate_kwargs,
         )
-        if self.policy_version != version:
-            raise PolicyVersionError("vLLM policy changed during generation")
         if len(requests) != 1 or len(requests[0].outputs) != 1:
             raise BackendContractError("vLLM must return exactly one request and one completion")
-        if tuple(requests[0].prompt_token_ids) != prefix:
-            raise BackendContractError("vLLM returned a changed native-token prompt")
         completion = requests[0].outputs[0]
         ids = _tokens(completion.token_ids, label="vLLM completion")
         reason = completion.finish_reason
+        raw_completion(ids, reason, prefix, seed, version, (getattr(completion,"text",None) or "")[:400])
+        if self.policy_version != version:
+            raise PolicyVersionError("vLLM policy changed during generation")
+        if tuple(requests[0].prompt_token_ids) != prefix:
+            raise BackendContractError("vLLM returned a changed native-token prompt")
         if not isinstance(reason, str):
             raise BackendContractError("vLLM completion must have a final finish_reason")
+        if reason == "length":
+            from .audit import GenerationTruncated
+            raise GenerationTruncated("vLLM reached the configured generation limit")
         result = self.generation_parser(ids, reason)
         if (not isinstance(result, Generation) or result.token_ids != ids
                 or result.finish_reason != reason):

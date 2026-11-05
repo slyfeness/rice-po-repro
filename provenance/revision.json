@@ -1,0 +1,21 @@
+{
+  "review_base": "d4b490a96f8ceb31392ca55abf31325bedb7078c",
+  "paper_url": "https://arxiv.org/html/2605.26352v3",
+  "implementation": "independent_paper_reproduction",
+  "reference_constants": "configs/paper.json (unchanged)",
+  "profiles": "configs/paper_reference.json, smoke.json, ablation.json and single-factor variants",
+  "asset_claims": {
+    "local_query_index_match": "requires matching v2 content receipt at runtime",
+    "upstream_payload_verification": "unverified",
+    "author_split_identity_verified": false
+  },
+  "verification": {
+    "project_code_executed": false,
+    "tests_executed": false,
+    "models_or_datasets_downloaded": false,
+    "slurm_submitted": false,
+    "runtime_validated": false,
+    "four_gpu_validated": false
+  },
+  "ledger": "docs/REVISION_MATRIX.csv"
+}

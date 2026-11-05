@@ -167,6 +167,24 @@ def select_anchors(
     return tuple(sorted(anchors, key=lambda anchor: -anchor.entropy)[:top_k])
 
 
+def trajectory_advantages(trajectories, *, epsilon):
+    """Group-relative final reward for original trajectories of ONE query."""
+    _validate_trajectories(trajectories)
+    if not trajectories or not math.isfinite(epsilon) or epsilon <= 0:
+        raise ValueError("a complete query group and positive finite epsilon are required")
+    reward_mean, reward_variance = _moments([t.final_reward for t in trajectories])
+    scale = math.sqrt(reward_variance) + epsilon
+    rows = [
+        [
+            (trajectory.final_reward - reward_mean) / scale if generated else 0.0
+            for generated in trajectory.generated_mask
+        ]
+        for trajectory in trajectories
+    ]
+    return AdvantageBatch(tuple(t.trajectory_id for t in trajectories), tuple(map(tuple, rows)),
+                          tuple(t.generated_mask for t in trajectories), ())
+
+
 def compute_credit(
     group: BranchGroup,
     *,
@@ -175,6 +193,7 @@ def compute_credit(
     epsilon: float,
     variance_threshold: float = 0.05,
     residual_threshold: float = 0.03,
+    gate_mode: str = "paper",
 ) -> CreditRecord:
     """Compute branch moments (4)--(5), inclusive gate (6), and local credit.
 
@@ -234,16 +253,19 @@ def compute_credit(
     advantage = original.local_reward - local_mean
     if local_normalization == "center_std":
         advantage /= math.sqrt(influence_variance) + epsilon
+    passed_local = influence_variance >= variance_threshold
+    passed_residual = residual_variance <= residual_threshold
+    gates = {"paper": passed_local and passed_residual, "influence_only": passed_local,
+             "residual_only": passed_residual, "always": True, "never": False}
+    if gate_mode not in gates:
+        raise ValueError("unsupported propagation rule")
     return CreditRecord(
         anchor=group.anchor,
         local_mean=local_mean,
         influence_variance=influence_variance,
         residual_mean=residual_mean,
         residual_variance=residual_variance,
-        propagate=(
-            influence_variance >= variance_threshold
-            and residual_variance <= residual_threshold
-        ),
+        propagate=gates[gate_mode],
         summary_advantage=advantage,
     )
 
@@ -257,6 +279,7 @@ def build_advantages(
     epsilon: float,
     variance_threshold: float = 0.05,
     residual_threshold: float = 0.03,
+    gate_mode: str = "paper",
 ) -> AdvantageBatch:
     """Replace selected generated-token advantages as in (8)--(9).
 
@@ -275,15 +298,7 @@ def build_advantages(
         if groups:
             raise ValueError("branch groups require matching trajectories")
         return AdvantageBatch((), (), (), ())
-    reward_mean, reward_variance = _moments([t.final_reward for t in trajectories])
-    scale = math.sqrt(reward_variance) + epsilon
-    rows = [
-        [
-            (trajectory.final_reward - reward_mean) / scale if generated else 0.0
-            for generated in trajectory.generated_mask
-        ]
-        for trajectory in trajectories
-    ]
+    rows = [list(row) for row in trajectory_advantages(trajectories, epsilon=epsilon).advantages]
     indices = {trajectory.trajectory_id: index for index, trajectory in enumerate(trajectories)}
     seen: set[tuple[str, int]] = set()
     records: list[CreditRecord] = []
@@ -316,7 +331,7 @@ def build_advantages(
             local_normalization=local_normalization,
             epsilon=epsilon,
             variance_threshold=variance_threshold,
-            residual_threshold=residual_threshold,
+            residual_threshold=residual_threshold, gate_mode=gate_mode,
         )
         original = next(outcome for outcome in group.outcomes if outcome.is_original)
         if (

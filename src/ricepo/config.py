@@ -1,46 +1,46 @@
-"""Fail-closed configuration: no undocumented science defaults."""
+"""Read local recipe JSON and expand only the settings consumed by a command."""
 
 import json
-import math
+from copy import deepcopy
 from pathlib import Path
+from types import MappingProxyType
+
+from .recipe import LEGACY_SETTINGS, expand
 
 
 class FidelityError(ValueError):
     pass
 
 
-PAPER_CONSTANTS = {
+PAPER_CONSTANTS = MappingProxyType({
     "anchor_top_k": 4, "max_retrieval_depth": 5,
     "influence_threshold": 0.05, "residual_threshold": 0.03,
     "actor_learning_rate": 1e-6, "actor_kl_coefficient": 0.001,
     "training_batch_size": 128, "metric": "ndcg_cut_10", "reward_scale": "0_to_1",
-}
+})
+# Vocabulary accepted by version-1 configuration files. resolve() determines
+# the subset that a particular command actually requires.
+REQUIRED_SETTINGS = tuple(sorted(LEGACY_SETTINGS))
 
-REQUIRED_SETTINGS = (
-    "initial_trajectories_per_query", "total_branches_including_original",
-    "local_advantage_normalization", "trajectory_std_convention",
-    "normalization_epsilon", "optimize_counterfactual_branches", "temperature",
-    "top_p", "top_k", "max_new_tokens_per_step", "max_context_tokens",
-    "clip_epsilon", "loss_reduction", "kl_estimator", "optimizer",
-    "optimizer_hyperparameters", "total_updates", "training_seeds",
-    "query_composition", "hybrid_normalization", "excluded_before_normalization",
-    "observation_top_k", "observation_token_limit", "document_encoding_profile",
-    "prompt_artifact", "native_span_parser", "termination_policy",
-    "format_failure_policy", "train_split_manifest", "development_split_manifest",
-    "checkpoint_selection",
-)
+
+def _reject_nonfinite(literal):
+    raise FidelityError(f"nonfinite JSON number in recipe: {literal}")
 
 
 def load_config(path: str | Path, _seen: frozenset[Path] = frozenset()) -> dict:
     path = Path(path).resolve()
     if path in _seen:
         raise FidelityError("cyclic config inheritance")
-    with Path(path).open(encoding="utf-8") as handle:
-        value = json.load(handle)
-    if not isinstance(value, dict) or value.get("schema_version") != 1:
+    with path.open(encoding="utf-8") as handle:
+        value = json.load(handle, parse_constant=_reject_nonfinite)
+    if not isinstance(value, dict) or type(value.get("schema_version")) is not int or value["schema_version"] != 1:
         raise FidelityError("unsupported config schema")
     parent = value.pop("extends", None)
+    if parent is not None and "reference_research_settings" in value:
+        raise FidelityError("reference_research_settings is derived from the inherited independent reference")
     if parent is not None:
+        if not isinstance(parent, str) or not parent.strip():
+            raise FidelityError("extends requires a parent config path")
         base = load_config(path.parent / parent, _seen | {path})
         for key, item in value.items():
             if isinstance(item, dict) and isinstance(base.get(key), dict):
@@ -48,75 +48,46 @@ def load_config(path: str | Path, _seen: frozenset[Path] = frozenset()) -> dict:
             else:
                 base[key] = item
         value = base
+    if (value.get("profile") == "independent_reference_choices_not_author_recipe"
+            and value.get("reference_plan") == "single_process_v1"
+            and "reference_research_settings" not in value):
+        # Preserve the reference's settings before applying any child overrides.
+        # Values and evidence used by a command are emitted by resolve().
+        value["reference_research_settings"] = deepcopy(value.get("required_research_settings", {}))
     return value
 
 
-def fidelity_issues(config: dict, *, strict_author_source: bool = False) -> list[str]:
-    issues = []
-    constants = config.get("paper_constants", {})
-    for key, expected in PAPER_CONSTANTS.items():
-        if constants.get(key) != expected:
-            issues.append(f"paper_constants.{key}: expected {expected!r}")
-    author = config.get("author_code", {})
-    if strict_author_source and (author.get("status") != "verified"
-                                or not author.get("repository") or not author.get("commit")):
-        issues.append("RICE-PO author repository/commit is not verified")
-    settings = config.get("required_research_settings", {})
-    evidence = config.get("setting_evidence", {})
-    for key in REQUIRED_SETTINGS:
-        if key not in settings or settings[key] is None:
-            issues.append(f"unresolved: {key}")
-            continue
-        source = evidence.get(key, {})
-        if source.get("status") == "implementation_choice":
-            if not source.get("reason"):
-                issues.append(f"undocumented implementation choice: {key}")
-        elif source.get("status") not in {"paper_explicit", "author_code_explicit", "upstream_explicit"}:
-            issues.append(f"unknown evidence status: {key}")
-        elif not source.get("url") or not source.get("locator"):
-            issues.append(f"missing source locator: {key}")
-        if strict_author_source and source.get("status") not in {"paper_explicit", "author_code_explicit"}:
-            issues.append(f"not author-verified: {key}")
-    for key in ("initial_trajectories_per_query", "total_branches_including_original"):
-        value = settings.get(key)
-        if value is not None and (type(value) is not int or value < 2):
-            issues.append(f"{key} must be an integer >= 2")
-    for key in ("max_new_tokens_per_step", "max_context_tokens", "total_updates",
-                "observation_top_k", "observation_token_limit"):
-        value = settings.get(key)
-        if value is not None and (type(value) is not int or value <= 0):
-            issues.append(f"{key} must be a positive integer")
-    for key in ("normalization_epsilon", "temperature", "top_p", "clip_epsilon"):
-        value = settings.get(key)
-        if value is not None and (isinstance(value, bool) or not isinstance(value, (int, float))
-                                  or not math.isfinite(value) or value <= 0):
-            issues.append(f"{key} must be positive and finite")
-    for key, allowed in {
-        "local_advantage_normalization": {"center_only", "center_std"},
-        "trajectory_std_convention": {"population"},
-        "loss_reduction": {"sum", "token_mean", "sequence_mean"},
-    }.items():
-        value = settings.get(key)
-        if value is not None and value not in allowed:
-            issues.append(f"unsupported {key}: {value}")
-    if isinstance(settings.get("top_p"), (int, float)) and settings["top_p"] > 1:
-        issues.append("top_p must be <= 1")
-    if isinstance(settings.get("clip_epsilon"), (int, float)) and settings["clip_epsilon"] >= 1:
-        issues.append("clip_epsilon must be < 1")
-    for key in ("optimize_counterfactual_branches", "excluded_before_normalization"):
-        if settings.get(key) is not None and type(settings[key]) is not bool:
-            issues.append(f"{key} must be a boolean")
+def resolve(config: dict, command: str = "train") -> dict:
+    """Return a static, JSON-serializable recipe report, even when inputs are missing.
+
+    values contains the canonical field names passed to the command's callbacks.
+    fingerprint identifies this command's plan, not model weights or dataset contents.
+    Resolution reads no experiment assets and never authorizes execution.
+    """
+    return expand(config, command, PAPER_CONSTANTS, config.get("reference_research_settings"))
+
+
+def fidelity_issues(config: dict, *, command: str = "train", strict_author_source: bool = False) -> list[str]:
+    report = resolve(config, command)
+    issues = list(report["issues"])
+    if strict_author_source:
+        author = config.get("author_code", {})
+        if (author.get("status") != "verified" or not author.get("repository") or not author.get("commit")):
+            issues.append("RICE-PO author repository/commit is not verified")
+        for key, evidence in report["sources"].items():
+            if evidence.get("status") not in {"paper_explicit", "author_code_explicit"}:
+                issues.append(f"not author-verified: {key}")
     return issues
 
 
-def require_fidelity(config: dict) -> None:
-    issues = fidelity_issues(config)
+def require_fidelity(config: dict, command: str = "train") -> None:
+    issues = fidelity_issues(config, command=command)
     if issues:
         raise FidelityError("Reproduction configuration is incomplete:\n- " + "\n- ".join(issues))
 
 
-def require_execution(config: dict) -> None:
-    require_fidelity(config)
+def require_execution(config: dict, command: str = "train") -> None:
+    require_fidelity(config, command)
     require_enabled(config)
 
 
@@ -124,5 +95,4 @@ def require_enabled(config: dict) -> None:
     execution = config.get("execution", {})
     if execution.get("enabled") is not True:
         raise FidelityError("execution is disabled by the current task scope")
-    # runtime_validated is a recorded result, not a switch to set by assertion.
-    # Enabling the first authorized smoke run must not require claiming it passed.
+    # Validation flags are recorded outcomes. They are not permissions.

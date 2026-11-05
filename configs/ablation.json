@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "extends": "paper_reference.json",
+  "profile": "ablation",
+  "deviations": {
+    "total_branches_including_original": {
+      "value": 5,
+      "reason": "Interpret the appendix's five branches as five total outcomes, including the original. The reference uses six total outcomes."
+    }
+  }
+}

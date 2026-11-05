@@ -1,7 +1,7 @@
 """Build independent BRIGHT manifests from explicit offline source selections.
 
 Future Slurm entry point: python -m ricepo.manifest --plan PLAN --output NEW_DIR
-PLAN is a JSON object with schema_version=1, execution_enabled=true, an
+PLAN is a JSON object with schema_version=2, execution_enabled=true, an
 explicit count_policy ("report_only" or "require_paper_counts"), reasonir_revision,
 bright_revision, selection_jsonl, and domains. Each asset is {"path": absolute
 local JSONL path, "sha256": expected hex digest}. Each domain provides
@@ -12,6 +12,9 @@ Exported assets and the selection file must reside on cluster bulk storage.
 
 Each selection row supplies split ("train" or "development"), domain, query_id,
 and source_row_index (zero-based nonblank JSON records in reasonir_hq_jsonl).
+selection_provenance declares a rule, filters list and seed (integer/null)
+for each of train and development. A version-1 plan retains explicit
+membership and labels missing upstream selection history as undisclosed.
 All BRIGHT reference examples in the provided domains go into test. No RNG or
 implicit sampling is used. Expected hashes identify local exports. Declared Hub
 revisions alone cannot authenticate how an export was produced.
@@ -22,56 +25,38 @@ import hashlib
 import json
 import tempfile
 from pathlib import Path
+import uuid
 
 from .artifacts import atomic_json, file_sha256, require_cluster_storage, require_slurm
 from .data import (
-    BRIGHT_TEST_COUNTS, BRIGHT_TRAIN_COUNTS, content_sha256, join_reasonir_hq,
+    BRIGHT_REVISION, BRIGHT_TEST_COUNTS, BRIGHT_TRAIN_COUNTS, REASONIR_REVISION,
+    SplitValidationError, content_sha256, identity_record, join_reasonir_hq,
     project_bright_example, project_qrels, validate_split_manifests,
 )
-
-REASONIR_REVISION = "0275f825929b206d4ead23d34b4f8a50d4eddbc8"
-BRIGHT_REVISION = "3066d29c9651a576c8aba4832d249807b181ecae"
+from .dataset_bundle import REVISIONS, SOURCE_RULES, SPLITS, is_digest, selection_provenance, verified_jsonl
 
 
 def _asset(spec):
     path = Path(spec["path"])
     digest = spec["sha256"]
-    if not path.is_absolute() or not isinstance(digest, str) or len(digest) != 64:
+    if not path.is_absolute() or not is_digest(digest):
         raise ValueError("each asset requires an absolute path and expected SHA-256")
-    if any(ch not in "0123456789abcdef" for ch in digest):
-        raise ValueError("asset SHA-256 must use lowercase hexadecimal")
     return require_cluster_storage(path), digest
-
-
-def _rows(asset):
-    """Hash the same byte stream used to parse rows, including blank lines."""
-    path, expected = asset
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for line_number, raw in enumerate(handle, 1):
-            digest.update(raw)
-            if raw.strip():
-                row = json.loads(raw.decode("utf-8"))
-                if not isinstance(row, dict):
-                    raise ValueError(f"{path}, line {line_number}: expected JSON object")
-                yield row
-    if digest.hexdigest() != expected:
-        raise ValueError(f"input SHA-256 mismatch: {path}")
 
 
 def _join(domain, query_id, query, qrels, excluded, corpus, source):
     if not isinstance(query_id, str) or not query_id.strip():
         raise ValueError(f"{domain}: expected a nonempty query ID")
     if not qrels or not set(qrels).issubset(corpus):
-        raise ValueError(f"{domain}/{query_id}: absent positive or unresolved corpus ID")
+        raise ValueError(f"{domain}/{query_id}: absent positive or unresolved corpus IDs {sorted(set(qrels) - corpus.keys())}")
     if set(qrels).intersection(excluded):
         raise ValueError(f"{domain}/{query_id}: positive document is also excluded")
     return {"domain": domain, "query_id": query_id, "query": query, "qrels": qrels,
             "excluded_ids": sorted(excluded), "source": source}
 
 
-def _source(dataset, revision, asset, index, row):
-    return {"dataset": dataset, "revision": revision, "export_sha256": asset[1],
+def _source(dataset, revision, role, asset, index, row):
+    return {"dataset": dataset, "revision": revision, "asset_role": role, "export_sha256": asset[1],
             "source_row_index": index, "source_row_sha256": content_sha256(row)}
 
 
@@ -80,8 +65,10 @@ def build_manifests(plan_path: str | Path, output: str | Path) -> dict:
     require_slurm()
     plan_bytes = Path(plan_path).read_bytes()
     plan = json.loads(plan_bytes.decode("utf-8"))
-    if not isinstance(plan, dict) or plan.get("schema_version") != 1 or plan.get("execution_enabled") is not True:
-        raise ValueError("an explicitly enabled version-1 preparation plan is required")
+    if (not isinstance(plan, dict) or type(plan.get("schema_version")) is not int
+            or plan["schema_version"] not in (1, 2) or plan.get("execution_enabled") is not True):
+        raise ValueError("an explicitly enabled version-1 or version-2 preparation plan is required")
+    selection_history = selection_provenance(plan)
     if (plan.get("bright_revision") != BRIGHT_REVISION
             or plan.get("reasonir_revision") != REASONIR_REVISION):
         raise ValueError("source revision differs from the pinned independent profile")
@@ -95,9 +82,17 @@ def build_manifests(plan_path: str | Path, output: str | Path) -> dict:
     if not isinstance(domains, dict) or not domains or not set(domains).issubset(BRIGHT_TEST_COUNTS):
         raise ValueError("plan requires one or more known BRIGHT domains")
     inputs = {"selection": _asset(plan["selection_jsonl"])}
+    input_counts = {}
+
+    def source_rows(asset):
+        count = 0
+        for row in verified_jsonl(*asset):
+            count += 1
+            yield row
+        input_counts[asset] = count
+
     selected = {}
-    seen_sources = set()
-    for selection in _rows(inputs["selection"]):
+    for index_in_selection, selection in enumerate(source_rows(inputs["selection"])):
         domain, split = selection["domain"], selection["split"]
         index, query_id = selection["source_row_index"], selection["query_id"]
         if split not in {"train", "development"} or domain not in domains:
@@ -108,11 +103,8 @@ def build_manifests(plan_path: str | Path, output: str | Path) -> dict:
         if key not in inputs:
             inputs[key] = _asset(domains[domain]["reasonir_hq_jsonl"])
         asset = inputs[key]
-        source_id = (asset[1], index)
-        if source_id in seen_sources:
-            raise ValueError("a ReasonIR source row was selected more than once")
-        seen_sources.add(source_id)
-        selected.setdefault(asset, {})[index] = (split, domain, query_id)
+        selected.setdefault(asset, {}).setdefault(index, []).append(
+            (split, domain, query_id, index_in_selection, content_sha256(selection)))
 
     splits = {"train": [], "development": [], "test": []}
     corpora = {}
@@ -121,7 +113,7 @@ def build_manifests(plan_path: str | Path, output: str | Path) -> dict:
         examples = _asset(spec["bright_examples_jsonl"])
         inputs[f"{domain}/documents"], inputs[f"{domain}/examples"] = documents, examples
         corpus = {}
-        for row in _rows(documents):
+        for row in source_rows(documents):
             doc_id = row["id"]
             if not isinstance(doc_id, str) or not doc_id or doc_id in corpus:
                 raise ValueError(f"{domain}: invalid or duplicate corpus document ID")
@@ -132,27 +124,39 @@ def build_manifests(plan_path: str | Path, output: str | Path) -> dict:
         if not corpus:
             raise ValueError(f"{domain}: empty document export")
         corpora[domain] = corpus
-        for index, row in enumerate(_rows(examples)):
+        for index, row in enumerate(source_rows(examples)):
             item = project_bright_example(row, domain)
             splits["test"].append(_join(
                 domain, item.query_id, item.query, project_qrels(row), item.excluded_ids,
-                corpus, _source("xlangai/BRIGHT", BRIGHT_REVISION, examples, index, row)))
+                corpus, _source("xlangai/BRIGHT", BRIGHT_REVISION, f"{domain}/examples", examples, index, row)))
+        if not input_counts[examples]:
+            raise ValueError(f"{domain}: empty BRIGHT example export")
 
     for asset, requests in selected.items():
         matched = set()
-        for index, row in enumerate(_rows(asset)):
+        for index, row in enumerate(source_rows(asset)):
             if index in requests:
-                split, domain, query_id = requests[index]
-                query, qrels = join_reasonir_hq(row, corpora[domain])
-                splits[split].append(_join(
-                    domain, query_id, query, qrels, (), corpora[domain],
-                    _source("reasonir/reasonir-data", REASONIR_REVISION, asset, index, row)))
+                for split, domain, query_id, selection_index, selection_digest in requests[index]:
+                    try:
+                        query, qrels = join_reasonir_hq(row, corpora[domain])
+                    except ValueError as error:
+                        raise ValueError(f"{split}/{domain}/{query_id}, source row {index}: {error}") from error
+                    source = _source("reasonir/reasonir-data", REASONIR_REVISION, f"{domain}/reasonir_hq", asset, index, row)
+                    source.update(selection_row_index=selection_index, selection_row_sha256=selection_digest)
+                    splits[split].append(_join(domain, query_id, query, qrels, (), corpora[domain], source))
                 matched.add(index)
         if matched != requests.keys():
             raise ValueError(f"ReasonIR selection indices absent from export: {sorted(requests.keys() - matched)}")
     if any(not rows for rows in splits.values()):
         raise ValueError("each of train, development, and test must contain selected rows")
-    validate_split_manifests(splits)
+    try:
+        overlap_audit = validate_split_manifests(splits)
+    except SplitValidationError as error:
+        failure = target.with_name(f"{target.name}.overlap-{uuid.uuid4().hex}.json")
+        atomic_json(failure, {"status": "rejected", "plan_sha256": hashlib.sha256(plan_bytes).hexdigest(),
+                              "inputs": {role: asset[1] for role, asset in inputs.items()}, "records": error.records})
+        error.add_note(f"Rejected overlap audit: {failure}")
+        raise
     counts = {split: dict.fromkeys(BRIGHT_TEST_COUNTS, 0) for split in splits}
     for split, rows in splits.items():
         for row in rows:
@@ -162,19 +166,23 @@ def build_manifests(plan_path: str | Path, output: str | Path) -> dict:
                "test": counts["test"] == BRIGHT_TEST_COUNTS}
     if policy == "require_paper_counts" and not all(matches.values()):
         raise ValueError(f"domain counts differ from Table 3: {counts}")
-    receipt = {"schema_version": 1, "kind": "independent_explicit_selection",
+    receipt = {"schema_version": 2, "kind": "independent_explicit_selection",
                "author_split_identity_verified": False, "count_policy": policy,
                "plan_sha256": hashlib.sha256(plan_bytes).hexdigest(),
-               "input_sha256": {role: asset[1] for role, asset in sorted(inputs.items())},
-               "declared_revisions": {"reasonir": REASONIR_REVISION, "bright": BRIGHT_REVISION},
+               "inputs": {role: {"path": str(asset[0]), "sha256": asset[1], "records": input_counts[asset]}
+                          for role, asset in sorted(inputs.items())},
+               "domains": sorted(domains), "source_rules": SOURCE_RULES, "selection_provenance": selection_history,
+               "declared_revisions": REVISIONS,
                "counts": counts, "paper_train_counts": BRIGHT_TRAIN_COUNTS,
                "paper_test_counts": BRIGHT_TEST_COUNTS, "paper_count_matches": matches,
-               "cross_split_validation": "domain-qualified IDs and normalized query text disjoint",
+               "membership": {s: [identity_record(row) for row in splits[s]] for s in SPLITS},
+               "overlap_audit": overlap_audit,
                "manifest_sha256": {}}
     target.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=target.parent, prefix=".manifest-") as staging:
         bundle = Path(staging) / "bundle"
         bundle.mkdir()
+        (bundle / "preparation-plan.json").write_bytes(plan_bytes)
         for split, rows in splits.items():
             path = bundle / f"{split}.jsonl"
             with path.open("x", encoding="utf-8", newline="\n") as handle:

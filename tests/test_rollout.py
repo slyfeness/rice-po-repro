@@ -179,7 +179,7 @@ def test_branch_rejects_truncated_saved_prefix_instead_of_losing_tool_history():
 def test_credit_branch_rejects_early_stopped_original_instead_of_mixing_horizons():
     runner = make_runner(stop_depth=3)
     original = run(runner)
-    with pytest.raises(ValueError, match="full five-step horizon"):
+    with pytest.raises(ValueError, match="full 5-step horizon"):
         runner.branch(original_query="original query", original=original,
                       anchor=anchor_for(original, 2), requests=(BranchRequest("a", (9, 10, 11, 12)),))
     assert len(runner.generator.calls) == 3

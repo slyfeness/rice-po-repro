@@ -1,13 +1,14 @@
 """Staged RICE-PO iteration with frozen policy versions and durable evidence."""
 
 from dataclasses import dataclass
-import math
 from pathlib import Path
 from typing import Callable, Sequence
 
 from .artifacts import atomic_json, stage_receipt
 from .contracts import AdvantageBatch, Anchor, EntropyProvider, Span, Trajectory
-from .credit import build_advantages, select_anchors
+from .credit import build_advantages, select_anchors, trajectory_advantages
+from .audit import operation, saved_item, stable_seed
+from .diagnostics import credit_report
 from .rollout import BranchRollouts
 
 
@@ -16,8 +17,8 @@ class IterationComponents:
     # Deployment callbacks own model lifecycle/barriers. They may not alter the
     # frozen scientific recipe or reload a newer policy during this iteration.
     rollout_batch: Callable[[int, str], Sequence[Trajectory]]
-    entropy_provider: EntropyProvider
-    collect_branches: Callable[[Trajectory, Anchor], BranchRollouts]
+    entropy_provider: EntropyProvider | None
+    collect_branches: Callable[[Trajectory, Anchor], BranchRollouts] | None
     update: Callable
     phase_barrier: Callable[[str, str], None]
 
@@ -30,6 +31,8 @@ def _validate_branch_trace(trace: Trajectory, source: Trajectory, anchor: Anchor
         raise ValueError("counterfactual trace must retain prior steps and the original final depth")
     if trace.steps[selected].prefix_token_ids != source.steps[selected].prefix_token_ids:
         raise ValueError("counterfactual trace does not start at the saved anchor prefix")
+    if trace.final_reward != trace.steps[-1].local_reward:
+        raise ValueError("counterfactual terminal reward must equal final retrieval")
     history = trace.steps[0].prefix_token_ids
     mask = (False,) * len(history)
     for step, source_step in zip(trace.steps, source.steps, strict=True):
@@ -90,84 +93,102 @@ def _validate_branch_rollouts(branch_rollouts, anchors, originals, total_branche
                 raise ValueError("counterfactual outcome rewards or metadata disagree with its full trace")
 
 
-def run_iteration(components: IterationComponents, *, iteration: int, policy_version: str,
-                  output_root: Path, expected_trajectories_per_query: int,
-                  total_branches: int, local_normalization: str, epsilon: float):
-    if type(iteration) is not int or iteration < 0 or not isinstance(policy_version, str) or not policy_version:
-        raise ValueError("iteration must be nonnegative and policy_version must be identified")
-    if (type(expected_trajectories_per_query) is not int or expected_trajectories_per_query <= 0
-            or type(total_branches) is not int or total_branches < 2):
-        raise ValueError("explicit positive query group size and >=2 total branches are required")
-    if (local_normalization not in {"center_only", "center_std"} or isinstance(epsilon, bool)
-            or not math.isfinite(epsilon) or epsilon <= 0):
-        raise ValueError("explicit local normalization and positive finite epsilon are required")
-    root = Path(output_root) / f"iteration-{iteration:06d}"
-    root.mkdir(parents=True, exist_ok=False)  # no silent replay of an update
-    trajectories = tuple(components.rollout_batch(iteration, policy_version))
-    if not trajectories or any(t.policy_version != policy_version for t in trajectories):
-        raise ValueError("rollout batch is empty or has mixed policy versions")
-    index = {t.trajectory_id: t for t in trajectories}
-    if len(index) != len(trajectories):
-        raise ValueError("trajectory IDs must be globally unique within the iteration")
-    grouped = {}
-    for trajectory in trajectories:
-        grouped.setdefault(trajectory.query_id, []).append(trajectory)
-    if any(len(group) != expected_trajectories_per_query for group in grouped.values()):
-        raise ValueError("incomplete query group; cannot estimate advantages")
-    digest = atomic_json(root / "trajectories.json", trajectories)
-    stage_receipt(root, "rollout", policy_version=policy_version, artifacts={"trajectories.json": digest})
+def _collect_credit(components, grouped, originals, root, policy_version, recipe, seed, iteration):
+    def grouped_baseline():
+        return [trajectory_advantages(g, epsilon=recipe["normalization_epsilon"]) for g in grouped.values()]
+    if recipe["method"] == "grpo":
+        # Do not even read the entropy provider or branch sampler in this path.
+        stage_receipt(root, "branches_complete", policy_version=policy_version,
+                      artifacts={"applicability": "skipped_grpo", "branch_count": 0})
+        return grouped_baseline()
+    entropy, anchors, summaries = {}, [], []
+    provider = components.entropy_provider
     components.phase_barrier("rollout", "entropy")
-    if components.entropy_provider.policy_version != policy_version:
-        raise ValueError("entropy provider has a different old policy")
-    entropies = {}
-    for trajectory in trajectories:
-        if components.entropy_provider.policy_version != policy_version:
-            raise ValueError("entropy provider changed policy within the iteration")
-        entropies[trajectory.trajectory_id] = tuple(components.entropy_provider.token_entropies(trajectory))
-        if components.entropy_provider.policy_version != policy_version:
-            raise ValueError("entropy provider changed policy during teacher forcing")
-    anchors = tuple(a for group in grouped.values() for a in select_anchors(
-        group, {t.trajectory_id: entropies[t.trajectory_id] for t in group}, top_k=4))
-    # Save all summary-token entropies, including candidates that were not selected.
-    summary_entropies = [
-        {"trajectory_id": t.trajectory_id, "depth": s.depth,
-         "span": s.summary_span, "values": list(entropies[t.trajectory_id][s.summary_span.start:s.summary_span.end])}
-        for t in trajectories for s in t.steps
-    ]
-    entropy_digest = atomic_json(root / "summary-entropies.json", summary_entropies)
-    digest = atomic_json(root / "anchors.json", anchors)
+    for q, group in grouped.items():
+        for t in group:
+            if provider.policy_version != policy_version:
+                raise ValueError("entropy provider changed policy within the iteration")
+            with operation("entropy", query=q, trajectory=t.trajectory_id, input_tokens=len(t.token_ids)-1, model_passes=1):
+                entropy[t.trajectory_id] = tuple(provider.token_entropies(t))
+            if provider.policy_version != policy_version:
+                raise ValueError("entropy provider changed policy during teacher forcing")
+            for step in t.steps:
+                span = step.summary_span
+                summaries.append(dict(trajectory_id=t.trajectory_id, depth=step.depth, span=span,
+                                      values=entropy[t.trajectory_id][span.start:span.end]))
+        candidates = select_anchors(group, {t.trajectory_id:entropy[t.trajectory_id] for t in group},
+                                    top_k=sum(len(t.steps) for t in group))
+        k = recipe["anchors_per_query"]
+        if len(candidates) < k:
+            raise ValueError("fewer eligible actions than configured anchor budget")
+        if recipe["anchor_selection"] == "random":
+            candidates = sorted(candidates, key=lambda a: stable_seed(seed, "random_anchor", iteration,
+                                                                        q, a.trajectory_id, a.depth))
+        elif recipe["anchor_selection"] != "entropy":
+            raise ValueError("unsupported anchor selection")
+        anchors.extend(candidates[:k])
+    entropy_digest = atomic_json(root / "summary-entropies.json", summaries)
+    anchor_digest = atomic_json(root / "anchors.json", anchors)
     stage_receipt(root, "entropy", policy_version=policy_version,
-                  artifacts={"anchors.json": digest, "summary-entropies.json": entropy_digest})
-    components.phase_barrier("entropy", "branches")
-    branch_rollouts = tuple(components.collect_branches(index[a.trajectory_id], a) for a in anchors)
-    _validate_branch_rollouts(branch_rollouts, anchors, index, total_branches)
-    branches = tuple(b.group for b in branch_rollouts)
-    trace_digest = atomic_json(root / "counterfactual-trajectories.json", branch_rollouts)
-    digest = atomic_json(root / "branches.json", branches)
-    stage_receipt(root, "branches", policy_version=policy_version,
-                  artifacts={"branches.json": digest, "counterfactual-trajectories.json": trace_digest})
-    components.phase_barrier("branches", "credit")
-    per_query = [build_advantages(
-        group, [b for b in branches if b.anchor.query_id == query_id],
-        local_normalization=local_normalization, epsilon=epsilon,
-        expected_branch_count=total_branches) for query_id, group in grouped.items()]
-    rows = {identity: (adv, mask) for part in per_query for identity, adv, mask in zip(
-        part.trajectory_ids, part.advantages, part.generated_masks, strict=True)}
-    batch = AdvantageBatch(tuple(t.trajectory_id for t in trajectories),
-                           tuple(rows[t.trajectory_id][0] for t in trajectories),
-                           tuple(rows[t.trajectory_id][1] for t in trajectories),
-                           tuple(record for part in per_query for record in part.records))
-    digest = atomic_json(root / "advantages.json", batch)
-    stage_receipt(root, "credit", policy_version=policy_version, artifacts={"advantages.json": digest})
-    components.phase_barrier("credit", "update")
-    result = components.update(trajectories, batch, policy_version, root)
-    # Callback returns the newly verified checkpoint identity, not a guessed path.
-    if (not isinstance(result, dict) or not isinstance(result.get("new_policy_version"), str)
-            or not result["new_policy_version"]):
-        raise ValueError("update did not return a verified checkpoint identity")
-    if result["new_policy_version"] == policy_version:
-        raise ValueError("nonzero update did not produce a new policy version")
-    digest = atomic_json(root / "update.json", result)
-    stage_receipt(root, "update", policy_version=result["new_policy_version"], artifacts={"update.json": digest})
-    components.phase_barrier("update", "rollout")
+                  artifacts={"anchors.json":anchor_digest, "summary-entropies.json":entropy_digest})
+    components.phase_barrier("entropy","branches")
+    collections = []
+    for a in anchors:
+        collection = components.collect_branches(originals[a.trajectory_id], a)
+        saved_item("branch_group", [iteration,a.trajectory_id,a.depth], collection)
+        collections.append(collection)
+    total = recipe["total_branches_including_original"]
+    _validate_branch_rollouts(collections, anchors, originals, total)
+    branches = [item.group for item in collections]
+    digest = atomic_json(root / "counterfactual-trajectories.json", collections)
+    stage_receipt(root, "branches_complete", policy_version=policy_version,
+                  artifacts={"counterfactual-trajectories.json":digest})
+    components.phase_barrier("branches","credit")
+    parts = [build_advantages(group, [b for b in branches if b.anchor.query_id == q],
+             expected_branch_count=total, epsilon=recipe["normalization_epsilon"],
+             local_normalization=recipe["local_advantage_normalization"], gate_mode=recipe["gate_mode"],
+             variance_threshold=recipe["influence_threshold"], residual_threshold=recipe["residual_threshold"])
+             for q,group in grouped.items()]
+    atomic_json(root / "credit-diagnostics.json", credit_report(grouped, branches, parts, recipe, iteration))
+    return parts
+
+
+def run_iteration(components, *, iteration, policy_version, output_root, recipe, root_seed):
+    """Commit one optimizer call. Checkpoint publication and selection follow separately."""
+    if recipe["method"] not in {"ricepo","grpo"} or type(iteration) is not int or iteration < 0:
+        raise ValueError("invalid training method or iteration")
+    root = Path(output_root) / f"iteration-{iteration:06d}"
+    root.mkdir(parents=True, exist_ok=False)
+    originals, grouped = {}, {}
+    with operation("rollout_group", iteration=iteration):
+        for trajectory in components.rollout_batch(iteration,policy_version):
+            if trajectory.trajectory_id in originals or trajectory.policy_version != policy_version:
+                raise ValueError("duplicate trajectory or mixed behavior policy")
+            if len(trajectory.steps) != recipe["rollout_depth"] or trajectory.final_reward != trajectory.steps[-1].local_reward:
+                raise ValueError("incomplete configured horizon or final reward differs from last retrieval")
+            saved_item("original", trajectory.trajectory_id, trajectory)
+            originals[trajectory.trajectory_id] = trajectory
+            grouped.setdefault(trajectory.query_id,[]).append(trajectory)
+        if len(grouped) != recipe["queries_per_update"] or any(
+                len(g) != recipe["trajectories_per_query"] for g in grouped.values()):
+            raise ValueError("incomplete original query group")
+    trajectories = tuple(originals.values())
+    digest = atomic_json(root / "trajectories.json", trajectories)
+    stage_receipt(root, "rollout_complete", policy_version=policy_version, artifacts={"trajectories.json":digest})
+    with operation("credit", iteration=iteration):
+        parts = _collect_credit(components,grouped,originals,root,policy_version,recipe,root_seed,iteration)
+        rows = {key:(adv,mask) for part in parts for key,adv,mask in zip(
+            part.trajectory_ids,part.advantages,part.generated_masks,strict=True)}
+        batch = AdvantageBatch(tuple(originals),tuple(rows[k][0] for k in originals),
+                               tuple(rows[k][1] for k in originals),tuple(r for part in parts for r in part.records))
+        digest = atomic_json(root / "advantages.json",batch)
+    stage_receipt(root, "credit_complete", policy_version=policy_version, artifacts={"advantages.json":digest})
+    components.phase_barrier("credit","update")
+    with operation("update", iteration=iteration):
+        result = components.update(trajectories,batch,policy_version,root)
+    if not isinstance(result,dict) or not result.get("new_policy_version"):
+        raise ValueError("update did not return a policy identity")
+    digest = atomic_json(root / "update.json",result)
+    stage_receipt(root, "optimizer_step_committed", policy_version=result["new_policy_version"],
+                  artifacts={"update.json":digest})
     return result

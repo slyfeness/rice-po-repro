@@ -1,179 +1,264 @@
-"""Read-only evaluation of a development-selected checkpoint on a held-out split."""
+"""Standalone frozen baselines and read-only evaluation of selected checkpoints."""
 
 import json
 import os
 from pathlib import Path
-import random
 
 from .artifacts import atomic_json, file_sha256, require_cluster_storage, require_slurm, stage_receipt
-from .config import require_enabled
-from .data import BRIGHT_TEST_COUNTS, validate_split_manifests, verify_counts
-from .evaluation import summarize
+from .assessment import evaluate_queries
+from .asset_identity import local_model_identity
+from .audit import attempt, cost_report, fingerprint, operation
+from .config import require_execution, resolve
+from .data import BRIGHT_TEST_COUNTS, verify_counts
+from .dataset_bundle import verify_bundle
+from .environment import configure_caches
 from .formats import PromptRenderer
-from .hf_runtime import (
-    HFNativeGenerator, _configure_caches, _domain_retriever, _local_file, _manifest,
-    _model_source, _source_hashes,
-)
+from .hf_runtime import HFNativeGenerator, _domain_retriever, _local_file, _manifest, _source_hashes
+from .policy_identity import identify
 from .retrieval import DiverEncoder, ExplicitQueryComposer, PyTrecReward
 from .rollout import RolloutRules, RolloutRunner
+from .state import read_json, selected_so_far, verify_checkpoint
 
 
-def _json(path: Path):
-    return json.loads(path.read_text(encoding="utf-8"))
+def _deploy_hash(deployment):
+    return fingerprint({k: v for k, v in deployment.items() if k not in ("expected_test_domains", "test_scope")})
 
 
-def evaluate_checkpoint(config, deployment, *, checkpoint_dir, test_manifest, output_root) -> dict:
-    """Evaluate one fixed checkpoint; never optimize or select on test results.
+def _verify_binding(binding, **checks):
+    for key, expected in checks.items():
+        if binding.get(key) != expected:
+            raise ValueError(f"selected run binding differs for {key}")
 
-    Default full-BRIGHT mode requires all twelve paper domain counts (1,384
-    queries). Matching counts do not prove unpublished split identity. An
-    explicitly named partial diagnostic has distinct output labeling.
-    """
-    require_enabled(config)
-    job_id = require_slurm()
-    if int(os.environ.get("WORLD_SIZE", "1")) != 1:
-        raise RuntimeError("reference holdout supports a single process")
+
+def _selected_state(config, deployment, checkpoint_dir, bundle):
+    """Resolve the selected policy and verify its original training identity before opening test qrels."""
     train_root = require_cluster_storage(deployment["output_root"])
     checkpoint = require_cluster_storage(checkpoint_dir)
-    output = require_cluster_storage(output_root)
-    if output.is_relative_to(train_root) or output.exists():
-        raise ValueError("holdout output must be a new directory outside the completed training run")
-    completed = _json(train_root / "completed.json")
+    completed = read_json(train_root / "completed.json")
     chosen = completed["selected_checkpoint"]
-    if checkpoint != require_cluster_storage(chosen["checkpoint"]) or not checkpoint.is_relative_to(train_root):
-        raise ValueError("holdout may evaluate only the checkpoint already selected by the completed training run")
-    receipt = _json(checkpoint / "complete.json")
-    if receipt["policy_version"] != chosen["policy_version"]:
-        raise ValueError("selected checkpoint policy identity disagrees with its completion receipt")
-    actual_files = {str(path.relative_to(checkpoint)) for path in checkpoint.rglob("*")
-                    if path.is_file() and path != checkpoint / "complete.json"}
-    if actual_files != set(receipt["files"]):
-        raise ValueError("selected checkpoint file set differs from its completion receipt")
-    for relative, digest in receipt["files"].items():
-        if file_sha256(checkpoint / relative) != digest:
-            raise ValueError(f"selected checkpoint file has changed: {relative}")
-    if file_sha256(train_root / "config.json") != receipt["config_sha256"] or _json(train_root / "config.json") != config:
-        raise ValueError("holdout must use the selected training run's unchanged research configuration")
-    source_hashes = _source_hashes()
-    if source_hashes != _json(train_root / "sources.json"):
-        raise ValueError("holdout implementation differs from the selected training run")
-    original_deployment = _json(train_root / "deployment.json")
-    for key, value in original_deployment.items():
-        if key not in {"test_scope", "expected_test_domains"} and deployment.get(key) != value:
-            raise ValueError(f"holdout cannot silently change training deployment field {key}")
-    settings = config["required_research_settings"]
-    domain_specs = deployment["domains"]
-    train_path = _local_file(deployment["train_manifest_path"], "train_manifest_path")
-    dev_path = _local_file(deployment["development_manifest_path"], "development_manifest_path")
-    test_path = _local_file(str(test_manifest), "test_manifest")
-    inputs = _json(train_root / "run-identity.json")["input_hashes"]
-    if file_sha256(train_path) != inputs["train"] or file_sha256(dev_path) != inputs["development"]:
-        raise ValueError("training or development manifest changed after checkpoint selection")
-    train_rows, _, _ = _manifest(train_path, set(domain_specs))
-    dev_rows, _, _ = _manifest(dev_path, set(domain_specs))
-    test_rows, examples, qrels = _manifest(test_path, set(domain_specs))
-    validate_split_manifests({"train": train_rows, "development": dev_rows, "test": test_rows})
-    scope = deployment.get("test_scope", "bright_full_12_domains")
-    if scope == "bright_full_12_domains":
-        expected = list(BRIGHT_TEST_COUNTS)
-        verify_counts(examples.values(), BRIGHT_TEST_COUNTS)
-        if len(examples) != 1384:
-            raise ValueError("full BRIGHT holdout requires 1,384 test queries")
-        label = "bright_full_12_domain_count_matched_manifest"
-    elif scope == "partial_diagnostic":
-        expected = deployment.get("expected_test_domains")
-        if (not isinstance(expected, list) or not expected or len(set(expected)) != len(expected)
-                or set(expected) != {example.domain for example in examples.values()}):
-            raise ValueError("partial holdout requires its exact explicitly named expected_test_domains")
-        label = "partial_diagnostic_not_full_bright"
-    else:
-        raise ValueError("test_scope must be bright_full_12_domains or partial_diagnostic")
-    prompt_path = _local_file(deployment["prompt_path"], "prompt_path", large=False)
-    if file_sha256(prompt_path) != inputs["prompt"]:
-        raise ValueError("holdout prompt content differs from training")
-    retriever_path = require_cluster_storage(deployment["retriever_model_path"])
-    if _model_source(retriever_path) != _json(train_root / "model-sources.json")["retriever_model_path"]:
-        raise ValueError("fixed retriever model/tokenizer assets changed after training")
-    _configure_caches(require_cluster_storage(deployment["cache_root"]))
-    import torch
-    from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer
+    binding = read_json(train_root / "binding.json")
+    train = resolve(config, "train")
+    current_sources = _source_hashes()
+    _verify_binding(binding, schema_version=2, config_sha256=fingerprint(config),
+                    recipe_fingerprint=train["fingerprint"], source_sha256=fingerprint(current_sources),
+                    deployment_sha256=_deploy_hash(deployment), dataset_receipt_sha256=bundle.receipt_sha256,
+                    manifest_sha256=bundle.manifest_sha256)
+    if (read_json(train_root / "config.json") != config or read_json(train_root / "recipe.json") != train
+            or read_json(train_root / "sources.json") != current_sources
+            or _deploy_hash(read_json(train_root / "deployment.json")) != binding["deployment_sha256"]):
+        raise ValueError("recorded source, recipe, configuration or deployment differs from the selected run binding")
+    if chosen != selected_so_far(train_root, train["values"]["checkpoint_selection"]) or not chosen:
+        raise ValueError("chosen checkpoint disagrees with the completed development selection")
+    updates = completed.get("completed_updates")
+    if (type(updates) is not int or updates <= 0 or updates != train["values"]["total_updates"]
+            or completed.get("checkpoint_selection") != train["values"]["checkpoint_selection"]):
+        raise ValueError("completed run budget or selection policy disagrees with training")
+    terminal = read_json(train_root / f"iteration-{updates - 1:06d}" / "iteration_complete.receipt.json")
+    if (terminal["policy_version"] != completed["last_policy_version"]
+            or terminal["artifacts"]["selected_checkpoint_so_far"] != chosen):
+        raise ValueError("completed run has no matching terminal iteration receipt")
+    if (checkpoint != train_root / f"iteration-{chosen['iteration']:06d}" / "checkpoint"
+            or checkpoint != require_cluster_storage(chosen["checkpoint"])):
+        raise ValueError("holdout may only evaluate the selected checkpoint of this completed run")
+    receipt = verify_checkpoint(checkpoint, fingerprint(binding))
+    if receipt["policy_version"] != chosen["policy_version"] or receipt["iteration"] != chosen["iteration"]:
+        raise ValueError("selected checkpoint receipt disagrees with development selection")
+    previous_models = read_json(train_root / "model-sources.json")
+    previous_retrievers = read_json(train_root / "retriever-sources.json")
+    _verify_binding(binding, model_sha256=fingerprint(previous_models), retriever_sha256=fingerprint(previous_retrievers))
+    return checkpoint, chosen, binding, previous_models, previous_retrievers
 
-    actor_device = torch.device(deployment["actor_device"])
-    retriever_device = torch.device(deployment["retriever_device"])
-    if (actor_device.type != "cuda" or retriever_device.type != "cuda" or actor_device.index is None
-            or retriever_device.index is None or actor_device == retriever_device
-            or max(actor_device.index, retriever_device.index) >= torch.cuda.device_count()):
-        raise ValueError("holdout requires the two distinct Slurm-visible devices of the training deployment")
-    output.mkdir(parents=True, exist_ok=False)
-    atomic_json(output / "holdout-inputs.json", {
-        "scope": label, "slurm_job_id": job_id, "checkpoint": str(checkpoint),
-        "policy_version": receipt["policy_version"], "checkpoint_receipt_sha256": file_sha256(checkpoint / "complete.json"),
-        "selection": chosen, "train_manifest_sha256": inputs["train"], "development_manifest_sha256": inputs["development"],
-        "test_manifest": str(test_path), "test_manifest_sha256": file_sha256(test_path),
-        "source_sha256": source_hashes, "expected_test_domains": expected,
-    })
-    local_args = dict(local_files_only=True, trust_remote_code=False,
-                      cache_dir=str(require_cluster_storage(deployment["cache_root"]) / "transformers"))
-    tokenizer = AutoTokenizer.from_pretrained(str(checkpoint / "actor"), **local_args)
-    actor = AutoModelForCausalLM.from_pretrained(str(checkpoint / "actor"), torch_dtype=torch.float32,
-                                                **local_args).to(actor_device).eval()
+
+def _scope(deployment, examples, frozen_ids):
+    ids = {tuple(json.loads(key)) for key in examples}
+    if ids != set(frozen_ids):
+        raise ValueError("test manifest IDs differ from the precommitted receipt")
+    scope = deployment["test_scope"]
+    if scope == "bright_full_12_domains":
+        verify_counts(examples.values(), BRIGHT_TEST_COUNTS)
+        if deployment.get("expected_test_domains") is not None:
+            declared = deployment["expected_test_domains"]
+            if not isinstance(declared, list) or sorted(declared) != sorted(BRIGHT_TEST_COUNTS):
+                raise ValueError("full BRIGHT scope requires every domain exactly once")
+        return examples, "complete", "bright_full_12_domain_count_matched_manifest"
+    if scope != "partial_diagnostic":
+        raise ValueError("test_scope must explicitly name full BRIGHT or partial_diagnostic")
+    domains = deployment["expected_test_domains"]
+    if (not isinstance(domains, list) or not domains or len(set(domains)) != len(domains)
+            or not set(domains) <= {ex.domain for ex in examples.values()}):
+        raise ValueError("partial diagnostics require distinct expected_test_domains in the frozen test set")
+    return ({key: ex for key, ex in examples.items() if ex.domain in domains},
+            "partial_diagnostic", "partial_diagnostic_not_full_bright")
+
+
+def _prompt(settings, deployment):
+    path = _local_file(deployment["prompt_path"], "prompt_path", large=False)
+    declared = Path(settings["prompt_artifact"])
+    if not declared.is_absolute():
+        declared = Path(__file__).resolve().parents[2] / declared
+    if not declared.is_file() or file_sha256(declared) != file_sha256(path):
+        raise ValueError("deployment prompt differs from resolved research prompt")
+    return path
+
+
+def _actor_runtime(path, tokenizer_path, prompt, settings, deployment, policy_version_getter):
+    import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    device = torch.device(deployment["actor_device"])
+    fixed_device = torch.device(deployment["retriever_device"])
+    if (device.type != "cuda" or device.index is None or fixed_device.type != "cuda"
+            or fixed_device.index is None or device == fixed_device
+            or max(device.index, fixed_device.index) >= torch.cuda.device_count()):
+        raise ValueError("generated evaluation requires distinct Slurm-visible actor and retriever CUDA devices")
+    precision = deployment["dtype"]
+    if precision not in ("float32", "bfloat16"):
+        raise ValueError("unsupported reference precision")
+    before = local_model_identity(path)
+    local = dict(local_files_only=True, trust_remote_code=False)
+    # Training uses the original tokenizer for every policy version and recovery.
+    tokenizer = AutoTokenizer.from_pretrained(str(tokenizer_path), **local)
+    actor, info = AutoModelForCausalLM.from_pretrained(str(path), torch_dtype=torch.float32,
+                                                      output_loading_info=True, **local)
+    if (any(info.get(k) for k in ("missing_keys", "mismatched_keys", "error_msgs"))
+            or local_model_identity(path) != before or tokenizer.eos_token_id is None):
+        raise ValueError("incomplete or changing local policy/tokenizer payload")
+    actor.to(device).eval()
     actor.requires_grad_(False)
-    retriever_tokenizer = AutoTokenizer.from_pretrained(str(retriever_path), **local_args)
-    dtype_name = deployment["dtype"]
-    if dtype_name not in {"float32", "bfloat16"}:
-        raise ValueError("unsupported holdout precision")
-    retriever = AutoModel.from_pretrained(str(retriever_path), torch_dtype=getattr(torch, dtype_name),
-                                          **local_args).to(retriever_device).eval()
-    retriever.requires_grad_(False)
-    encoder = DiverEncoder(retriever, retriever_tokenizer, device=retriever_device,
-                           max_length=deployment["retriever_max_length"], document_prefix=deployment["document_prefix"])
-    renderer = PromptRenderer(tokenizer, prompt_path.read_text(encoding="utf-8"),
+    renderer = PromptRenderer(tokenizer, prompt.read_text(encoding="utf-8"),
                               observation_top_k=settings["observation_top_k"],
                               observation_token_limit=settings["observation_token_limit"], prefill_think=True)
     generator = HFNativeGenerator(
-        model=actor, tokenizer=tokenizer, device=actor_device, policy_version_getter=lambda: receipt["policy_version"],
+        model=actor, tokenizer=tokenizer, device=device, policy_version_getter=policy_version_getter,
         max_new_tokens=settings["max_new_tokens_per_step"], max_context_tokens=settings["max_context_tokens"],
         prefilled_think=True, precision_context=lambda: torch.autocast(
-            device_type="cuda", dtype=torch.bfloat16, enabled=(dtype_name == "bfloat16")),
-    )
-    reward = PyTrecReward(qrels)
-    composer = ExplicitQueryComposer(**settings["query_composition"])
-    fixed_sources = _json(train_root / "retriever-sources.json")
-    rows = []
-    all_seeds = {}
-    for domain in expected:
-        backend, domain_receipt = _domain_retriever(domain, domain_specs[domain], deployment, settings, config["model"],
-                                                   encoder, renderer, examples, qrels)
-        if domain_receipt != fixed_sources[domain]:
-            raise ValueError(f"holdout corpus, vectors, or fixed retrieval version differs from training: {domain}")
-        runner = RolloutRunner(
-            generator=generator, retriever=backend, reward_scorer=reward, query_composer=composer,
-            rules=RolloutRules(frozenset({"stop"}), settings["max_new_tokens_per_step"], settings["max_context_tokens"]),
-            should_stop=lambda steps: False, final_reward=lambda steps: steps[-1].local_reward,
-            excluded_ids_by_query={key: ex.excluded_ids for key, ex in examples.items() if ex.domain == domain},
-        )
-        for identity, example in examples.items():
-            if example.domain != domain:
-                continue
-            serial = len(rows)
-            random_source = random.Random(f"holdout:{settings['training_seeds'][0]}:{identity}")
-            seeds = tuple(random_source.randrange(2**63) for _ in range(5))
-            all_seeds[identity] = seeds
-            initial = backend.retrieve(example.query, excluded_ids=example.excluded_ids)
-            trajectory = runner.run(
-                query_id=identity, trajectory_id=f"test-{serial:06d}", original_query=example.query,
-                initial_prefix_token_ids=renderer.initial(example.query, initial.documents), seeds=seeds,
-                old_policy_version=receipt["policy_version"],
-            )
-            atomic_json(output / "trajectories" / f"{serial:06d}.json", {
-                "initial_ranking": [(doc.document_id, doc.score) for doc in initial.documents],
-                "trajectory": trajectory,
-            })
-            rows.append({"query_id": json.loads(identity)[1], "domain": domain, "ndcg_at_10": trajectory.final_reward})
-    summary = {"scope": label, "policy_version": receipt["policy_version"], "test_queries": len(rows),
-               "checkpoint": str(checkpoint), "aggregation": summarize(rows, expected_domains=expected)}
-    artifacts = {"results-by-query.json": atomic_json(output / "results-by-query.json", rows),
-                 "generation-seeds.json": atomic_json(output / "generation-seeds.json", all_seeds),
-                 "holdout-summary.json": atomic_json(output / "holdout-summary.json", summary)}
-    stage_receipt(output, "evaluation", policy_version=receipt["policy_version"], artifacts=artifacts)
-    return summary
+            device_type="cuda", dtype=torch.bfloat16, enabled=(precision == "bfloat16")))
+    tokenizer_behavior = {"tokenizer_length": len(tokenizer), "special_ids": tokenizer.all_special_ids,
+                          "chat_template_sha256": fingerprint(tokenizer.chat_template)}
+    return renderer, generator, tokenizer_behavior
+
+
+def _evaluate(config, deployment, *, command, output_root, checkpoint_dir=None, test_manifest=None):
+    require_execution(config, command)
+    job = require_slurm()
+    if deployment.get("runtime") != "single_process_hf_reference" or int(os.environ.get("WORLD_SIZE", "1")) != 1:
+        raise ValueError("offline evaluation requires the single-process reference deployment")
+    report = resolve(config, command)
+    settings, method = report["values"], report["method"]
+    output = require_cluster_storage(output_root)
+    if command == "evaluate" and output.is_relative_to(require_cluster_storage(deployment["output_root"])):
+        raise ValueError("holdout output must be a new directory outside the selected training run")
+    output.mkdir(parents=True, exist_ok=False)
+    with attempt(output):
+        with operation("asset_binding", method=method, split="test"):
+            configure_caches(deployment["cache_root"])
+            bundle = verify_bundle(deployment)
+            path = bundle.paths["test"]
+            if test_manifest is not None and require_cluster_storage(test_manifest) != path:
+                raise ValueError("test manifest differs from the path fixed by the precommitted dataset receipt")
+            checkpoint = chosen = binding = previous_models = previous_retrievers = None
+            if command == "evaluate":
+                checkpoint, chosen, binding, previous_models, previous_retrievers = _selected_state(
+                    config, deployment, checkpoint_dir, bundle)
+            generate = method != "retrieval_only"
+            asset_keys = ("actor_model_path", "retriever_model_path") if generate else ("retriever_model_path",)
+            models = {key: local_model_identity(require_cluster_storage(deployment[key])) for key in asset_keys}
+            if previous_models is not None and previous_models != models:
+                raise ValueError("initial model/tokenizer or fixed retriever payload changed after training")
+            prompt = _prompt(settings, deployment) if generate else None
+            if binding is not None:
+                _verify_binding(binding, prompt_sha256=file_sha256(prompt))
+            # Formal gold labels are accessed only inside this held-out assessment.
+            _, examples, qrels = _manifest(path, set(deployment["domains"]),
+                                           expected_sha256=bundle.manifest_sha256["test"])
+            selected_examples, scope, label = _scope(deployment, examples, bundle.identities["test"])
+            encoder = DiverEncoder.from_local(deployment)
+            if encoder.identity["assets"] != models["retriever_model_path"]:
+                raise ValueError("deployed retriever asset identity changed during evaluation setup")
+            if chosen:
+                policy_version = chosen["policy_version"]
+            elif generate:
+                policy_version = "initial-actor/" + models["actor_model_path"]["payload_sha256"]
+            else:
+                policy_version = "fixed-retriever/" + models["retriever_model_path"]["payload_sha256"]
+            renderer = generator = None
+            behavior = None
+            if generate:
+                tokenizer_path = require_cluster_storage(deployment["actor_model_path"])
+                policy_path = checkpoint / "actor" if checkpoint else tokenizer_path
+                renderer, generator, tokenizer_behavior = _actor_runtime(
+                    policy_path, tokenizer_path, prompt, settings, deployment, lambda: policy_version)
+                behavior = dict(**tokenizer_behavior, root_seed=settings["training_seeds"][0],
+                                temperature=settings["temperature"], top_p=settings["top_p"], top_k=settings["top_k"],
+                                repetition_penalty=1.0, model_mode="eval", precision=deployment["dtype"],
+                                initial_actor_payload=models["actor_model_path"]["payload_sha256"],
+                                prefilled_think=True, rng="sha256-json-stream-v1")
+                if local_model_identity(tokenizer_path) != models["actor_model_path"]:
+                    raise ValueError("initial actor/tokenizer identity changed while loading the policy")
+                live_version, live_identity = identify(generator.model, behavior)
+                if binding:
+                    _verify_binding(binding, behavior=behavior)
+                    registry = require_cluster_storage(deployment["output_root"]) / "behavior-identities"
+                    if live_version != chosen["policy_version"] or read_json(registry / f"{live_version}.json") != live_identity:
+                        raise ValueError("loaded checkpoint has a different live behavior-policy identity")
+                    verify_checkpoint(checkpoint, fingerprint(binding))
+                policy_version = live_version
+                atomic_json(output / "behavior-policy.json", live_identity)
+            reward = PyTrecReward(qrels)
+            retrievers, runners, domain_receipts = {}, {}, {}
+            for domain, spec in deployment["domains"].items():
+                backend, domain_receipts[domain] = _domain_retriever(
+                    domain, spec, deployment, settings, config["model"], encoder, renderer, examples, qrels)
+                retrievers[domain] = backend
+                if generate:
+                    runners[domain] = RolloutRunner(
+                        generator=generator, retriever=backend, reward_scorer=reward,
+                        query_composer=ExplicitQueryComposer(**settings["query_composition"]),
+                        rules=RolloutRules(frozenset({"stop"}), settings["max_new_tokens_per_step"],
+                                           settings["max_context_tokens"], depth=settings["rollout_depth"]),
+                        should_stop=lambda steps: False, final_reward=lambda steps: steps[-1].local_reward,
+                        excluded_ids_by_query={key: ex.excluded_ids for key, ex in examples.items() if ex.domain == domain})
+            if previous_retrievers is not None and previous_retrievers != domain_receipts:
+                raise ValueError("fixed retrieval assets or retrieval behavior changed after checkpoint selection")
+            evidence = dict(scope=label, split="test", slurm_job_id=job, method=method, policy_version=policy_version,
+                            source_sha256=_source_hashes(), config_sha256=fingerprint(config), recipe=report,
+                            dataset_receipt_sha256=bundle.receipt_sha256, manifest_sha256=bundle.manifest_sha256,
+                            models=models, retrievers=domain_receipts, deployment_sha256=_deploy_hash(deployment),
+                            prompt_sha256=file_sha256(prompt) if prompt else None, behavior=behavior)
+            if checkpoint is not None:
+                evidence.update(selection=chosen, training_binding_sha256=fingerprint(binding),
+                                checkpoint_receipt_sha256=file_sha256(checkpoint / "complete.json"))
+            atomic_json(output / "evaluation-inputs.json", evidence)
+        aggregate = evaluate_queries(
+            examples=selected_examples, expected_ids=bundle.identities["test"], split="test", phase="holdout",
+            method=method, root_seed=settings["training_seeds"][0] if generate else None,
+            policy_version=policy_version, rollout_depth=settings.get("rollout_depth"),
+            retrievers=retrievers, runners=runners, renderer=renderer, reward=reward, scope=scope,
+            manifest_sha256=bundle.manifest_sha256["test"],
+            backend_fingerprints={domain: fingerprint(receipt) for domain, receipt in domain_receipts.items()},
+            behavior_sha256=fingerprint(dict(policy_version=policy_version, behavior=behavior,
+                                             prompt=evidence["prompt_sha256"], recipe=report["fingerprint"],
+                                             source_sha256=fingerprint(evidence["source_sha256"]))),
+            output=output / "evaluation")
+        summary = dict(scope=label, method=method, policy_version=policy_version, aggregation=aggregate)
+        if checkpoint is not None:
+            summary["checkpoint"] = str(checkpoint)
+        digest = atomic_json(output / "holdout-summary.json", summary)
+        cost = atomic_json(output / "cost.json", cost_report(output))
+        stage_receipt(output, "evaluation", policy_version=policy_version,
+                      artifacts={"holdout-summary.json": digest, "cost.json": cost,
+                                 "evaluation-inputs.json": file_sha256(output / "evaluation-inputs.json"),
+                                 "evaluation/summary.json": file_sha256(output / "evaluation/summary.json"),
+                                 "evaluation/results-by-query.json": file_sha256(output / "evaluation/results-by-query.json")})
+        return summary
+
+
+def evaluate_baseline(config, deployment, *, output_root):
+    """Score retrieval_only or the original prompting actor without training state."""
+    return _evaluate(config, deployment, command="baseline", output_root=output_root)
+
+
+def evaluate_checkpoint(config, deployment, *, checkpoint_dir, test_manifest, output_root):
+    """Score only the policy already chosen from the completed training run's development results."""
+    return _evaluate(config, deployment, command="evaluate", checkpoint_dir=checkpoint_dir,
+                     test_manifest=test_manifest, output_root=output_root)

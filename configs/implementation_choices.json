@@ -2,6 +2,7 @@
   "schema_version": 1,
   "extends": "paper.json",
   "profile": "independent_reference_choices_not_author_recipe",
+  "reference_plan": "single_process_v1",
   "batch_unit": "queries",
   "batch_unit_evidence": "The paper says batch size 128 without clarifying the unit. Reference runtime chooses 128 queries, each with N trajectories. This choice can be expensive and is not verified.",
   "required_research_settings": {
