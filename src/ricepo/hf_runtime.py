@@ -30,7 +30,7 @@ from .state import (writer, bind_run, recovery_checkpoint, publish_checkpoint, v
                     read_json, complete_stage, selected_so_far, finish_development)
 from .contracts import Generation
 from .data import QueryExample
-from .formats import CHAT_TURN, NativeTagParser, PromptRenderer, action_closed, native_summary_mode, turn_protocol
+from .formats import CHAT_TURN, NativeTagParser, PromptRenderer, action_closed, native_summary_mode, turn_protocol, parser_options
 from .modeling import sampled_old_log_probs, make_forward
 from .retrieval import (
     DenseVectorScorer, DiverEncoder, ExplicitQueryComposer, FixedHybridRetriever,
@@ -56,14 +56,15 @@ class HFNativeGenerator:
     def __init__(self, *, model: Any, tokenizer: Any, device: Any,
                  policy_version_getter: Any, max_new_tokens: int,
                  max_context_tokens: int, prefilled_think: bool, precision_context: Any,
-                 summary_mode: str = NativeTagParser.STRICT_TAGGED, structured_stop: bool = False):
+                 summary_mode: str = NativeTagParser.STRICT_TAGGED, structured_stop: bool = False,
+                 parser_settings=None):
         self.model, self.tokenizer, self.device = model, tokenizer, device
         self._policy_version_getter = policy_version_getter
         self.max_new_tokens, self.max_context_tokens = max_new_tokens, max_context_tokens
         self.precision_context = precision_context
         self.closed = action_closed if structured_stop else lambda text: "</summary>" in text
         self.parser = NativeTagParser(tokenizer, prefilled_think=prefilled_think, malformed_policy="raise",
-                                      summary_mode=summary_mode)
+                                      summary_mode=summary_mode, **(parser_settings or {}))
         # A supplied GenerationConfig is authoritative for the explicit fields
         # below.  Transformers 5.5.1 has no literal use_model_defaults
         # parameter and validates arbitrary kwargs as model inputs, so passing
@@ -148,12 +149,15 @@ class HFNativeGenerator:
             raise RuntimeError("actor policy changed during a frozen-policy generation")
         if output.ndim != 2 or output.shape[0] != 1 or tuple(output[0, :prefix_length].tolist()) != prefix:
             raise ValueError("model.generate altered the native prefix or completion count")
-        text = tokenizer.decode(native, skip_special_tokens=False, clean_up_tokenization_spaces=False)
+        terminal = len(native)
+        while terminal and native[terminal-1] in (tokenizer.eos_token_id, tokenizer.pad_token_id):
+            terminal -= 1
+        text = tokenizer.decode(native[:terminal], skip_special_tokens=False, clean_up_tokenization_spaces=False)
         closed = closed_action(text)
         # The named functional-smoke adapter accepts an EOS-terminated,
         # unwrapped summary only after the model has closed its think span.
         # It does not accept a length-truncated completion as a valid stop.
-        if (getattr(self.parser, "summary_mode", None) in {NativeTagParser.PREFILLED_UNWRAPPED_SUMMARY,
+        if (getattr(self.parser, "structure_mode", None) != "tagged" and getattr(self.parser, "summary_mode", None) in {NativeTagParser.PREFILLED_UNWRAPPED_SUMMARY,
                                          NativeTagParser.SUMMARY_END_OVERLAP_INCLUSIVE_V1,
                                          NativeTagParser.SUMMARY_END_RIGHT_INCLUSIVE_V1}
                 and engine_reason == "eos" and "</think>" in text
@@ -249,6 +253,11 @@ def _train(config,deployment,root,attempt_dir,resume):
     resolved = resolve(config,"train")
     plan = resolved["values"]
     parser_mode = native_summary_mode(deployment["output_parser_mode"])
+    effective_parser = parser_options(deployment)
+    if effective_parser.get("boundary_rule") == "native_body_coverage_v1" and plan["native_span_parser"] != "configured_native_body_coverage_v1":
+        raise ValueError("resolved recipe differs from deployed native body coverage")
+    resolved["effective_generation"] = dict(parser=effective_parser, output_parser_mode=deployment["output_parser_mode"],
+        turn_protocol=turn_protocol(deployment), prompt=plan["prompt_artifact"], seed_schedule="controlled_v2")
     with operation("asset_binding"):
         frozen = verify_bundle(deployment)
         domain_specs = deployment["domains"]
@@ -315,6 +324,9 @@ def _train(config,deployment,root,attempt_dir,resume):
     protocol = turn_protocol(deployment)
     if protocol == CHAT_TURN:
         binding["behavior"]["turn_protocol"] = protocol
+    binding["behavior"]["parser_settings"] = effective_parser
+    binding["behavior"]["prompt_sha256"] = file_sha256(prompt_path)
+    binding["behavior"]["seed_schedule"] = "controlled_v2"
     bound = bind_run(root,binding,resume=resume)
     fixed_files = {"config.json":config,"deployment.json":deployment,"recipe.json":resolved,
                    "model-sources.json":model_sources,"retriever-sources.json":sources,"sources.json":_source_hashes()}
@@ -375,7 +387,7 @@ def _train(config,deployment,root,attempt_dir,resume):
     generator = HFNativeGenerator(model=actor,tokenizer=tokenizer,device=actor_device,
         policy_version_getter=lambda:version["value"],max_new_tokens=plan["max_new_tokens_per_step"],
         max_context_tokens=plan["max_context_tokens"],prefilled_think=True,precision_context=autocast,
-        summary_mode=parser_mode, structured_stop=protocol == CHAT_TURN)
+        summary_mode=parser_mode, structured_stop=protocol == CHAT_TURN, parser_settings=effective_parser)
     reward = PyTrecReward(qrels)
     runners = {domain:RolloutRunner(generator=generator,retriever=backend,reward_scorer=reward,
         query_composer=ExplicitQueryComposer(**plan["query_composition"]),rules=RolloutRules(
@@ -424,7 +436,7 @@ def _train(config,deployment,root,attempt_dir,resume):
     def collect_branches(t,a):
         ex = train[t.query_id]
         requests = [BranchRequest(f"{t.trajectory_id}-d{a.depth}-b{b}",
-                    tuple(stable_seed(seed,"branch",t.policy_version,ex.domain,t.query_id,t.trajectory_id,a.depth,b,d)
+                    tuple(stable_seed(seed,"branch_v2",ex.domain,t.query_id,t.trajectory_id,a.depth,b,d)
                           for d in range(a.depth,plan["rollout_depth"]+1)))
                     for b in range(1,plan["total_branches_including_original"])]
         return runners[ex.domain].branch(original_query=ex.query,original=t,anchor=a,requests=requests)
@@ -473,6 +485,17 @@ def _train(config,deployment,root,attempt_dir,resume):
             checked = verify_checkpoint(cp_path,bound,allow_missing_stage=True)
             if checked["policy_version"] != current:
                 raise ValueError("restored actor and saved checkpoint differ")
+            if not recovered:
+                reloaded, info = AutoModelForCausalLM.from_pretrained(str(cp_path/"actor"),torch_dtype=torch.float32,
+                                                                      output_loading_info=True,**local)
+                if any(info.get(k) for k in ("missing_keys","mismatched_keys","error_msgs")):
+                    raise ValueError("checkpoint reload has incomplete weights")
+                reloaded.eval()
+                reload_version, _ = identify(reloaded,behavior)
+                if reload_version != current:
+                    raise ValueError("reloaded checkpoint weights differ from saved policy")
+                del reloaded
+                atomic_json(directory/"reload-verification.json",dict(policy_version=current,weights_verified=True))
             complete_stage(directory,"checkpoint_complete",current,{"checkpoint/complete.json":file_sha256(cp_path/"complete.json")})
         else:
             complete_stage(directory,"checkpoint_complete",current,{"skipped":"cadence"})

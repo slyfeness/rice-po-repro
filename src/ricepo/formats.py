@@ -22,8 +22,35 @@ def turn_protocol(deployment):
     return value
 
 
+def tagged_action(text, *, prefilled_think=True, allow_empty_reasoning=False):
+    pattern = (r"(.*?)</think>\s*<summary>(.*?)</summary>\s*"
+               if prefilled_think else r"\s*<think>(.*?)</think>\s*<summary>(.*?)</summary>\s*")
+    match = re.fullmatch(pattern, text, re.DOTALL)
+    if match is None:
+        raise MalformedGenerationError("expected one complete ordered tagged action")
+    if any(tag in body for body in match.groups()
+           for tag in ("<think>", "</think>", "<summary>", "</summary>", "<tool_response>", "</tool_response>")):
+        raise MalformedGenerationError("nested or duplicate output tags")
+    if not match.group(2).strip():
+        raise EmptySpanError("nonempty summary required")
+    if not allow_empty_reasoning and not match.group(1).strip():
+        raise EmptySpanError("nonempty reasoning required")
+    return match
+
+
 def action_closed(text):
-    return re.search(r"</think>\s*<summary>.*?</summary>", text, re.DOTALL) is not None
+    try:
+        tagged_action(text, allow_empty_reasoning=True)
+    except MalformedGenerationError:
+        return False
+    return True
+
+
+def parser_options(deployment):
+    options = deployment.get("parser_settings", {})
+    if set(options) - {"structure_mode", "boundary_rule", "allow_empty_reasoning"}:
+        raise ValueError("unknown parser setting")
+    return options
 
 
 class EmptySpanError(MalformedGenerationError):
@@ -50,7 +77,8 @@ class NativeTagParser:
     SUMMARY_END_RIGHT_INCLUSIVE_V1 = "summary_end_right_inclusive_v1"
 
     def __init__(self, tokenizer, *, prefilled_think: bool, malformed_policy: str,
-                 summary_mode: str = STRICT_TAGGED):
+                 summary_mode: str = STRICT_TAGGED, structure_mode=None,
+                 boundary_rule="exact", allow_empty_reasoning=False):
         if type(prefilled_think) is not bool or malformed_policy != "raise":
             raise ValueError("choose an explicit prefilled_think boolean and malformed_policy='raise'")
         if summary_mode not in {self.STRICT_TAGGED, self.PREFILLED_UNWRAPPED_SUMMARY,
@@ -64,6 +92,13 @@ class NativeTagParser:
         self.tokenizer = tokenizer
         self.prefilled_think = prefilled_think
         self.summary_mode = summary_mode
+        if structure_mode not in (None, "tagged", "unwrapped_diagnostic"):
+            raise ValueError("unsupported structure mode")
+        if boundary_rule not in ("exact", "native_body_coverage_v1") or type(allow_empty_reasoning) is not bool:
+            raise ValueError("unsupported boundary rule or empty reasoning policy")
+        self.structure_mode = structure_mode
+        self.boundary_rule = boundary_rule
+        self.allow_empty_reasoning = allow_empty_reasoning
 
     def __call__(self, token_ids: tuple[int, ...], finish_reason: str) -> Generation:
         if not token_ids or any(type(token) is not int or token < 0 for token in token_ids):
@@ -77,9 +112,33 @@ class NativeTagParser:
         while content_end and token_ids[content_end - 1] in terminal_ids:
             content_end -= 1
         text = decode(token_ids[:content_end])
-        unwrapped = self.summary_mode in {self.PREFILLED_UNWRAPPED_SUMMARY,
+        if self.structure_mode == "tagged":
+            match = tagged_action(text, prefilled_think=self.prefilled_think,
+                                  allow_empty_reasoning=self.allow_empty_reasoning)
+            if self.boundary_rule == "native_body_coverage_v1":
+                prefixes = [decode(token_ids[:i]) for i in range(content_end + 1)]
+                if any(not text.startswith(p) or not prefixes[i+1].startswith(p)
+                       or len(prefixes[i+1]) <= len(p) for i,p in enumerate(prefixes[:-1])):
+                    raise AmbiguousBoundaryError("non-unique or non-monotonic native decode")
+                def covering(start, end):
+                    if start == end:
+                        return Span(0, 0)
+                    indices = [i for i in range(content_end)
+                               if len(prefixes[i]) < end and len(prefixes[i+1]) > start]
+                    if not indices:
+                        raise AmbiguousBoundaryError("body has no native coverage")
+                    return Span(indices[0], indices[-1]+1)
+                reasoning = covering(*match.span(1)) if match.group(1).strip() else Span(0,0)
+                summary = covering(*match.span(2))
+                if reasoning.end > summary.start:
+                    raise AmbiguousBoundaryError("one native token covers both bodies")
+                return Generation(token_ids, reasoning, summary, match.group(2), finish_reason)
+        elif self.structure_mode == "unwrapped_diagnostic":
+            if "<summary>" in text or "</summary>" in text:
+                raise MalformedGenerationError("unwrapped diagnostic forbids summary tags")
+        unwrapped = self.structure_mode == "unwrapped_diagnostic" or (self.structure_mode is None and self.summary_mode in {self.PREFILLED_UNWRAPPED_SUMMARY,
                                           self.SUMMARY_END_OVERLAP_INCLUSIVE_V1,
-                                          self.SUMMARY_END_RIGHT_INCLUSIVE_V1}
+                                          self.SUMMARY_END_RIGHT_INCLUSIVE_V1})
         has_summary_tag = "<summary>" in text or "</summary>" in text
         if unwrapped and not has_summary_tag:
             # This is a separately named non-paper format adapter.  It maps
@@ -98,7 +157,7 @@ class NativeTagParser:
         # follow the closing tag. Ordinary tokens spelling '<eos>' do not count.
         if tail.strip():
             raise MalformedGenerationError("unexpected generated text after summary")
-        if not match.group(1).strip():
+        if not match.group(1).strip() and not self.allow_empty_reasoning:
             raise EmptySpanError("strict parsing requires nonempty reasoning")
         if not match.group(2).strip():
             raise EmptySpanError("strict parsing requires nonempty summary")

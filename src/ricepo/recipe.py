@@ -63,7 +63,7 @@ FIXED_BACKEND = {
     "temperature": (1,), "top_p": (1,), "top_k": (0,), "optimizer": ("adamw",),
     "kl_estimator": ("exact_categorical",), "trajectory_std_convention": ("population",),
     "hybrid_normalization": ("minmax",), "format_failure_policy": ("raise",),
-    "native_span_parser": ("strict_native_tag_boundaries_prefilled_think",),
+    "native_span_parser": ("strict_native_tag_boundaries_prefilled_think", "configured_native_body_coverage_v1"),
     "document_encoding_profile": ("original_model_card_raw_documents",),
     "loss_reduction": ("sum", "token_mean", "sequence_mean"),
     "local_advantage_normalization": ("center_only", "center_std"),

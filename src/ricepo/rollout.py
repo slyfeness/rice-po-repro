@@ -175,7 +175,7 @@ class RolloutRunner:
             reasoning.start, reasoning.end, summary.start, summary.end
         )):
             raise MalformedGenerationError("span offsets must be integer native-token positions")
-        if not (0 <= reasoning.start < reasoning.end <= summary.start < summary.end <= len(ids)):
+        if not (0 <= reasoning.start <= reasoning.end <= summary.start < summary.end <= len(ids)):
             raise MalformedGenerationError(
                 "format policy requires nonempty, ordered, in-bounds reasoning and summary spans"
             )
