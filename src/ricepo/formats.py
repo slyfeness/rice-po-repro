@@ -24,16 +24,25 @@ class AmbiguousBoundaryError(MalformedGenerationError):
 
 
 class NativeTagParser:
-    """Strict reference parser: prefix decoding may take quadratic work.
+    """Native token parser; strict tagged parsing is the reference mode.
 
     Only uniquely mapped native boundaries are accepted. A tokenizer-specific
     faster parser can be injected into the generator after separate validation.
     """
-    def __init__(self, tokenizer, *, prefilled_think: bool, malformed_policy: str):
+    STRICT_TAGGED = "strict_tagged"
+    PREFILLED_UNWRAPPED_SUMMARY = "prefilled_unwrapped_summary_ablation_v1"
+
+    def __init__(self, tokenizer, *, prefilled_think: bool, malformed_policy: str,
+                 summary_mode: str = STRICT_TAGGED):
         if type(prefilled_think) is not bool or malformed_policy != "raise":
             raise ValueError("choose an explicit prefilled_think boolean and malformed_policy='raise'")
+        if summary_mode not in {self.STRICT_TAGGED, self.PREFILLED_UNWRAPPED_SUMMARY}:
+            raise ValueError("unsupported native summary parsing mode")
+        if summary_mode == self.PREFILLED_UNWRAPPED_SUMMARY and not prefilled_think:
+            raise ValueError("unwrapped-summary mode requires an explicitly prefilled think prefix")
         self.tokenizer = tokenizer
         self.prefilled_think = prefilled_think
+        self.summary_mode = summary_mode
 
     def __call__(self, token_ids: tuple[int, ...], finish_reason: str) -> Generation:
         if not token_ids or any(type(token) is not int or token < 0 for token in token_ids):
@@ -47,8 +56,15 @@ class NativeTagParser:
         while content_end and token_ids[content_end - 1] in terminal_ids:
             content_end -= 1
         text = decode(token_ids[:content_end])
-        pattern = (r"(.*?)</think>\s*<summary>(.*?)</summary>" if self.prefilled_think
-                   else r"\s*<think>(.*?)</think>\s*<summary>(.*?)</summary>")
+        if self.summary_mode == self.PREFILLED_UNWRAPPED_SUMMARY:
+            # This is a separately named non-paper format adapter.  It maps
+            # the model's EOS-terminated text after a native </think> token
+            # boundary to the summary span; it never inserts, re-encodes, or
+            # otherwise fabricates tag tokens.
+            pattern = r"(.*?)</think>\s*(.*?)"
+        else:
+            pattern = (r"(.*?)</think>\s*<summary>(.*?)</summary>" if self.prefilled_think
+                       else r"\s*<think>(.*?)</think>\s*<summary>(.*?)</summary>")
         match = re.match(pattern, text, flags=re.DOTALL)
         if match is None:
             raise MalformedGenerationError("expected ordered think and summary tags")
@@ -82,6 +98,22 @@ class NativeTagParser:
         return Generation(token_ids, reasoning, summary, match.group(2), finish_reason)
 
 
+def native_summary_mode(deployment_value: str) -> str:
+    """Translate an auditable deployment selector to a parser implementation.
+
+    The strict tagged mode is the independent reference.  The alternate name
+    is deliberately verbose so an ablation cannot be mistaken for it.
+    """
+    modes = {
+        "strict_native_tags": NativeTagParser.STRICT_TAGGED,
+        "prefilled_think_unwrapped_summary_ablation_v1": NativeTagParser.PREFILLED_UNWRAPPED_SUMMARY,
+    }
+    try:
+        return modes[deployment_value]
+    except (KeyError, TypeError) as error:
+        raise ValueError("unsupported output_parser_mode deployment value") from error
+
+
 class PromptRenderer:
     """Figure 5 text + escaped query/documents. Layout is a documented choice.
 
@@ -99,10 +131,11 @@ class PromptRenderer:
         self.top_k, self.token_limit = observation_top_k, observation_token_limit
         self.prefill_think = prefill_think
 
-    def make_parser(self, *, malformed_policy: str) -> NativeTagParser:
+    def make_parser(self, *, malformed_policy: str,
+                    summary_mode: str = NativeTagParser.STRICT_TAGGED) -> NativeTagParser:
         """Bind strict parsing to exactly the prefill mode used at every branch prefix."""
         return NativeTagParser(self.tokenizer, prefilled_think=self.prefill_think,
-                               malformed_policy=malformed_policy)
+                               malformed_policy=malformed_policy, summary_mode=summary_mode)
 
     def _documents(self, documents) -> str:
         records = []

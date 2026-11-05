@@ -48,6 +48,18 @@ def test_prefilled_mode_matches_the_saved_prefix_without_duplicate_open_tag():
         parser(prefilled=False)((2, 3, 4, 5, 6), "stop")
 
 
+def test_named_unwrapped_summary_adapter_preserves_native_ids_without_inserting_tags():
+    ids = (2, 3, 5, 7)
+    result = NativeTagParser(PieceTokenizer(), prefilled_think=True, malformed_policy="raise",
+                             summary_mode="prefilled_unwrapped_summary_ablation_v1")(ids, "stop")
+    assert result.token_ids is ids
+    assert result.reasoning_span == Span(0, 1)
+    assert result.summary_span == Span(2, 3)
+    assert result.summary_text == "query"
+    with pytest.raises(MalformedGenerationError, match="ordered"):
+        parser(prefilled=True)(ids, "stop")
+
+
 def test_parser_rejects_inside_token_and_ambiguous_native_boundaries():
     with pytest.raises(MalformedGenerationError, match="inside a native token"):
         parser()((9, 3, 4, 5, 6), "stop")

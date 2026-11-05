@@ -58,7 +58,7 @@ DEPLOYMENT_BASE = ("runtime", "retriever_model_path", "cache_root", "retriever_d
                    "document_prefix", "retriever_max_length", "domains")
 DEPLOYMENT_RETRIEVAL = ("dataset_receipt_path", "dataset_receipt_sha256", "train_manifest_path",
                         "development_manifest_path", "test_manifest_path", "dense_chunk_size", "retrieval_top_k")
-DEPLOYMENT_GENERATION = ("actor_device", "prompt_path")
+DEPLOYMENT_GENERATION = ("actor_device", "prompt_path", "output_parser_mode")
 FIXED_BACKEND = {
     "temperature": (1,), "top_p": (1,), "top_k": (0,), "optimizer": ("adamw",),
     "kl_estimator": ("exact_categorical",), "trajectory_std_convention": ("population",),

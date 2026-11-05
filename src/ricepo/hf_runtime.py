@@ -30,7 +30,7 @@ from .state import (writer, bind_run, recovery_checkpoint, publish_checkpoint, v
                     read_json, complete_stage, selected_so_far, finish_development)
 from .contracts import Generation
 from .data import QueryExample
-from .formats import NativeTagParser, PromptRenderer
+from .formats import NativeTagParser, PromptRenderer, native_summary_mode
 from .modeling import sampled_old_log_probs, make_forward
 from .retrieval import (
     DenseVectorScorer, DiverEncoder, ExplicitQueryComposer, FixedHybridRetriever,
@@ -55,12 +55,14 @@ class HFNativeGenerator:
 
     def __init__(self, *, model: Any, tokenizer: Any, device: Any,
                  policy_version_getter: Any, max_new_tokens: int,
-                 max_context_tokens: int, prefilled_think: bool, precision_context: Any):
+                 max_context_tokens: int, prefilled_think: bool, precision_context: Any,
+                 summary_mode: str = NativeTagParser.STRICT_TAGGED):
         self.model, self.tokenizer, self.device = model, tokenizer, device
         self._policy_version_getter = policy_version_getter
         self.max_new_tokens, self.max_context_tokens = max_new_tokens, max_context_tokens
         self.precision_context = precision_context
-        self.parser = NativeTagParser(tokenizer, prefilled_think=prefilled_think, malformed_policy="raise")
+        self.parser = NativeTagParser(tokenizer, prefilled_think=prefilled_think, malformed_policy="raise",
+                                      summary_mode=summary_mode)
         # A supplied GenerationConfig is authoritative for the explicit fields
         # below.  Transformers 5.5.1 has no literal use_model_defaults
         # parameter and validates arbitrary kwargs as model inputs, so passing
@@ -145,7 +147,14 @@ class HFNativeGenerator:
         if output.ndim != 2 or output.shape[0] != 1 or tuple(output[0, :prefix_length].tolist()) != prefix:
             raise ValueError("model.generate altered the native prefix or completion count")
         text = tokenizer.decode(native, skip_special_tokens=False, clean_up_tokenization_spaces=False)
-        reason = "stop" if "</summary>" in text else engine_reason
+        closed = "</summary>" in text
+        # The named functional-smoke adapter accepts an EOS-terminated,
+        # unwrapped summary only after the model has closed its think span.
+        # It does not accept a length-truncated completion as a valid stop.
+        if (self.parser.summary_mode == NativeTagParser.PREFILLED_UNWRAPPED_SUMMARY
+                and engine_reason == "eos" and "</think>" in text):
+            closed = True
+        reason = "stop" if closed else engine_reason
         event("completion_diagnosis", finish_reason=reason, decoded_preview=text[:400])
         if reason != "stop" and at_limit:
             raise GenerationTruncated("generation exhausted its configured length before closing the summary")
@@ -234,6 +243,7 @@ def _train(config,deployment,root,attempt_dir,resume):
     from .assessment import evaluate_queries
     resolved = resolve(config,"train")
     plan = resolved["values"]
+    parser_mode = native_summary_mode(deployment["output_parser_mode"])
     with operation("asset_binding"):
         frozen = verify_bundle(deployment)
         domain_specs = deployment["domains"]
@@ -295,7 +305,8 @@ def _train(config,deployment,root,attempt_dir,resume):
                                  repetition_penalty=1.0,model_mode="eval", precision=precision,
                                  initial_actor_payload=actor_source["payload_sha256"],tokenizer_length=len(tokenizer),
                                  special_ids=tokenizer.all_special_ids,chat_template_sha256=fingerprint(tokenizer.chat_template),
-                                 prefilled_think=True, rng="sha256-json-stream-v1"))
+                                 prefilled_think=True, output_parser_mode=deployment["output_parser_mode"],
+                                 rng="sha256-json-stream-v1"))
     bound = bind_run(root,binding,resume=resume)
     fixed_files = {"config.json":config,"deployment.json":deployment,"recipe.json":resolved,
                    "model-sources.json":model_sources,"retriever-sources.json":sources,"sources.json":_source_hashes()}
@@ -355,7 +366,8 @@ def _train(config,deployment,root,attempt_dir,resume):
         raise ValueError("restored live policy differs from committed behavior identity")
     generator = HFNativeGenerator(model=actor,tokenizer=tokenizer,device=actor_device,
         policy_version_getter=lambda:version["value"],max_new_tokens=plan["max_new_tokens_per_step"],
-        max_context_tokens=plan["max_context_tokens"],prefilled_think=True,precision_context=autocast)
+        max_context_tokens=plan["max_context_tokens"],prefilled_think=True,precision_context=autocast,
+        summary_mode=parser_mode)
     reward = PyTrecReward(qrels)
     runners = {domain:RolloutRunner(generator=generator,retriever=backend,reward_scorer=reward,
         query_composer=ExplicitQueryComposer(**plan["query_composition"]),rules=RolloutRules(
