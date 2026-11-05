@@ -7,6 +7,7 @@ raise an error instead of silently shifting policy-loss spans.
 
 import html
 import re
+import json
 from .contracts import Generation, Span
 from .rollout import MalformedGenerationError
 
@@ -99,6 +100,47 @@ class NativeTagParser:
         self.structure_mode = structure_mode
         self.boundary_rule = boundary_rule
         self.allow_empty_reasoning = allow_empty_reasoning
+        self._byte_level = False
+        decoder = getattr(getattr(tokenizer,"backend_tokenizer",None),"decoder",None)
+        if decoder is not None:
+            self._byte_level = json.loads(decoder.__getstate__()).get("type") == "ByteLevel"
+
+    def _body_byte_spans(self, ids, text, match):
+        """Exact native ByteLevel intervals; no tokenizer encode or prefix decode.
+
+        A UTF-8 character may span native tokens. Partial prefix decoding then
+        emits U+FFFD and is not monotonic although the full byte sequence is
+        unambiguous. Require exact reconstruction under the frozen decoder.
+        This only implements the existing whole-token body coverage adapter.
+        """
+        base = list(range(33,127))+list(range(161,173))+list(range(174,256))
+        order = base + [b for b in range(256) if b not in base]
+        chars = base + list(range(256,256+256-len(base)))
+        inverse = {chr(c):b for b,c in zip(order,chars,strict=True)}
+        added = set(self.tokenizer.get_added_vocab().values())
+        boundaries, chunks = [0], []
+        try:
+            for token, piece in zip(ids,self.tokenizer.convert_ids_to_tokens(list(ids)),strict=True):
+                chunk = piece.encode("utf8") if token in added else bytes(inverse[c] for c in piece)
+                if not chunk:
+                    raise AmbiguousBoundaryError("empty native byte token")
+                chunks.append(chunk)
+                boundaries.append(boundaries[-1]+len(chunk))
+        except (KeyError, TypeError, ValueError) as exc:
+            raise AmbiguousBoundaryError("cannot reconstruct frozen native byte decoder") from exc
+        if b"".join(chunks) != text.encode("utf8"):
+            raise AmbiguousBoundaryError("native bytes differ from complete decoded text")
+        def cover(start,end):
+            if start == end: return Span(0,0)
+            left,right = len(text[:start].encode("utf8")),len(text[:end].encode("utf8"))
+            positions = [i for i in range(len(ids)) if boundaries[i]<right and boundaries[i+1]>left]
+            if not positions: raise AmbiguousBoundaryError("body has no native byte coverage")
+            return Span(positions[0],positions[-1]+1)
+        reasoning = cover(*match.span(1)) if match.group(1).strip() else Span(0,0)
+        summary = cover(*match.span(2))
+        if reasoning.end > summary.start:
+            raise AmbiguousBoundaryError("one native token covers both bodies")
+        return reasoning,summary
 
     def __call__(self, token_ids: tuple[int, ...], finish_reason: str) -> Generation:
         if not token_ids or any(type(token) is not int or token < 0 for token in token_ids):
@@ -116,6 +158,9 @@ class NativeTagParser:
             match = tagged_action(text, prefilled_think=self.prefilled_think,
                                   allow_empty_reasoning=self.allow_empty_reasoning)
             if self.boundary_rule == "native_body_coverage_v1":
+                if self._byte_level:
+                    reasoning,summary = self._body_byte_spans(token_ids[:content_end],text,match)
+                    return Generation(token_ids,reasoning,summary,match.group(2),finish_reason)
                 prefixes = [decode(token_ids[:i]) for i in range(content_end + 1)]
                 if any(not text.startswith(p) or not prefixes[i+1].startswith(p)
                        or len(prefixes[i+1]) <= len(p) for i,p in enumerate(prefixes[:-1])):

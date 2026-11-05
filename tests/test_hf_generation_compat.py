@@ -74,3 +74,17 @@ def test_eos_after_think_with_an_unclosed_summary_is_not_marked_stop():
 
     generator.parser = Parser()
     assert generator.generate(prefix, seed=43) == "eos"
+
+
+def test_saved_native_replay_never_calls_model_generation():
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("transformers")
+    class Model:
+        training=False
+        def generate(self,**kwargs):raise AssertionError("must reuse paid IDs")
+    generator=HFNativeGenerator(model=Model(),tokenizer=_Tokenizer(),device="cpu",
+        policy_version_getter=lambda:"frozen",max_new_tokens=8,max_context_tokens=64,
+        prefilled_think=False,precision_context=nullcontext)
+    generator.completion_replay=lambda prefix,seed,version:dict(token_ids=(7,2),finish_reason="eos",source={"event_sha256":"a"*64})
+    generator.parser=lambda ids,reason:(ids,reason)
+    assert generator.generate((210,214),seed=43)==((7,2),"stop")

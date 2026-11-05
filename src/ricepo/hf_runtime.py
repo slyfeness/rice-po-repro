@@ -127,6 +127,33 @@ class HFNativeGenerator:
         device = torch.device(self.device)
         cuda_indices = [device.index] if device.type == "cuda" else []
         version = self.policy_version
+        replay = getattr(self,"completion_replay",None)
+        cached = replay(prefix,seed,version) if replay else None
+        if cached is not None:
+            ids = cached["token_ids"]
+            if not ids or len(ids)>limit or any(type(t) is not int or t<0 for t in ids):
+                raise ValueError("invalid saved native completion")
+            output = torch.tensor([prefix+tuple(ids)],dtype=torch.long,device=self.device)
+        else:
+            output = self._sample(inputs,recipe,cuda_indices,device,seed,prefix_length,SummaryClosed,
+                                  LogitsProcessorList,StoppingCriteriaList)
+        native = tuple(output[0, prefix_length:].tolist())
+        at_limit = len(native) >= limit
+        engine_reason = ("eos" if native and native[-1] == tokenizer.eos_token_id
+                         else "length_or_stop" if at_limit else "stopping_criterion")
+        if cached is not None and engine_reason != cached["finish_reason"]:
+            raise ValueError("saved completion termination differs from the frozen generation configuration")
+        raw_completion(native, engine_reason, prefix, seed, version,
+                       replay_source=cached["source"] if cached else None)
+        if self.policy_version != version:
+            raise RuntimeError("actor policy changed during a frozen-policy generation")
+        if output.ndim != 2 or output.shape[0] != 1 or tuple(output[0, :prefix_length].tolist()) != prefix:
+            raise ValueError("model.generate altered the native prefix or completion count")
+        return self._parse_completion(native,engine_reason,at_limit)
+
+    def _sample(self,inputs,recipe,cuda_indices,device,seed,prefix_length,SummaryClosed,
+                LogitsProcessorList,StoppingCriteriaList):
+        import torch
         with torch.random.fork_rng(devices=cuda_indices), torch.inference_mode(), self.precision_context():
             torch.random.default_generator.manual_seed(seed)
             if device.type == "cuda":
@@ -142,21 +169,15 @@ class HFNativeGenerator:
             }
             if self._supports_use_model_defaults:
                 generate_kwargs["use_model_defaults"] = False
-            output = self.model.generate(**generate_kwargs)
-        native = tuple(output[0, prefix_length:].tolist())
-        at_limit = len(native) >= limit
-        engine_reason = ("eos" if native and native[-1] == tokenizer.eos_token_id
-                         else "length_or_stop" if at_limit else "stopping_criterion")
-        raw_completion(native, engine_reason, prefix, seed, version)
-        if self.policy_version != version:
-            raise RuntimeError("actor policy changed during a frozen-policy generation")
-        if output.ndim != 2 or output.shape[0] != 1 or tuple(output[0, :prefix_length].tolist()) != prefix:
-            raise ValueError("model.generate altered the native prefix or completion count")
+            return self.model.generate(**generate_kwargs)
+
+    def _parse_completion(self,native,engine_reason,at_limit):
+        tokenizer = self.tokenizer
         terminal = len(native)
         while terminal and native[terminal-1] in (tokenizer.eos_token_id, tokenizer.pad_token_id):
             terminal -= 1
         text = tokenizer.decode(native[:terminal], skip_special_tokens=False, clean_up_tokenization_spaces=False)
-        closed = closed_action(text)
+        closed = self.closed(text)
         # The named functional-smoke adapter accepts an EOS-terminated,
         # unwrapped summary only after the model has closed its think span.
         # It does not accept a length-truncated completion as a valid stop.
@@ -404,6 +425,9 @@ def _train(config,deployment,root,attempt_dir,resume):
         max_context_tokens=plan["max_context_tokens"],prefilled_think=True,precision_context=autocast,
         summary_mode=parser_mode, structured_stop=protocol == CHAT_TURN, parser_settings=effective_parser,
         failure_semantics=plan["format_failure_policy"])
+    if deployment.get("native_replay_sources"):
+        from .native_replay import SavedNativeCompletions
+        generator.completion_replay = SavedNativeCompletions(deployment["native_replay_sources"],binding)
     reward = PyTrecReward(qrels)
     runners = {domain:RolloutRunner(generator=generator,retriever=backend,reward_scorer=reward,
         query_composer=ExplicitQueryComposer(**plan["query_composition"]),rules=RolloutRules(
