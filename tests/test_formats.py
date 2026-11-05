@@ -55,7 +55,7 @@ def test_named_unwrapped_summary_adapter_preserves_native_ids_without_inserting_
     assert result.token_ids is ids
     assert result.reasoning_span == Span(0, 1)
     assert result.summary_span == Span(2, 3)
-    assert result.summary_text == "query"
+    assert result.summary_text == "query\n"
     with pytest.raises(MalformedGenerationError, match="ordered"):
         parser(prefilled=True)(ids, "stop")
 
@@ -72,7 +72,7 @@ def test_named_unwrapped_summary_adapter_still_prefers_the_strict_tagged_path():
 def test_summary_end_overlap_adapter_assigns_only_mixed_closing_token_to_summary():
     class ClosingOverlapTokenizer(PieceTokenizer):
         pieces = {2: "reason", 3: "</think>", 4: "<summary>",
-                  6: "query</summary>\n", 7: "<eos>"}
+                  6: "query\n</summary>\n", 7: "<eos>"}
 
     ids = (2, 3, 4, 6, 7)
     with pytest.raises(InsideTokenError):
