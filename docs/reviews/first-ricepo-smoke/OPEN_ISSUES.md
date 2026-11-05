@@ -2,7 +2,7 @@
 
 ## Latest functional diagnostic
 
-The mixed-format adapter completed both originals and selected an entropy anchor. The new branch hit `InsideTokenError`; dropping that branch would invalidate its group. The authorized follow-up adapter is now explicitly named `summary_end_overlap_inclusive_v1` in `241ccdc`: only a unique token containing nonempty Summary text plus `</summary>` is wholly assigned to Summary. Strict reference parsing remains unchanged. The saved-ID verification is still pending.
+The mixed-format adapter completed both originals and selected an entropy anchor. The new branch hit `InsideTokenError`; dropping that branch would invalidate its group. The authorized follow-up adapter is now explicitly named `summary_end_overlap_inclusive_v1` in `241ccdc`/`91e2161`/`26d7720`: only a unique token containing nonempty Summary text plus `</summary>` (and at most whitespace beside it) is wholly assigned to Summary. Strict reference parsing remains unchanged. The executed saved-ID inspection found that the actual crossing token contains no close tag, so the authorized adapter correctly cannot accept it.
 
 ## Earlier strict-reference blocking issue
 
@@ -11,12 +11,15 @@ configured one-step generation bound for the first pre-registered original
 sample. Because RICE-PO requires complete original trajectory groups, this is a
 valid fail-fast outcome rather than a missing value to impute.
 
-## Pending execution
+## Blocking decision
 
-Run the CPU-only saved-ID verifier first. If it passes, submit the separately
-labelled two-GPU, one-query v7 functional smoke (two originals, one anchor,
-one new branch, depth one). Neither diagnostic is equivalent to the
-paper-reference recipe.
+The saved branch has a different structure: its Summary end is inside a token
+that ends in whitespace, while `</summary>` begins at a later native boundary.
+Accepting that output needs a distinct, pre-registered rule and changes the
+loss-span ownership question. It is not authorized by the same-token-close
+rule. No two-GPU v7 job may be submitted until a compatible rule or a new
+pre-registered diagnostic input is authorized. Neither diagnostic is
+equivalent to the paper-reference recipe.
 
 The following actions are explicitly not taken:
 

@@ -23,5 +23,14 @@ No test result above implies a complete training update, retrieval benchmark,
 four-GPU validation, or distributed equivalence.
 
 `summary_end_overlap_inclusive_v1` was added in `241ccdc` with focused source
-tests. Its required CPU-only check against the saved failure completion has
-not yet run, so it is not reported as a passing test here.
+tests and refined in `91e2161`/`26d7720` to permit only whitespace beside the
+same-token close tag. A CPU-only, no-generation inspection of the saved branch
+completed after those changes. It found one crossing token, with nonempty
+Summary body content and only whitespace after the formal Summary end; the
+closing tag was not in that token. The adapter therefore correctly remains
+inapplicable. The sanitized private report SHA-256 is
+`b865f69c324a483b66b053e9bbdd315a0c4ca704d6a4633dac59f352ef6e397e`.
+The original-trajectory artifact SHA-256 remained
+`f88df33c19ff19bd75cb58fecf214bb7e6d69a411ea44c214e4b9dd688565237`.
+No branch reward, advantage, optimizer step, checkpoint, development result,
+or two-GPU v7 job was created.
