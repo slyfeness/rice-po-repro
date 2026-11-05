@@ -44,10 +44,13 @@ from .workflow import IterationComponents, run_iteration
 class HFNativeGenerator:
     """Sample untouched model probabilities and retain every native output ID.
 
-    A fresh GenerationConfig plus use_model_defaults=False prevents a model's
-    bundled generation recipe from silently applying a different sampling law.
-    The explicit law is temperature=1, top_p=1, top_k=0, with no penalties,
-    constraints, or logit processors. Stop conditions do not reweight logits.
+    A fresh, explicit GenerationConfig prevents a model's bundled generation
+    recipe from silently applying a different sampling law.  Some Transformers
+    releases expose ``use_model_defaults`` and others reject it as an unused
+    model kwarg; the keyword is therefore used only where it is an explicit
+    ``generate`` parameter.  The explicit law is temperature=1, top_p=1,
+    top_k=0, with no penalties, constraints, or logit processors. Stop
+    conditions do not reweight logits.
     """
 
     def __init__(self, *, model: Any, tokenizer: Any, device: Any,
@@ -58,8 +61,14 @@ class HFNativeGenerator:
         self.max_new_tokens, self.max_context_tokens = max_new_tokens, max_context_tokens
         self.precision_context = precision_context
         self.parser = NativeTagParser(tokenizer, prefilled_think=prefilled_think, malformed_policy="raise")
-        if "use_model_defaults" not in inspect.signature(model.generate).parameters:
-            raise RuntimeError("installed Transformers must support generate(use_model_defaults=False)")
+        # A supplied GenerationConfig is authoritative for the explicit fields
+        # below.  Transformers 5.5.1 has no literal use_model_defaults
+        # parameter and validates arbitrary kwargs as model inputs, so passing
+        # the old keyword there aborts before sampling.  Do not infer support
+        # from **kwargs: that is precisely the path validated as model kwargs.
+        self._supports_use_model_defaults = (
+            "use_model_defaults" in inspect.signature(model.generate).parameters
+        )
 
     @property
     def policy_version(self) -> str:
@@ -115,13 +124,17 @@ class HFNativeGenerator:
             if device.type == "cuda":
                 with torch.cuda.device(device):
                     torch.cuda.manual_seed(seed)
-            output = self.model.generate(
-                input_ids=inputs, attention_mask=torch.ones_like(inputs),
-                generation_config=recipe, use_model_defaults=False,
-                logits_processor=LogitsProcessorList(),
-                stopping_criteria=StoppingCriteriaList([SummaryClosed()]),
-                synced_gpus=False,
-            )
+            generate_kwargs = {
+                "input_ids": inputs,
+                "attention_mask": torch.ones_like(inputs),
+                "generation_config": recipe,
+                "logits_processor": LogitsProcessorList(),
+                "stopping_criteria": StoppingCriteriaList([SummaryClosed()]),
+                "synced_gpus": False,
+            }
+            if self._supports_use_model_defaults:
+                generate_kwargs["use_model_defaults"] = False
+            output = self.model.generate(**generate_kwargs)
         native = tuple(output[0, prefix_length:].tolist())
         at_limit = len(native) >= limit
         engine_reason = ("eos" if native and native[-1] == tokenizer.eos_token_id
