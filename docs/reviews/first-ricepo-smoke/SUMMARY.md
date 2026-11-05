@@ -1,6 +1,43 @@
 # First RICE-PO smoke review
 
-Latest diagnostic: **original group and entropy anchor completed; the saved v5
+## 2026-11-05 controlled recovery and five-round follow-up
+
+The saved v5 evidence was structurally compatible with an **offline recovery**:
+two original trajectories, one entropy anchor, and one saved branch completion
+shared the frozen policy, query and pre-reasoning native prefix.  The branch
+was strictly rejected but accepted by the authorized
+`summary_end_right_inclusive_v1` parser without changing its IDs.  The frozen
+retriever then supplied the previously missing retrieval/reward step.  Both
+branch outcomes had NDCG@10 0.0, so population local variance was 0.0 and the
+paper gate did not propagate credit.  All 1,081 original action advantages
+were zero.
+
+Despite that legitimate zero-signal batch, the real PPO implementation ran one
+`optimizer.step`, recorded a finite pre-clip gradient norm, and observed a
+parameter-probe change.  Its checkpoint was atomically published and reloaded
+without weight discrepancies.  This proves the update/checkpoint path, **not
+reward-driven learning**: policy loss and reference KL were zero, and the
+recorded parameter movement must not be interpreted as a positive training
+result.  The recovery allocation elapsed 9m01s; recorded batch MaxRSS was
+about 32.3 GiB.
+
+A fixed-query/two-fixed-seed prompt diagnostic then compared the Figure 5
+prompt with a compact non-paper prompt under the strict reference parser.  The
+reference prompt had two native summary-end boundary rejections, both accepted
+unchanged by the already-authorized right-inclusive adapter.  The compact
+prompt had two malformed EOS completions; although the adapter's unwrapped
+summary path can parse them, it was not selected because it did not produce
+the requested explicit tags and cost more generated tokens.
+
+The subsequent independent one-query full-five run used the Figure 5 prompt,
+the right-inclusive adapter, four originals, four anchors and five new
+branches per anchor.  It failed at depth 2 of its first original trajectory
+on a new duplicate/nested-tag completion.  The full original group was thus
+incomplete; no entropy receipt, branch group, credit, PPO step, checkpoint or
+development result was committed for that run.  No IDs, tags, rewards or seeds
+were repaired, substituted, retried or dropped.
+
+Prior v8 diagnostic: **original group and entropy anchor completed; the saved v5
 branch re-parsed under the authorized right-inclusive rule; a newly generated
 v8 counterfactual was structurally malformed; zero optimizer steps.**
 
@@ -59,7 +96,7 @@ development evaluation, or formal test evaluation was performed.
 
 ## Unfinished work
 
-The v8 branch result blocks the complete group required for credit gating and
-a formal PPO update. It cannot be converted into a successful RICE-PO result
+The v8 branch result blocks the complete on-policy group required for credit
+gating and a formal on-policy PPO update. It cannot be converted into a successful RICE-PO result
 by silently extending generation, resampling, or dropping the failed sample.
 See [OPEN_ISSUES.md](OPEN_ISSUES.md).

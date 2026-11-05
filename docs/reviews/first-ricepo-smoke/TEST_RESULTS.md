@@ -40,3 +40,18 @@ The original-trajectory artifact SHA-256 remained
 `f88df33c19ff19bd75cb58fecf214bb7e6d69a411ea44c214e4b9dd688565237`.
 No branch reward, advantage, optimizer step, checkpoint, development result,
 or completed two-GPU functional update was created.
+
+## 2026-11-05 follow-up results
+
+| Evidence | Command class | Outcome | Notes |
+| --- | --- | --- | --- |
+| EOS classification regression | CPU `pytest` against immutable patched source | 2 passed | An EOS completion containing incomplete Summary markup remains classified as malformed, not as a normal stop. |
+| v5 saved-ID recovery audit | CPU Slurm structural audit | passed | Two originals, one anchor and one saved branch completion had matching query, policy and native prefix identities. |
+| v5 offline recovery | two-GPU recovery workflow | completed | Deterministic parse/retrieval/reward recovery, one credit calculation, one real optimizer step, atomic checkpoint and successful reload. The batch had zero advantage signal. |
+| Fixed-seed prompt diagnostic | two-GPU, 1 query × 2 seeds × 2 prompts | completed | Strict parser: reference 0/2 (boundary); compact 0/2 (structure). Right-inclusive reparse: reference 2/2 accepted; compact was not selected. |
+| Full-five functional smoke | two-GPU, 1 query / 4 originals / depth 5 | failed | A duplicate/nested-tag original completion at depth 2 stopped the incomplete group before entropy, branches, credit or update. |
+
+The parser source test result above is a real executed test result. The full
+five failure is a real model-format outcome, not a test failure manufactured by
+fixtures. No row in this section establishes a benchmark score, a complete
+five-round result, or four-GPU support.

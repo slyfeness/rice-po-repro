@@ -31,3 +31,22 @@ The following actions are explicitly not taken:
 Four-GPU execution remains a separate, unvalidated capability. The frozen
 four-GPU configuration from another project was not reused for this reference
 runtime.
+
+## Current blocking condition after the full-five attempt
+
+The first full-five original trajectory produced one valid first retrieval
+step, then a depth-2 completion with nested/duplicate format tags.  This is
+neither the summary-end native-token boundary already covered by
+`summary_end_right_inclusive_v1`, nor a retriever, reward, credit, optimizer
+or checkpoint fault.  The saved raw completion and request identity remain in
+private evidence.  Because four complete original trajectories are required,
+the run correctly stopped before formal credit statistics.
+
+The controlled v5 recovery separately proves that the PPO/update/checkpoint
+path works, but its zero rewards/advantages do not resolve this on-policy
+format-validity requirement.  No further parser exceptions will be added for
+missing or duplicate tags.  A future continuation needs a pre-registered
+format-generation intervention that preserves an accounted sampling law, or a
+different explicitly authorized generation protocol.  It must retain the
+failed full-five attempt and cannot resample until a preferred-looking group
+appears.
