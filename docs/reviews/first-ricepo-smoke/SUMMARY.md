@@ -1,6 +1,8 @@
 # First RICE-PO smoke review
 
-Stage status: **failed before a complete original rollout group; no optimizer step was committed.**
+Latest diagnostic: **original group and entropy anchor completed; branch parsing failed; zero optimizer steps.**
+
+The later functional run at `adc707800239672fa0a1624d54bb26a5b95cda8f` used one Biology query, two original trajectories, one anchor, one new branch and one retrieval round. This is a non-paper diagnostic with a separately named format adapter. The rollout receipt binds the archived trajectories to SHA-256 `f88df33c19ff19bd75cb58fecf214bb7e6d69a411ea44c214e4b9dd688565237`. Two original generations produced 1,081 tokens in total; the branch produced 365. The branch could not map a text boundary to an exact native token offset. No branch group, final credit, update, checkpoint or development result was committed. Elapsed allocation time on the executed attempt: 4m18s, two GPUs. Earlier pre-batch launch failures were separate scheduler events. The sections below describe the earlier strict-reference run.
 
 This review records a bounded, one-query Biology diagnostic using the independent
 RICE-PO reference runtime. It is not a benchmark result, a runtime validation

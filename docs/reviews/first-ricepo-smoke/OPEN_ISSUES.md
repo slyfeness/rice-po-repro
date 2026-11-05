@@ -1,6 +1,10 @@
 # Open issues and next-stage decision
 
-## Blocking issue
+## Latest functional diagnostic
+
+The mixed-format adapter completed both originals and selected an entropy anchor. The new branch hit `InsideTokenError`; dropping that branch would invalidate its group. An alternative token-ownership rule would change which positions receive local credit and must be specified independently before testing it. Strict reference parsing remains unchanged.
+
+## Earlier strict-reference blocking issue
 
 The frozen actor did not close the strict reasoning/summary format within the
 configured one-step generation bound for the first pre-registered original
