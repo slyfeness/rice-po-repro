@@ -1,5 +1,7 @@
 # Verification status
 
+Latest bounded online evidence: [failure-zero results](reviews/first-ricepo-smoke/FAILURE_ZERO_RESULTS.md). GRPO completed three updates and one reward-driven weight change, with three checkpoints independently reloaded. Both initial and trained policies evaluated all 32 development queries and completed zero legal five-round episodes. RICE collected all 65 scheduled new branches but had zero estimable anchors out of 13 and no weight change; its interrupted checkpoint is invalid and unpublished. This is an independent failure-environment experiment, not paper-performance or distributed validation. The source-only statements below are historical revision-phase status.
+
 The first authorized trial is recorded in [FIRST_TRIAL.md](FIRST_TRIAL.md). After a shared-filesystem publication fix, the CPU suite recorded 219 passed and 2 skipped. A separate real 1.5B model diagnostic completed with zero optimizer steps. The source-only account below describes the preceding revision phase; full interactive RICE-PO validation remains pending.
 
 **本次仅做静态审查。测试源码已编写，未执行。** 未导入项目模块、运行测试、下载资产、安装依赖、构建索引、训练、评估或提交 Slurm。模板执行开关和运行验证字段为 false。

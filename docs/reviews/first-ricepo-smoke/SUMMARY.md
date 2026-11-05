@@ -1,5 +1,9 @@
 # First RICE-PO smoke review
 
+## Latest: authorized zero-utility failure environment
+
+[Current report](FAILURE_ZERO_RESULTS.md) and [sanitized numerical evidence](FAILURE_ZERO_EVIDENCE.json): GRPO completed three updates; the third had reward-driven gradients and changed weights, with independently verified checkpoints. RICE completed its 16 originals and 65 new branches but all 13 anchors were not estimable, so it had no local credit or effective update and expansion stopped. Initial and GRPO development evaluations covered 32/32 each, both with zero legal five-round completions and zero failure-adjusted task utility. Cumulative allocation cost is 4.175555 GPU hours. These results supersede the historical proposal below; inherited-D0 failure reward was rejected and never enabled.
+
 ## 2026-11-05 controlled recovery and five-round follow-up
 
 The saved v5 evidence was structurally compatible with an **offline recovery**:

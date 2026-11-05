@@ -1,6 +1,8 @@
 # RICE-PO 独立复现
 
-面向祝融，目标为 DeepSeek-R1-Distill-Qwen-1.5B 和 BRIGHT。此修订基于 `d4b490a96f8ceb31392ca55abf31325bedb7078c`。本次交付限于源码、配置、测试源码与静态审查。运行验证和实验结果留待另行授权。[论文 v3](https://arxiv.org/html/2605.26352v3) · [逐项修改表](docs/REVISION_MATRIX.csv) · [验证状态](docs/VALIDATION.md)
+面向祝融，目标为 DeepSeek-R1-Distill-Qwen-1.5B 和 BRIGHT。最初源码审查基准为 `d4b490a96f8ceb31392ca55abf31325bedb7078c`。[论文 v3](https://arxiv.org/html/2605.26352v3) · [逐项修改表](docs/REVISION_MATRIX.csv) · [验证状态](docs/VALIDATION.md)
+
+最新授权受限试跑：[失败终态训练报告](docs/reviews/first-ricepo-smoke/FAILURE_ZERO_RESULTS.md)。GRPO 完成三次更新，第三次有真实奖励驱动梯度和权重变化；RICE 的 13 个锚点全部不可估计，已停止扩大。初始模型和训练后 GRPO 均覆盖 32/32 开发查询，但合法五轮完成均为 0/32。当前没有复现论文性能；`invalid_action_terminal_zero_v1` 是独立失败环境变体，公开模板仍默认禁执行。
 
 ## 配置和方法
 
@@ -11,6 +13,7 @@
 | `configs/smoke.json` | 只把查询数改为 1，优化器整批轨迹数随之从 512 变为 4 |
 | `configs/retrieval_only.json`、`prompting.json` | 固定检索器的 D0、初始策略的完整交互评估 |
 | `configs/grpo.json` | 同查询最终奖励归一化，直接进入共享 PPO 更新 |
+| `configs/failure_zero_ricepo.json`、`failure_zero_grpo.json` | 已授权受限失败环境：4 查询更新、保留全部非法终止轨迹；明确偏离论文，见最新报告 |
 | `configs/ablation.json`、`configs/variants/` | 五个总分支、门控规则、选锚、局部归一化、查询组合或 PPO 轮数的单因素变体 |
 
 从源码 checkout 部署，使用 `src` 作为 Python 模块根目录，保留同一 checkout 中的 `configs` 和 `prompts`。静态配置入口 `python -m ricepo.cli expand --config configs/smoke.json --for-command train` 只读配置，输出实际值、来源、偏离项、待填字段、部署字段名与指纹。本次未执行该命令。模板中训练总预算与真实数据清单路径留空，执行开关及运行验证标记为 false。[配置与选择规则](docs/REFERENCE_RUNTIME.md)
@@ -27,6 +30,6 @@
 - 数据准备保存三份划分、源行和正例关联的指纹。训练前读取绑定的评测身份，测试标签仅用于留出评估。完整结果要求精确覆盖全部 `(domain, query_id)`，按域内平均后计算域宏平均。[数据与复现边界](docs/REPRODUCIBILITY.md)
 - 文档向量、行 ID 和收据作为一个版本目录发布。查询编码器必须与文档编码时的实际权重、分词器和编码配置匹配。[检索身份和上游逐层比较](docs/RETRIEVAL_AUDIT.md)
 - 原始生成结果先于格式解析写盘。失败尝试、随机种子、前缀、成本和阶段收据保留。独占锁和已完成检查点约束恢复；开发集重试使用新尝试目录。[参考运行及恢复](docs/REFERENCE_RUNTIME.md)
-- HF 参考路径为单进程双设备。分布式组件、vLLM 权重同步、数值一致性和峰值显存均需后续实测。[祝融部署](docs/ZHURONG.md) · [测试分级](docs/TEST_TIERS.md)
+- HF 参考路径为单进程双设备，已有受限训练及显存测量。四卡仅以两个独立双卡作业并行使用；四卡分布式、vLLM 权重同步及正式规模容量仍未验证。[祝融部署](docs/ZHURONG.md) · [测试分级](docs/TEST_TIERS.md)
 
 论文报告的 4,011 条训练配额与实际样本 ID 是两种证据。复现明确记录了分支计数、查询拼接和训练预算的来源。代码来源与现有第三方许可见 [NOTICE](NOTICE.md) 与 [来源清单](provenance/sources.json)。

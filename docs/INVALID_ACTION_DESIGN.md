@@ -1,5 +1,10 @@
 # invalid_action_terminal_v1 — proposal only
 
+Historical proposal: the user rejected inherited-last-ranking training reward.
+It is not enabled. The authorized independent environment is
+[`invalid_action_terminal_zero_v1`](INVALID_ACTION_ZERO.md), which preserves
+the last measured NDCG separately and assigns zero failure training utility.
+
 Status: independently proposed failure semantics, unconfirmed by the RICE-PO
 authors. Simulation only. Production training keeps its existing failure gate.
 
