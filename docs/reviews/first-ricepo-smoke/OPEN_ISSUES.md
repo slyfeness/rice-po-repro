@@ -2,7 +2,7 @@
 
 ## Latest functional diagnostic
 
-The mixed-format adapter completed both originals and selected an entropy anchor. The new branch hit `InsideTokenError`; dropping that branch would invalidate its group. The authorized follow-up adapter is now explicitly named `summary_end_overlap_inclusive_v1` in `241ccdc`/`91e2161`/`26d7720`: only a unique token containing nonempty Summary text plus `</summary>` (and at most whitespace beside it) is wholly assigned to Summary. Strict reference parsing remains unchanged. The executed full/prefix-decode inspection found that the actual crossing token contains a non-whitespace prefix of the close tag, and the tag start itself is not a native boundary, so the adapter correctly cannot accept it.
+The mixed-format adapter completed both originals and selected an entropy anchor. The original saved branch's unique partial-close-tag boundary was accepted only after the explicitly authorized `summary_end_right_inclusive_v1` adapter (`2d5827e`); strict parsing remains unchanged. The newly generated v8 counterfactual then contained one `</think>`, two `<summary>` openings, and no `</summary>` close. Dropping it would invalidate its group, so the workflow stopped before credit.
 
 ## Earlier strict-reference blocking issue
 
@@ -13,14 +13,12 @@ valid fail-fast outcome rather than a missing value to impute.
 
 ## Blocking decision
 
-The saved branch has a different structure: Summary end and close-tag start
-coincide inside one native token, whose remaining characters are a prefix of
-the tag rather than whitespace. The new
-`summary_end_trailing_whitespace_v1` rule is therefore inapplicable too.
-Accepting this output needs a distinct, pre-registered rule that assigns part
-of the close tag to Summary, which is not authorized. No two-GPU v7 job may be
-submitted until a compatible rule or a new pre-registered diagnostic input is
-authorized. Neither diagnostic is equivalent to the paper-reference recipe.
+The remaining failure is not a token-boundary ambiguity: the v8 completion has
+no closing Summary tag. Accepting it would require inventing a missing tag or
+using malformed text as the retrieval query, neither of which is authorized.
+Any further attempt needs an explicitly defined format-generation intervention
+or a pre-registered input change; it must retain the failed v8 branch and its
+seed. Neither diagnostic is equivalent to the paper-reference recipe.
 
 The following actions are explicitly not taken:
 
