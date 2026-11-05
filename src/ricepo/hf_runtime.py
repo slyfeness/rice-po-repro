@@ -30,7 +30,7 @@ from .state import (writer, bind_run, recovery_checkpoint, publish_checkpoint, v
                     read_json, complete_stage, selected_so_far, finish_development)
 from .contracts import Generation
 from .data import QueryExample
-from .formats import NativeTagParser, PromptRenderer, native_summary_mode
+from .formats import CHAT_TURN, NativeTagParser, PromptRenderer, action_closed, native_summary_mode, turn_protocol
 from .modeling import sampled_old_log_probs, make_forward
 from .retrieval import (
     DenseVectorScorer, DiverEncoder, ExplicitQueryComposer, FixedHybridRetriever,
@@ -56,11 +56,12 @@ class HFNativeGenerator:
     def __init__(self, *, model: Any, tokenizer: Any, device: Any,
                  policy_version_getter: Any, max_new_tokens: int,
                  max_context_tokens: int, prefilled_think: bool, precision_context: Any,
-                 summary_mode: str = NativeTagParser.STRICT_TAGGED):
+                 summary_mode: str = NativeTagParser.STRICT_TAGGED, structured_stop: bool = False):
         self.model, self.tokenizer, self.device = model, tokenizer, device
         self._policy_version_getter = policy_version_getter
         self.max_new_tokens, self.max_context_tokens = max_new_tokens, max_context_tokens
         self.precision_context = precision_context
+        self.closed = action_closed if structured_stop else lambda text: "</summary>" in text
         self.parser = NativeTagParser(tokenizer, prefilled_think=prefilled_think, malformed_policy="raise",
                                       summary_mode=summary_mode)
         # A supplied GenerationConfig is authoritative for the explicit fields
@@ -92,13 +93,14 @@ class HFNativeGenerator:
             raise ValueError("generation cannot truncate or exceed the native context")
         limit = min(self.max_new_tokens, remaining)
         tokenizer, prefix_length = self.tokenizer, len(prefix)
+        closed_action = self.closed
 
         class SummaryClosed(StoppingCriteria):
             def __call__(self, input_ids, scores, **kwargs):
                 # Decode only to detect termination; never reconstruct token IDs.
                 text = tokenizer.decode(input_ids[0, prefix_length:].tolist(), skip_special_tokens=False,
                                         clean_up_tokenization_spaces=False)
-                return torch.tensor(["</summary>" in text], device=input_ids.device, dtype=torch.bool)
+                return torch.tensor([closed_action(text)], device=input_ids.device, dtype=torch.bool)
 
         recipe = GenerationConfig(
             do_sample=True, num_beams=1, num_return_sequences=1,
@@ -147,7 +149,7 @@ class HFNativeGenerator:
         if output.ndim != 2 or output.shape[0] != 1 or tuple(output[0, :prefix_length].tolist()) != prefix:
             raise ValueError("model.generate altered the native prefix or completion count")
         text = tokenizer.decode(native, skip_special_tokens=False, clean_up_tokenization_spaces=False)
-        closed = "</summary>" in text
+        closed = closed_action(text)
         # The named functional-smoke adapter accepts an EOS-terminated,
         # unwrapped summary only after the model has closed its think span.
         # It does not accept a length-truncated completion as a valid stop.
@@ -310,6 +312,9 @@ def _train(config,deployment,root,attempt_dir,resume):
                                  special_ids=tokenizer.all_special_ids,chat_template_sha256=fingerprint(tokenizer.chat_template),
                                  prefilled_think=True, output_parser_mode=deployment["output_parser_mode"],
                                  rng="sha256-json-stream-v1"))
+    protocol = turn_protocol(deployment)
+    if protocol == CHAT_TURN:
+        binding["behavior"]["turn_protocol"] = protocol
     bound = bind_run(root,binding,resume=resume)
     fixed_files = {"config.json":config,"deployment.json":deployment,"recipe.json":resolved,
                    "model-sources.json":model_sources,"retriever-sources.json":sources,"sources.json":_source_hashes()}
@@ -370,12 +375,13 @@ def _train(config,deployment,root,attempt_dir,resume):
     generator = HFNativeGenerator(model=actor,tokenizer=tokenizer,device=actor_device,
         policy_version_getter=lambda:version["value"],max_new_tokens=plan["max_new_tokens_per_step"],
         max_context_tokens=plan["max_context_tokens"],prefilled_think=True,precision_context=autocast,
-        summary_mode=parser_mode)
+        summary_mode=parser_mode, structured_stop=protocol == CHAT_TURN)
     reward = PyTrecReward(qrels)
     runners = {domain:RolloutRunner(generator=generator,retriever=backend,reward_scorer=reward,
         query_composer=ExplicitQueryComposer(**plan["query_composition"]),rules=RolloutRules(
         frozenset({"stop"}),plan["max_new_tokens_per_step"],plan["max_context_tokens"],plan["rollout_depth"]),
         should_stop=lambda steps:False,final_reward=lambda steps:steps[-1].local_reward,
+        render_next_turn=renderer.next_user_turn if protocol == CHAT_TURN else None,
         excluded_ids_by_query={q:ex.excluded_ids for q,ex in examples.items() if ex.domain==domain})
         for domain,backend in retrievers.items()}
     scoring = make_forward(reference_model=reference,device=actor_device,logit_chunk_size=deployment["logit_chunk_size"],

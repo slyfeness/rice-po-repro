@@ -11,6 +11,21 @@ from .contracts import Generation, Span
 from .rollout import MalformedGenerationError
 
 
+CHAT_TURN = "native_user_observation_v1"
+LEGACY_TURN = "inline_tool_response_v1"
+
+
+def turn_protocol(deployment):
+    value = deployment.get("turn_protocol", LEGACY_TURN)
+    if value not in (CHAT_TURN, LEGACY_TURN):
+        raise ValueError("unknown turn protocol")
+    return value
+
+
+def action_closed(text):
+    return re.search(r"</think>\s*<summary>.*?</summary>", text, re.DOTALL) is not None
+
+
 class EmptySpanError(MalformedGenerationError):
     code = "empty_span"
 
@@ -233,3 +248,23 @@ class PromptRenderer:
         if self.prefill_think:
             text += "<think>\n"
         return tuple(self.tokenizer.encode(text, add_special_tokens=False))
+
+    def next_user_turn(self, documents, generated_ids):
+        """Append only environment IDs. The pinned template ends assistant
+        messages with EOS and starts each user message with a role marker.
+        Rendering a standalone user turn avoids rewriting prior reasoning.
+        """
+        body = "<tool_response>" + self._documents(documents) + "</tool_response>"
+        return self.user_turn_suffix(body, generated_ids)
+
+    def user_turn_suffix(self, body, generated_ids):
+        tok = self.tokenizer
+        ids = tuple(tok.apply_chat_template([{"role": "user", "content": body}],
+                    tokenize=True, add_generation_prompt=True, return_dict=False))
+        if not ids or ids[0] != tok.bos_token_id or tok.eos_token_id is None:
+            raise ValueError("incompatible turn template: expected initial BOS and defined EOS")
+        suffix = ids[1:]
+        text = tok.decode(suffix, skip_special_tokens=False, clean_up_tokenization_spaces=False)
+        if text != "<｜User｜>" + body + "<｜Assistant｜><think>\n":
+            raise ValueError("incompatible native user/assistant delimiters or think prefill")
+        return (() if generated_ids[-1] == tok.eos_token_id else (tok.eos_token_id,)) + suffix

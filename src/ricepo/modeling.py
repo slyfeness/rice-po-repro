@@ -17,7 +17,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
-from .objective import _log_probabilities, exact_reference_kl
+from .objective import _conditional_kl, _log_probabilities, exact_reference_kl
 
 if TYPE_CHECKING:
     from torch import Tensor
@@ -140,7 +140,7 @@ def _native_scores(
                 reference_rows = reference_logits[0, start:stop].index_select(0, positions)
                 if compact:
                     ref_lp = _log_probabilities(reference_rows)
-                    selected_kl = (log_probabilities.exp() * (log_probabilities - ref_lp)).sum(-1)
+                    selected_kl = _conditional_kl(log_probabilities, ref_lp)
                 else:
                     selected_kl = exact_reference_kl(policy_rows, reference_rows, chunk_size=logit_chunk_size)
                 divergence = divergence.index_copy(0, positions, selected_kl)

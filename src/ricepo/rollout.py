@@ -18,7 +18,7 @@ allowed to appear again, including in counterfactual branches.
 """
 
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from math import isfinite
 from types import MappingProxyType
 
@@ -127,8 +127,10 @@ class RolloutRunner:
         should_stop: Callable[[tuple[RetrievalStep, ...]], bool],
         final_reward: Callable[[tuple[RetrievalStep, ...]], float],
         excluded_ids_by_query: Mapping[str, frozenset[str]] | None = None,
+        render_next_turn: Callable | None = None,
     ) -> None:
         self.generator = generator
+        self.render_next_turn = render_next_turn
         self.retriever = retriever
         self.reward_scorer = reward_scorer
         self.query_composer = query_composer
@@ -266,6 +268,9 @@ class RolloutRunner:
             if any(isinstance(doc.score, bool) or not isinstance(doc.score, (int, float))
                    or not isfinite(doc.score) for doc in retrieval.documents):
                 raise RetrievalContractError("retriever returned a nonfinite document score")
+            if self.render_next_turn is not None:
+                retrieval = replace(retrieval, observation_token_ids=self.render_next_turn(
+                    retrieval.documents, generated_ids))
             observation = _tokens(retrieval.observation_token_ids, label="retrieval observation")
             local_reward = _finite_reward(
                 self.reward_scorer.score(query_id, ranked_ids), label="local reward"

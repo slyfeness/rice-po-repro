@@ -12,7 +12,7 @@ from .config import require_execution, resolve
 from .data import BRIGHT_TEST_COUNTS, verify_counts
 from .dataset_bundle import verify_bundle
 from .environment import configure_caches
-from .formats import PromptRenderer, native_summary_mode
+from .formats import CHAT_TURN, PromptRenderer, native_summary_mode, turn_protocol
 from .hf_runtime import HFNativeGenerator, _domain_retriever, _local_file, _manifest, _source_hashes
 from .policy_identity import identify
 from .retrieval import DiverEncoder, ExplicitQueryComposer, PyTrecReward
@@ -133,7 +133,8 @@ def _actor_runtime(path, tokenizer_path, prompt, settings, deployment, policy_ve
         max_new_tokens=settings["max_new_tokens_per_step"], max_context_tokens=settings["max_context_tokens"],
         prefilled_think=True, precision_context=lambda: torch.autocast(
             device_type="cuda", dtype=torch.bfloat16, enabled=(precision == "bfloat16")),
-        summary_mode=native_summary_mode(deployment["output_parser_mode"]))
+        summary_mode=native_summary_mode(deployment["output_parser_mode"]),
+        structured_stop=turn_protocol(deployment) == CHAT_TURN)
     tokenizer_behavior = {"tokenizer_length": len(tokenizer), "special_ids": tokenizer.all_special_ids,
                           "chat_template_sha256": fingerprint(tokenizer.chat_template)}
     return renderer, generator, tokenizer_behavior
@@ -194,6 +195,9 @@ def _evaluate(config, deployment, *, command, output_root, checkpoint_dir=None, 
                                 repetition_penalty=1.0, model_mode="eval", precision=deployment["dtype"],
                                 initial_actor_payload=models["actor_model_path"]["payload_sha256"],
                                 prefilled_think=True, rng="sha256-json-stream-v1")
+                behavior["output_parser_mode"] = deployment["output_parser_mode"]
+                if turn_protocol(deployment) == CHAT_TURN:
+                    behavior["turn_protocol"] = CHAT_TURN
                 if local_model_identity(tokenizer_path) != models["actor_model_path"]:
                     raise ValueError("initial actor/tokenizer identity changed while loading the policy")
                 live_version, live_identity = identify(generator.model, behavior)
@@ -214,6 +218,7 @@ def _evaluate(config, deployment, *, command, output_root, checkpoint_dir=None, 
                 if generate:
                     runners[domain] = RolloutRunner(
                         generator=generator, retriever=backend, reward_scorer=reward,
+                        render_next_turn=renderer.next_user_turn if turn_protocol(deployment) == CHAT_TURN else None,
                         query_composer=ExplicitQueryComposer(**settings["query_composition"]),
                         rules=RolloutRules(frozenset({"stop"}), settings["max_new_tokens_per_step"],
                                            settings["max_context_tokens"], depth=settings["rollout_depth"]),
