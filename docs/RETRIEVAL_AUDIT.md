@@ -2,7 +2,7 @@
 
 ## Vector bundle
 
-Set `corpus_jsonl` to the source export and both output paths to files in a new sibling version directory, for example `domain/enc-v2/vectors.npy` and `domain/enc-v2/vector_document_ids.json`. Keep all three under storage. The encoding stage writes the vector matrix, the ID list and `vectors.receipt.json` into a private sibling directory. It fsyncs the complete files and publishes that directory with a no-replace rename. On Linux this requires a filesystem that supports `renameat2(RENAME_NOREPLACE)`. A killed writer can leave an unpublished `.pending-*` directory. Retrying may target the same absent final directory. Existing final directories are immutable.
+Set `corpus_jsonl` to the source export and both output paths to files in a new sibling version directory, for example `domain/enc-v2/vectors.npy` and `domain/enc-v2/vector_document_ids.json`. Keep all three under storage. The encoding stage writes the vector matrix, the ID list and `vectors.receipt.json` into a private sibling directory. It fsyncs the complete files and publishes that directory while holding a sibling exclusive advisory lock. Every project publisher must use that lock; the filesystem must support coherent flock and atomic same-filesystem directory rename. Existing targets, including empty directories, are rejected under the lock. A killed writer can leave an unpublished `.pending-*` directory. Retrying may target the same absent final directory. Existing final directories are immutable.
 
 Receipt version 2 binds the following evidence.
 

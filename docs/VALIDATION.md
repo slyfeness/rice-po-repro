@@ -1,5 +1,7 @@
 # Verification status
 
+The first authorized trial is recorded in [FIRST_TRIAL.md](FIRST_TRIAL.md). After a shared-filesystem publication fix, the CPU suite recorded 219 passed and 2 skipped. A separate real 1.5B model diagnostic completed with zero optimizer steps. The source-only account below describes the preceding revision phase; full interactive RICE-PO validation remains pending.
+
 **本次仅做静态审查。测试源码已编写，未执行。** 未导入项目模块、运行测试、下载资产、安装依赖、构建索引、训练、评估或提交 Slurm。模板执行开关和运行验证字段为 false。
 
 | 范围 | 交付证据 | 后续需授权验证 |

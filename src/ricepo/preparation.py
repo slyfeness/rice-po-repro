@@ -1,6 +1,5 @@
 """Offline document encoding and consumption of immutable, directory-published bundles."""
 
-import ctypes
 import hashlib
 import json
 import os
@@ -82,16 +81,23 @@ def _sync_directory(path):
 
 
 def _publish(staged: Path, target: Path) -> None:
-    # Both live in the same parent. Linux renameat2 also refuses an existing
-    # *empty* directory during a concurrent publish. Unsupported FS fails closed.
+    # All publishers use the same sibling lock. This supports shared filesystems
+    # that implement flock/rename but reject renameat2(RENAME_NOREPLACE).
+    if staged.parent.resolve() != target.parent.resolve():
+        raise ValueError("publication requires sibling staging and target directories")
     _sync_directory(staged)
     if os.name == "nt":
         staged.rename(target)
     else:
-        rename = ctypes.CDLL(None, use_errno=True).renameat2
-        if rename(-100, os.fsencode(staged), -100, os.fsencode(target), 1) != 0:
-            err = ctypes.get_errno()
-            raise OSError(err, os.strerror(err), target)
+        import fcntl
+        with (target.parent / ("." + target.name + ".publish.lock")).open("ab") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            try:
+                if target.exists() or target.is_symlink():
+                    raise FileExistsError(target)
+                staged.rename(target)
+            finally:
+                fcntl.flock(lock, fcntl.LOCK_UN)
     _sync_directory(target.parent)
 
 
