@@ -109,7 +109,8 @@ class NativeTagParser:
                     continue
                 token_text = right[len(left):]
                 before, after = token_text[:summary_end - len(left)], token_text[summary_end - len(left):]
-                if before.strip() and after == "</summary>":
+                if (before.strip() and after.startswith("</summary>")
+                        and not after[len("</summary>"):].strip()):
                     candidates.append(end)
             if len(candidates) == 1:
                 boundaries[summary_end] = candidates

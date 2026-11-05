@@ -72,7 +72,7 @@ def test_named_unwrapped_summary_adapter_still_prefers_the_strict_tagged_path():
 def test_summary_end_overlap_adapter_assigns_only_mixed_closing_token_to_summary():
     class ClosingOverlapTokenizer(PieceTokenizer):
         pieces = {2: "reason", 3: "</think>", 4: "<summary>",
-                  6: "query</summary>", 7: "<eos>"}
+                  6: "query</summary>\n", 7: "<eos>"}
 
     ids = (2, 3, 4, 6, 7)
     with pytest.raises(InsideTokenError):
