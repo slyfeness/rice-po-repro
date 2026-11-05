@@ -7,9 +7,11 @@ Commits `241ccdc`, `91e2161`, and `26d7720` add the explicitly authorized, non-p
 permits exactly one additional case: a nonempty Summary body and its
 `</summary>` close (with at most surrounding whitespace) occur in the same
 uniquely identified token, which is then assigned wholly to Summary. Strict
-parsing is unchanged. The executed saved-branch inspection showed that its
-sole crossing token does **not** contain the close tag, so this adapter is not
-applicable to that saved completion. No two-GPU v7 smoke was submitted.
+parsing is unchanged. A later full/prefix-decode audit showed that its sole
+crossing token contains a non-whitespace *prefix* of the close tag. The
+Summary end and close-tag start coincide inside that token; neither is a
+native boundary. Thus neither the same-token-complete-tag adapter nor a
+trailing-whitespace adapter is applicable. No two-GPU v7 smoke was submitted.
 
 The later functional run at `adc707800239672fa0a1624d54bb26a5b95cda8f` used one Biology query, two original trajectories, one anchor, one new branch and one retrieval round. This is a non-paper diagnostic with a separately named format adapter. The rollout receipt binds the archived trajectories to SHA-256 `f88df33c19ff19bd75cb58fecf214bb7e6d69a411ea44c214e4b9dd688565237`. Two original generations produced 1,081 tokens in total; the branch produced 365. The branch could not map a text boundary to an exact native token offset. No branch group, final credit, update, checkpoint or development result was committed. Elapsed allocation time on the executed attempt: 4m18s, two GPUs. Earlier pre-batch launch failures were separate scheduler events. The sections below describe the earlier strict-reference run.
 
@@ -50,8 +52,9 @@ development evaluation, or formal test evaluation was performed.
 ## Unfinished work
 
 The saved-branch result blocks the complete group required for credit gating
-and a formal PPO update. The authorized adapter cannot be broadened to cover
-the observed tag-in-a-later-token layout without a new, explicitly defined
-token-ownership rule. It cannot be converted into a successful RICE-PO result
-by silently extending generation, resampling, or dropping the failed sample.
+and a formal PPO update. The authorized adapters cannot be broadened to cover
+the observed partial-close-tag token without assigning tag characters to
+Summary, which their definitions forbid. It cannot be converted into a
+successful RICE-PO result by silently extending generation, resampling, or
+dropping the failed sample.
 See [OPEN_ISSUES.md](OPEN_ISSUES.md).
