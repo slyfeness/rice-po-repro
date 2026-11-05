@@ -32,16 +32,19 @@ class NativeTagParser:
     STRICT_TAGGED = "strict_tagged"
     PREFILLED_UNWRAPPED_SUMMARY = "prefilled_unwrapped_summary_ablation_v1"
     SUMMARY_END_OVERLAP_INCLUSIVE_V1 = "summary_end_overlap_inclusive_v1"
+    SUMMARY_END_RIGHT_INCLUSIVE_V1 = "summary_end_right_inclusive_v1"
 
     def __init__(self, tokenizer, *, prefilled_think: bool, malformed_policy: str,
                  summary_mode: str = STRICT_TAGGED):
         if type(prefilled_think) is not bool or malformed_policy != "raise":
             raise ValueError("choose an explicit prefilled_think boolean and malformed_policy='raise'")
         if summary_mode not in {self.STRICT_TAGGED, self.PREFILLED_UNWRAPPED_SUMMARY,
-                                self.SUMMARY_END_OVERLAP_INCLUSIVE_V1}:
+                                self.SUMMARY_END_OVERLAP_INCLUSIVE_V1,
+                                self.SUMMARY_END_RIGHT_INCLUSIVE_V1}:
             raise ValueError("unsupported native summary parsing mode")
         if summary_mode in {self.PREFILLED_UNWRAPPED_SUMMARY,
-                            self.SUMMARY_END_OVERLAP_INCLUSIVE_V1} and not prefilled_think:
+                            self.SUMMARY_END_OVERLAP_INCLUSIVE_V1,
+                            self.SUMMARY_END_RIGHT_INCLUSIVE_V1} and not prefilled_think:
             raise ValueError("unwrapped-summary mode requires an explicitly prefilled think prefix")
         self.tokenizer = tokenizer
         self.prefilled_think = prefilled_think
@@ -60,7 +63,8 @@ class NativeTagParser:
             content_end -= 1
         text = decode(token_ids[:content_end])
         unwrapped = self.summary_mode in {self.PREFILLED_UNWRAPPED_SUMMARY,
-                                          self.SUMMARY_END_OVERLAP_INCLUSIVE_V1}
+                                          self.SUMMARY_END_OVERLAP_INCLUSIVE_V1,
+                                          self.SUMMARY_END_RIGHT_INCLUSIVE_V1}
         has_summary_tag = "<summary>" in text or "</summary>" in text
         if unwrapped and not has_summary_tag:
             # This is a separately named non-paper format adapter.  It maps
@@ -117,6 +121,34 @@ class NativeTagParser:
                 missing = set()
             elif len(candidates) > 1:
                 raise AmbiguousBoundaryError("summary end has multiple native overlap interpretations")
+        if (missing == {summary_end}
+                and self.summary_mode == self.SUMMARY_END_RIGHT_INCLUSIVE_V1):
+            # This explicitly non-paper adapter is valid only when prefix
+            # decoding is monotonic and the missing boundary is followed by a
+            # nonempty prefix of the already validated close tag. The whole
+            # native token receives the Summary span; IDs are never split.
+            if any(not prefixes[end].startswith(prefixes[end - 1])
+                   for end in range(1, content_end + 1)):
+                raise AmbiguousBoundaryError("non-monotonic native prefix decoding")
+            candidates = []
+            close_tag = "</summary>"
+            for end in range(1, content_end + 1):
+                left, right = prefixes[end - 1], prefixes[end]
+                if not (right.startswith(left) and text.startswith(left)
+                        and text.startswith(right) and len(left) < summary_end < len(right)):
+                    continue
+                before = text[len(left):summary_end]
+                after = text[summary_end:len(right)]
+                is_tag_prefix = bool(after) and close_tag.startswith(after)
+                is_complete_tag = (after.startswith(close_tag)
+                                   and not after[len(close_tag):].strip())
+                if before.strip() and (is_tag_prefix or is_complete_tag):
+                    candidates.append(end)
+            if len(candidates) == 1:
+                boundaries[summary_end] = candidates
+                missing = set()
+            elif len(candidates) > 1:
+                raise AmbiguousBoundaryError("summary end has multiple native right-inclusive interpretations")
         if missing:
             raise InsideTokenError("tag/content boundary lies inside a native token")
         if any(len(boundaries[target]) != 1 for target in targets):
@@ -136,6 +168,7 @@ def native_summary_mode(deployment_value: str) -> str:
         "strict_native_tags": NativeTagParser.STRICT_TAGGED,
         "prefilled_think_unwrapped_summary_ablation_v1": NativeTagParser.PREFILLED_UNWRAPPED_SUMMARY,
         "summary_end_overlap_inclusive_v1": NativeTagParser.SUMMARY_END_OVERLAP_INCLUSIVE_V1,
+        "summary_end_right_inclusive_v1": NativeTagParser.SUMMARY_END_RIGHT_INCLUSIVE_V1,
     }
     try:
         return modes[deployment_value]

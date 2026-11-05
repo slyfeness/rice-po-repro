@@ -55,7 +55,7 @@ def test_named_unwrapped_summary_adapter_preserves_native_ids_without_inserting_
     assert result.token_ids is ids
     assert result.reasoning_span == Span(0, 1)
     assert result.summary_span == Span(2, 3)
-    assert result.summary_text == "query\n"
+    assert result.summary_text == "query"
     with pytest.raises(MalformedGenerationError, match="ordered"):
         parser(prefilled=True)(ids, "stop")
 
@@ -95,6 +95,27 @@ def test_summary_end_overlap_adapter_rejects_a_reasoning_boundary_overlap():
         NativeTagParser(ReasoningOverlapTokenizer(), prefilled_think=True,
                         malformed_policy="raise",
                         summary_mode="summary_end_overlap_inclusive_v1")((9, 4, 5, 6, 7), "stop")
+
+
+def test_summary_end_right_inclusive_assigns_a_close_tag_prefix_token_to_summary():
+    class CloseTagPrefixTokenizer(PieceTokenizer):
+        pieces = {2: "reason", 3: "</think>", 4: "<summary>", 6: "query</",
+                  10: "summary>", 7: "<eos>"}
+
+    ids = (2, 3, 4, 6, 10, 7)
+    with pytest.raises(InsideTokenError):
+        parser(prefilled=True, tokenizer=CloseTagPrefixTokenizer())(ids, "stop")
+    with pytest.raises(InsideTokenError):
+        NativeTagParser(CloseTagPrefixTokenizer(), prefilled_think=True,
+                        malformed_policy="raise",
+                        summary_mode="summary_end_overlap_inclusive_v1")(ids, "stop")
+    result = NativeTagParser(CloseTagPrefixTokenizer(), prefilled_think=True,
+                             malformed_policy="raise",
+                             summary_mode="summary_end_right_inclusive_v1")(ids, "stop")
+    assert result.token_ids is ids
+    assert result.reasoning_span == Span(0, 1)
+    assert result.summary_span == Span(3, 4)
+    assert result.summary_text == "query"
 
 
 def test_parser_rejects_inside_token_and_ambiguous_native_boundaries():
