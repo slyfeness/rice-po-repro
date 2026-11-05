@@ -21,3 +21,7 @@ the summary end was inside a token (ID 3918); both sides contain non-whitespace.
 The diagnostic did not generate new text or assign advantages.
 No test result above implies a complete training update, retrieval benchmark,
 four-GPU validation, or distributed equivalence.
+
+`summary_end_overlap_inclusive_v1` was added in `241ccdc` with focused source
+tests. Its required CPU-only check against the saved failure completion has
+not yet run, so it is not reported as a passing test here.
