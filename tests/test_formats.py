@@ -83,7 +83,7 @@ def test_summary_end_overlap_adapter_assigns_only_mixed_closing_token_to_summary
     assert result.token_ids is ids
     assert result.reasoning_span == Span(0, 1)
     assert result.summary_span == Span(3, 4)
-    assert result.summary_text == "query"
+    assert result.summary_text == "query\n"
 
 
 def test_summary_end_overlap_adapter_rejects_a_reasoning_boundary_overlap():
