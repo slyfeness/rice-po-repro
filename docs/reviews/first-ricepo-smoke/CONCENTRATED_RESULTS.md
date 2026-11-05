@@ -26,6 +26,16 @@ The two initial jobs overlapped as independent two-GPU allocations. Total new al
 
 D0 is the only complete new development metric. Prompting and trained-policy metrics are missing. Neither malformed sample received a synthetic reward. New seeds or dropped branches were not used to complete a group.
 
+## Fixed development format sweep
+
+Job 174224 attempted the remaining 31 frozen development queries once each, using the identical initial weights, Figure 5 prompt, parser, message protocol and evaluation seeds of 174213. The prior first-query failure was reused from its stored evidence. All 32 queries were accounted for: 3 complete five-round trajectories (9.375%), 29 failures (90.625%). Failures comprised 28 tag-structure errors and one length exhaustion, at depths 1/2/3/5 with counts 21/4/3/1. No malformed completion was repaired or resampled. The three complete final rewards were 0.6309297535714575, 0.6309297535714575 and 0.0; they are individually observed values and are not aggregated into a development score.
+
+This diagnostic produced 30,158 new native tokens over 57 generation calls and 29 follow-up retrieval calls. Generation host time was 677.17 s and follow-up retrieval time 112.50 s; initial retrievals were archived per query but were outside that follow-up timer. Job wall time was 968 s with two allocated GPUs. Peak allocator bytes were 7930522624 and 8126497280 (about 7.39 and 7.57 GiB). A five-second setup failure in 174223 was retained; it read the manifest hash dictionary as a scalar and stopped before model loading. The corrected job reused its original query and seed schedule.
+
+Total allocation cost for this task, including all three earlier GPU jobs, the setup failure and this sweep, is now 0.746111 GPU hours. Formal development NDCG remains missing. New online optimizer updates remain zero. The required complete online RICE-PO gate continues to block GRPO/batch comparison.
+
+The sanitized sweep report SHA256 is 5d8f4d56f30d9e5ed5cadf1b5f8f3f146a5f9f90b7d87d6401951396555696d0. Its source-summary SHA256 is 61833f5636fcd83c7ec714612b3beedd28366f640bbb57eb4cca216088fe1a21. The portable source in scripts/diagnose_fixed_development.py adds an explicit Slurm/main guard and accepts the private source-run/config locations through environment variables. It requires existing local assets.
+
 The inspected SwAP successful generation settings were four TP1 vLLM replicas, concurrency 144 per GPU, memory utilization 0.90 and max_num_batched_tokens 32768. This execution used the existing HF two-device driver, following the task's first-runtime requirement. RICE-PO integration of that vLLM topology, generation/scoring probability agreement and per-update weight synchronization remain unvalidated. Its throughput was not measured here.
 
 Private full-score artifact SHA256 is c99767d8ee268c7ef430b5e7e22dfc1ba7747065a679f0da34a22b4261322e31. RICE-PO failure SHA256 is 1098be5a36bb431592ee932daedb804d50521181b8cbe1a406157d44d7df4e45. Prompting failure SHA256 is 1ad94886d67943c8bbc97486400724b7385fdba00f9e1394232594ff926136df. Raw data, weights, completions and machine logs remain private.
