@@ -65,3 +65,13 @@ The original Diver expansion prompt in `third_party/reference/diver/` is
 reference material for an external dependency and must not replace this
 RICE-PO prompt. Having a transcribed prompt does not establish that model
 loading, parsing, rollout, or training has been executed or validated.
+
+## Compact format diagnostic (non-paper)
+
+[`ricepo_prefilled_think_compact_format_v1.txt`](ricepo_prefilled_think_compact_format_v1.txt)
+is an explicitly non-paper functional-diagnostic prompt. It removes the
+reference prompt's diversity and length instructions and concentrates on one
+unambiguous Think/ Summary closure. It may only be selected through
+[`configs/format_prompt_diagnostic.json`](../configs/format_prompt_diagnostic.json),
+whose profile is `ablation`. Results from it cannot be reported as results of
+the Figure 5 reference prompt or the paper configuration.
