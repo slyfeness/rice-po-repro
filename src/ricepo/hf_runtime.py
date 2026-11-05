@@ -154,7 +154,8 @@ class HFNativeGenerator:
         if (self.parser.summary_mode in {NativeTagParser.PREFILLED_UNWRAPPED_SUMMARY,
                                          NativeTagParser.SUMMARY_END_OVERLAP_INCLUSIVE_V1,
                                          NativeTagParser.SUMMARY_END_RIGHT_INCLUSIVE_V1}
-                and engine_reason == "eos" and "</think>" in text):
+                and engine_reason == "eos" and "</think>" in text
+                and "<summary>" not in text and "</summary>" not in text):
             closed = True
         reason = "stop" if closed else engine_reason
         event("completion_diagnosis", finish_reason=reason, decoded_preview=text[:400])
