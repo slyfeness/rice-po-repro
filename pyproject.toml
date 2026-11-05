@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rice-po-repro"
+version = "0.1.0"
+description = "Source-traceable RICE-PO research implementation; author-code verification pending"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+# Runtime packages are deliberately not installed or resolved by this project.
+# The accepted HPC environment must be recorded before any execution.
+
+[project.scripts]
+ricepo = "ricepo.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

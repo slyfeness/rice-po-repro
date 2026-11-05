@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "runtime": "single_process_hf_reference",
+  "actor_model_path": "/file_storage01/home/USERNAME/models/LOCAL_ACTOR",
+  "retriever_model_path": "/file_storage01/home/USERNAME/models/LOCAL_DIVER",
+  "output_root": "/file_storage01/home/USERNAME/ricepo/runs/NEW_RUN_DIRECTORY",
+  "cache_root": "/file_storage01/home/USERNAME/ricepo/cache",
+  "prompt_path": "/file_storage01/home/USERNAME/ricepo/control/ricepo_system.txt",
+  "train_manifest_path": null,
+  "development_manifest_path": null,
+  "actor_device": "cuda:0",
+  "retriever_device": "cuda:1",
+  "dtype": "bfloat16",
+  "entropy_chunk_size": 64,
+  "logit_chunk_size": 64,
+  "dense_chunk_size": 4096,
+  "retriever_max_length": 512,
+  "document_prefix": "",
+  "retrieval_top_k": 10,
+  "max_grad_norm": 1.0,
+  "expected_development_domains": null,
+  "test_scope": "bright_full_12_domains",
+  "expected_test_domains": null,
+  "domains": {
+    "DOMAIN_NAME": {
+      "corpus_jsonl": "/file_storage01/home/USERNAME/data/DOMAIN_NAME/corpus.jsonl",
+      "corpus_vectors_npy": "/file_storage01/home/USERNAME/data/DOMAIN_NAME/vectors.npy",
+      "vector_document_ids_json": "/file_storage01/home/USERNAME/data/DOMAIN_NAME/vector_document_ids.json",
+      "backend_version": "REPLACE_WITH_PINNED_DOMAIN_RETRIEVER_IDENTITY"
+    }
+  }
+}

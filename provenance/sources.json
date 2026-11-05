@@ -1,0 +1,281 @@
+{
+  "schema_version": "1.0",
+  "recorded_on": "2026-11-04",
+  "scope": "Public-source provenance and small, unmodified reference files only. Reference only; not runtime engine.",
+  "implementation_status": "paper_reimplementation",
+  "author_endorsement": false,
+  "execution_status": "No third-party code was imported or executed while preparing this provenance record. No model weights, datasets, or paper copies were downloaded.",
+  "paper": {
+    "id": "arxiv:2605.26352v3",
+    "title": "RICE-PO: Turning Retrieval Interactions into Credit Signals for Reasoning Agents",
+    "version": "v3",
+    "version_date": "2026-08-06",
+    "url": "https://arxiv.org/abs/2605.26352v3",
+    "html_url": "https://arxiv.org/html/2605.26352v3",
+    "status": "primary_paper",
+    "local_copy": false
+  },
+  "author_code": {
+    "status": "unverified_author_code",
+    "repository": null,
+    "commit": null,
+    "search_date": "2026-11-04",
+    "conclusion": "No publicly accessible RICE-PO author implementation was verified in the bounded sources searched. This does not establish that no private or unindexed repository exists.",
+    "evidence": [
+      {
+        "source": "https://toneli.github.io/",
+        "observation": "RICE-PO publication entry links to the paper only; no implementation link was shown."
+      },
+      {
+        "source": "https://github.com/ToneLi/toneli.github.io/blob/26e558c77ac83c716c241887ed42ea3688f38557/index.html",
+        "commit": "26e558c77ac83c716c241887ed42ea3688f38557",
+        "github_blob_sha": "968de59c4b6c53871666169d2c5e9518655fdaf4",
+        "observation": "Latest homepage commit observed was dated 2026-10-24. The RICE-PO resource entry contains only the paper link."
+      },
+      {
+        "source": "https://j-huang01.github.io/",
+        "observation": "RICE-PO publication entry links to PDF only."
+      },
+      {
+        "source": "https://arxiv.org/html/2605.26352",
+        "observation": "The observed paper remained v3. No code link was found in the article; GitHub links were arXiv page infrastructure."
+      },
+      {
+        "provider": "GitHub connector search_repositories",
+        "query": "user:ToneLi",
+        "per_page": 100,
+        "pages_checked": [
+          1,
+          2
+        ],
+        "returned_repository_count": 21,
+        "page_2_count": 0,
+        "observation": "No RICE-PO implementation identified among returned public repositories."
+      },
+      {
+        "provider": "GitHub connector search_repositories",
+        "query": "user:HansiZeng",
+        "per_page": 100,
+        "pages_checked": [
+          1
+        ],
+        "returned_repository_count": 14,
+        "observation": "No RICE-PO implementation identified."
+      },
+      {
+        "provider": "GitHub connector search_repositories",
+        "query": "user:J-Huang01",
+        "per_page": 100,
+        "pages_checked": [
+          1
+        ],
+        "returned_repository_count": 25,
+        "observation": "No RICE-PO implementation identified."
+      },
+      {
+        "provider": "GitHub connector search_repositories",
+        "queries": [
+          "2605.26352",
+          "\"Turning Retrieval Interactions\" in:readme",
+          "\"RICE-PO\" user:ToneLi"
+        ],
+        "observation": "Each query returned no repository."
+      },
+      {
+        "provider": "GitHub connector search",
+        "query": "2605.26352",
+        "max_results_inspected": 20,
+        "observation": "Returned related results were the author homepage, paper aggregations, or third-party citations; no author implementation verified."
+      },
+      {
+        "provider": "GitHub connector search",
+        "query": "RICE-PO",
+        "owner": "ToneLi",
+        "observation": "Only the author homepage was returned."
+      }
+    ]
+  },
+  "dependencies": [
+    {
+      "id": "diver_source",
+      "status": "official_dependency",
+      "repository": "https://github.com/AQ-MedAI/Diver",
+      "revision": "cfdf09ad863540f78a655880ef133c4cb28b3676",
+      "license": "Apache-2.0",
+      "role": "Reference for the fixed retrieval backend and evaluation conventions; not RICE-PO author code.",
+      "verification": "Selected files fetched at this revision on 2026-11-04; local Git blob hashes match.",
+      "purpose": "reference_only_not_runtime_engine"
+    },
+    {
+      "id": "reasonir_source",
+      "status": "official_dependency",
+      "repository": "https://github.com/facebookresearch/ReasonIR",
+      "revision": "0aac96269e455965949df16520fab72da68ffc22",
+      "license": "CC-BY-NC-4.0",
+      "role": "Reference for BRIGHT evaluation and synthetic data construction; not RICE-PO author code.",
+      "verification": "Selected files fetched at this revision on 2026-11-04; local Git blob hashes match.",
+      "purpose": "reference_only_not_runtime_engine"
+    },
+    {
+      "id": "reasonir_data",
+      "status": "official_dependency",
+      "repository": "https://huggingface.co/datasets/reasonir/reasonir-data",
+      "revision": "0275f825929b206d4ead23d34b4f8a50d4eddbc8",
+      "asset_type": "dataset",
+      "verification": "Revision inherited from the prior research freeze; dataset content not downloaded or revalidated in this implementation task.",
+      "downloaded_in_this_task": false
+    },
+    {
+      "id": "bright_data",
+      "status": "official_dependency",
+      "repository": "https://huggingface.co/datasets/xlangai/BRIGHT",
+      "revision": "3066d29c9651a576c8aba4832d249807b181ecae",
+      "asset_type": "dataset",
+      "verification": "Revision inherited from the prior research freeze; dataset content not downloaded or revalidated in this implementation task.",
+      "downloaded_in_this_task": false
+    },
+    {
+      "id": "actor_1_5b",
+      "status": "official_dependency",
+      "repository": "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+      "revision": "ad9f0ae0864d7fbcd1cd905e3c6c5b069cc8b562",
+      "asset_type": "model",
+      "verification": "Revision inherited from the prior research freeze; model content not downloaded or revalidated in this implementation task.",
+      "downloaded_in_this_task": false
+    },
+    {
+      "id": "diver_retriever_4b",
+      "status": "official_dependency",
+      "repository": "https://huggingface.co/AQ-MedAI/Diver-Retriever-4B",
+      "revision": "ff7f8bc8d1827734dcf2bbfab99f065be618069a",
+      "asset_type": "model",
+      "verification": "Revision inherited from the prior research freeze; model content not downloaded or revalidated in this implementation task.",
+      "variant": "Original Diver-Retriever-4B, not Diver-Retriever-4B-1020.",
+      "downloaded_in_this_task": false
+    }
+  ],
+  "reference_files": [
+    {
+      "path": "third_party/reference/diver/Retriever/retrievers.py",
+      "source_repository": "AQ-MedAI/Diver",
+      "source_commit": "cfdf09ad863540f78a655880ef133c4cb28b3676",
+      "source_path": "Retriever/retrievers.py",
+      "source_url": "https://github.com/AQ-MedAI/Diver/blob/cfdf09ad863540f78a655880ef133c4cb28b3676/Retriever/retrievers.py",
+      "github_blob_sha": "deb08863aa1d38c6de5d9cfd1c750f74a78f6921",
+      "local_git_blob_sha": "deb08863aa1d38c6de5d9cfd1c750f74a78f6921",
+      "sha256": "0599fbd4f51bc9764ec93f8ab05e9ab74298415c7faff454a8737d8260ae666a",
+      "size_bytes": 16247,
+      "content_modified": false,
+      "byte_verification": "git_blob_sha_equal",
+      "license": "Apache-2.0",
+      "purpose": "reference_only_not_runtime_engine"
+    },
+    {
+      "path": "third_party/reference/diver/utils/eval_util.py",
+      "source_repository": "AQ-MedAI/Diver",
+      "source_commit": "cfdf09ad863540f78a655880ef133c4cb28b3676",
+      "source_path": "utils/eval_util.py",
+      "source_url": "https://github.com/AQ-MedAI/Diver/blob/cfdf09ad863540f78a655880ef133c4cb28b3676/utils/eval_util.py",
+      "github_blob_sha": "359d45c77d78f07afcf5e80b0b12144bdf91ecf3",
+      "local_git_blob_sha": "359d45c77d78f07afcf5e80b0b12144bdf91ecf3",
+      "sha256": "a7cff3a7b5c68d8fc410d6464bf0b15c1fd4dabcdebf7c4f5675c4687d4457d3",
+      "size_bytes": 3382,
+      "content_modified": false,
+      "byte_verification": "git_blob_sha_equal",
+      "license": "Apache-2.0",
+      "purpose": "reference_only_not_runtime_engine"
+    },
+    {
+      "path": "third_party/reference/diver/QExpand/prompts.py",
+      "source_repository": "AQ-MedAI/Diver",
+      "source_commit": "cfdf09ad863540f78a655880ef133c4cb28b3676",
+      "source_path": "QExpand/prompts.py",
+      "source_url": "https://github.com/AQ-MedAI/Diver/blob/cfdf09ad863540f78a655880ef133c4cb28b3676/QExpand/prompts.py",
+      "github_blob_sha": "e748bed6b2f5829157977b887f32856a1cc2f6e8",
+      "local_git_blob_sha": "e748bed6b2f5829157977b887f32856a1cc2f6e8",
+      "sha256": "e86650da44ac714fd39b07703b0ae134f2ab48d482cf9e6c95f8161723675b35",
+      "size_bytes": 1506,
+      "content_modified": false,
+      "byte_verification": "git_blob_sha_equal",
+      "license": "Apache-2.0",
+      "purpose": "reference_only_not_runtime_engine"
+    },
+    {
+      "path": "third_party/reference/diver/env_requirements/requirements.txt",
+      "source_repository": "AQ-MedAI/Diver",
+      "source_commit": "cfdf09ad863540f78a655880ef133c4cb28b3676",
+      "source_path": "env_requirements/requirements.txt",
+      "source_url": "https://github.com/AQ-MedAI/Diver/blob/cfdf09ad863540f78a655880ef133c4cb28b3676/env_requirements/requirements.txt",
+      "github_blob_sha": "ac77cc08e11fc62e43572e15ca1753eecf4e538e",
+      "local_git_blob_sha": "ac77cc08e11fc62e43572e15ca1753eecf4e538e",
+      "sha256": "d2b2f1cbce6e1ca76a0b41e6bf61de08e177bf3a6cbdead0feb43a0ed80c04e1",
+      "size_bytes": 190,
+      "content_modified": false,
+      "byte_verification": "git_blob_sha_equal",
+      "license": "Apache-2.0",
+      "purpose": "reference_only_not_runtime_engine"
+    },
+    {
+      "path": "third_party/reference/diver/LICENSE.txt",
+      "source_repository": "AQ-MedAI/Diver",
+      "source_commit": "cfdf09ad863540f78a655880ef133c4cb28b3676",
+      "source_path": "LICENSE.txt",
+      "source_url": "https://github.com/AQ-MedAI/Diver/blob/cfdf09ad863540f78a655880ef133c4cb28b3676/LICENSE.txt",
+      "github_blob_sha": "261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64",
+      "local_git_blob_sha": "261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64",
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "size_bytes": 11357,
+      "content_modified": false,
+      "byte_verification": "git_blob_sha_equal",
+      "license": "Apache-2.0",
+      "purpose": "reference_only_not_runtime_engine"
+    },
+    {
+      "path": "third_party/reference/reasonir/evaluation/bright/run.py",
+      "source_repository": "facebookresearch/ReasonIR",
+      "source_commit": "0aac96269e455965949df16520fab72da68ffc22",
+      "source_path": "evaluation/bright/run.py",
+      "source_url": "https://github.com/facebookresearch/ReasonIR/blob/0aac96269e455965949df16520fab72da68ffc22/evaluation/bright/run.py",
+      "github_blob_sha": "3f86f9915e8c3cd50457a5b6369bdde6c99f7b92",
+      "local_git_blob_sha": "3f86f9915e8c3cd50457a5b6369bdde6c99f7b92",
+      "sha256": "26dda4c94831046b062099a1f54a38dde1d0993acdf5c5bcbf1bb875a39bacad",
+      "size_bytes": 10599,
+      "content_modified": false,
+      "byte_verification": "git_blob_sha_equal",
+      "license": "CC-BY-NC-4.0",
+      "purpose": "reference_only_not_runtime_engine"
+    },
+    {
+      "path": "third_party/reference/reasonir/synthetic_data_generation/doc_to_query.py",
+      "source_repository": "facebookresearch/ReasonIR",
+      "source_commit": "0aac96269e455965949df16520fab72da68ffc22",
+      "source_path": "synthetic_data_generation/doc_to_query.py",
+      "source_url": "https://github.com/facebookresearch/ReasonIR/blob/0aac96269e455965949df16520fab72da68ffc22/synthetic_data_generation/doc_to_query.py",
+      "github_blob_sha": "c041cc4d78ed498400cb64eae7f8e339227ecbb3",
+      "local_git_blob_sha": "c041cc4d78ed498400cb64eae7f8e339227ecbb3",
+      "sha256": "139e954916d62b1174281e9c40996ee5021aa171e54e582abed8d6a25e9795f6",
+      "size_bytes": 9554,
+      "content_modified": false,
+      "byte_verification": "git_blob_sha_equal",
+      "license": "CC-BY-NC-4.0",
+      "purpose": "reference_only_not_runtime_engine"
+    },
+    {
+      "path": "third_party/reference/reasonir/LICENSE",
+      "source_repository": "facebookresearch/ReasonIR",
+      "source_commit": "0aac96269e455965949df16520fab72da68ffc22",
+      "source_path": "LICENSE",
+      "source_url": "https://github.com/facebookresearch/ReasonIR/blob/0aac96269e455965949df16520fab72da68ffc22/LICENSE",
+      "github_blob_sha": "a115f899f8d09ef3b1def4a16c7bae1a0bd50fbe",
+      "local_git_blob_sha": "a115f899f8d09ef3b1def4a16c7bae1a0bd50fbe",
+      "sha256": "7c6858d0e71dc8b858255270ad4b5004e80b5b058bf5bbc408a28430d6ddbf4b",
+      "size_bytes": 19334,
+      "content_modified": false,
+      "byte_verification": "git_blob_sha_equal",
+      "license": "CC-BY-NC-4.0",
+      "purpose": "reference_only_not_runtime_engine"
+    }
+  ],
+  "interpretation_policy": "Paper-explicit definitions, official dependency behavior, and local reconstruction choices must be distinguished. The included reference snapshots are not an official RICE-PO implementation.",
+  "privacy": "Contains public source identifiers, public repository observations, licenses, and hashes only. No personal contact details, cluster access settings, credentials, or experiment records are included."
+}

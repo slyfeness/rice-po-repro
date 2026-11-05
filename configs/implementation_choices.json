@@ -1,0 +1,178 @@
+{
+  "schema_version": 1,
+  "extends": "paper.json",
+  "profile": "independent_reference_choices_not_author_recipe",
+  "batch_unit": "queries",
+  "batch_unit_evidence": "The paper says batch size 128 without clarifying the unit. Reference runtime chooses 128 queries, each with N trajectories. This choice can be expensive and is not verified.",
+  "required_research_settings": {
+    "initial_trajectories_per_query": 4,
+    "total_branches_including_original": 6,
+    "local_advantage_normalization": "center_only",
+    "trajectory_std_convention": "population",
+    "normalization_epsilon": 1e-8,
+    "optimize_counterfactual_branches": false,
+    "temperature": 1,
+    "top_p": 1,
+    "top_k": 0,
+    "max_new_tokens_per_step": 1024,
+    "max_context_tokens": 32768,
+    "clip_epsilon": 0.2,
+    "loss_reduction": "sequence_mean",
+    "kl_estimator": "exact_categorical",
+    "optimizer": "adamw",
+    "optimizer_hyperparameters": {
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "eps": 1e-8,
+      "weight_decay": 0
+    },
+    "total_updates": null,
+    "training_seeds": [
+      42
+    ],
+    "query_composition": {
+      "mode": "summary_only",
+      "separator": "\n"
+    },
+    "hybrid_normalization": "minmax",
+    "excluded_before_normalization": true,
+    "observation_top_k": 5,
+    "observation_token_limit": 512,
+    "document_encoding_profile": "original_model_card_raw_documents",
+    "prompt_artifact": "prompts/ricepo_system.txt",
+    "native_span_parser": "strict_native_tag_boundaries_prefilled_think",
+    "termination_policy": "full_depth_5",
+    "format_failure_policy": "raise",
+    "train_split_manifest": null,
+    "development_split_manifest": null,
+    "checkpoint_selection": "best_development_macro"
+  },
+  "setting_evidence": {
+    "initial_trajectories_per_query": {
+      "status": "implementation_choice",
+      "reason": "The paper uses N trajectories but does not publish N. Four is an explicit engineering choice, not an author setting."
+    },
+    "total_branches_including_original": {
+      "status": "implementation_choice",
+      "reason": "Appendix A.1 reports five Monte Carlo branches; Eq. (4) includes original k=0 plus K new samples. Interpret five as new branches, giving six outcomes. Five total remains a sensitivity alternative."
+    },
+    "local_advantage_normalization": {
+      "status": "implementation_choice",
+      "reason": "Use r_original minus branch mean as in Proposition 1. The algorithm text does not explicitly specify a local standard deviation divisor."
+    },
+    "trajectory_std_convention": {
+      "status": "implementation_choice",
+      "reason": "Group-normalized trajectory rewards instantiated with population standard deviation."
+    },
+    "normalization_epsilon": {
+      "status": "implementation_choice",
+      "reason": "Add epsilon to population standard deviation; numerical convention absent from the paper."
+    },
+    "optimize_counterfactual_branches": {
+      "status": "implementation_choice",
+      "reason": "Branches estimate statistics. Eq. (8) is applied to original N trajectories; no extra branch-policy objective is described."
+    },
+    "temperature": {
+      "status": "implementation_choice",
+      "reason": "Unwarped model distribution makes generation probabilities identical to teacher-forced old-policy probabilities."
+    },
+    "top_p": {
+      "status": "implementation_choice",
+      "reason": "No nucleus truncation, maintaining the likelihood-ratio distribution."
+    },
+    "top_k": {
+      "status": "implementation_choice",
+      "reason": "No top-k truncation, maintaining the likelihood-ratio distribution."
+    },
+    "max_new_tokens_per_step": {
+      "status": "implementation_choice",
+      "reason": "Capacity bound, not an author value. Incomplete/malformed generation aborts; no invented failure reward."
+    },
+    "max_context_tokens": {
+      "status": "implementation_choice",
+      "reason": "Allow room for D0 plus five observations (up to 6 x 5 x 512 snippet tokens) and five 1024-token generations. This is an input-length ceiling, not a GPU memory guarantee. The pinned actor config declares 131072 positions; no context is silently truncated."
+    },
+    "clip_epsilon": {
+      "status": "implementation_choice",
+      "reason": "Paper specifies clipped PPO but omits the clipping value. This conventional value is not claimed as the author's."
+    },
+    "loss_reduction": {
+      "status": "implementation_choice",
+      "reason": "Empirical mean over per-sequence token sums, following the expectation of token sums in Eq. (11)."
+    },
+    "kl_estimator": {
+      "status": "implementation_choice",
+      "reason": "Compute full-vocabulary conditional KL(current || frozen reference), then average using observed histories. No sampled-token KL approximation."
+    },
+    "optimizer": {
+      "status": "implementation_choice",
+      "reason": "Optimizer is not reported; reference runtime uses explicitly configured AdamW."
+    },
+    "optimizer_hyperparameters": {
+      "status": "implementation_choice",
+      "reason": "Explicit AdamW settings; no weight decay, constant paper learning rate, one complete-batch update."
+    },
+    "total_updates": {
+      "status": "implementation_choice",
+      "reason": "Training budget is unpublished and is intentionally not invented; fill for an independently authorized experiment."
+    },
+    "training_seeds": {
+      "status": "implementation_choice",
+      "reason": "Independent reproduction seed; not an author seed. Reference driver accepts one seed per separate output root."
+    },
+    "query_composition": {
+      "status": "implementation_choice",
+      "reason": "Section 3 and Figure 5 use summary directly; Section 4.2.2 says summary together with input query. Choose summary-only, record ambiguity, and support explicit original_and_summary alternative."
+    },
+    "hybrid_normalization": {
+      "status": "implementation_choice",
+      "reason": "Diver describes normalization to [0,1] but not the complete range convention. Use min/max over the full allowed corpus, equal .5/.5 fusion."
+    },
+    "excluded_before_normalization": {
+      "status": "implementation_choice",
+      "reason": "Apply fixed BRIGHT excluded_ids before computing normalization extrema; no exclusion of previous retrieval results."
+    },
+    "observation_top_k": {
+      "status": "implementation_choice",
+      "reason": "Five snippets is a Diver-related default, not a reported RICE setting. It changes actor observations, not NDCG ranking cutoff."
+    },
+    "observation_token_limit": {
+      "status": "implementation_choice",
+      "reason": "Truncate each snippet to 512 actor-tokenizer tokens; explicit implementation choice rather than RICE paper constant."
+    },
+    "document_encoding_profile": {
+      "status": "implementation_choice",
+      "reason": "Use the pinned original Diver model card's empty document prefix; other upstream scripts use a different prefix."
+    },
+    "prompt_artifact": {
+      "status": "implementation_choice",
+      "reason": "Transcription of the actual RICE Figure 5; layout and chat wrapping documented separately."
+    },
+    "native_span_parser": {
+      "status": "implementation_choice",
+      "reason": "Prefill opening think tag and locate content boundaries on native generated token IDs; abort ambiguous boundaries."
+    },
+    "termination_policy": {
+      "status": "implementation_choice",
+      "reason": "All original and counterfactual episodes reach depth five, as required for maximum-depth residual comparison."
+    },
+    "format_failure_policy": {
+      "status": "implementation_choice",
+      "reason": "Abort and retain preceding stage artifacts on malformed/empty output; paper does not define failure handling. Empty-summary zero-word allowance in Figure 5 does not define Eq. (1) entropy."
+    },
+    "train_split_manifest": {
+      "status": "implementation_choice",
+      "reason": "The 4,011-row author selection is unpublished. Supply an independently versioned manifest and disclose its selection procedure."
+    },
+    "development_split_manifest": {
+      "status": "implementation_choice",
+      "reason": "No author development IDs are available. Supply a disjoint independently versioned manifest; never select checkpoints on test."
+    },
+    "checkpoint_selection": {
+      "status": "implementation_choice",
+      "reason": "Select the highest development macro NDCG@10, keeping the earliest checkpoint on ties. Author selection policy is unspecified."
+    }
+  }
+}

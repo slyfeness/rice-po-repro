@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "status": "candidate_not_executed",
+  "slurm": {"partition": "gre", "account": "professors", "nodes": 1, "ntasks": 1, "gpus": 4, "cpus_per_task": 24, "memory": "384G", "time": "48:00:00"},
+  "control_root_env": "RICEPO_CONTROL_ROOT",
+  "storage_root_env": "RICEPO_STORAGE_ROOT",
+  "python_bin_env": "RICEPO_PYTHON",
+  "rules": {
+    "compute_requires_slurm": true,
+    "large_files_require_file_storage01": true,
+    "allow_node_constraint": false,
+    "modify_shared_environment": false,
+    "submit_jobs_automatically": false,
+    "create_recurring_monitor": false
+  },
+  "program_topology": null,
+  "program_topology_validation": "not_run"
+}
