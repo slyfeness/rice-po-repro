@@ -61,7 +61,7 @@ class NativeTagParser:
             # the model's EOS-terminated text after a native </think> token
             # boundary to the summary span; it never inserts, re-encodes, or
             # otherwise fabricates tag tokens.
-            pattern = r"(.*?)</think>\s*(.*?)"
+            pattern = r"(.*?)</think>\s*(.*?)\Z"
         else:
             pattern = (r"(.*?)</think>\s*<summary>(.*?)</summary>" if self.prefilled_think
                        else r"\s*<think>(.*?)</think>\s*<summary>(.*?)</summary>")
