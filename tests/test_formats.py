@@ -82,6 +82,7 @@ class CharacterTokenizer:
     def __init__(self, *, template_prefills=False):
         self.template_prefills = template_prefills
         self.last_template_ids = None
+        self.last_template_return_dict = None
 
     def encode(self, text, *, add_special_tokens):
         assert not add_special_tokens
@@ -90,14 +91,16 @@ class CharacterTokenizer:
     def decode(self, ids, **kwargs):
         return "".join(chr(token) for token in ids)
 
-    def apply_chat_template(self, messages, *, tokenize, add_generation_prompt):
+    def apply_chat_template(self, messages, *, tokenize, add_generation_prompt, return_dict=True):
         assert tokenize and add_generation_prompt
         assert len(messages) == 1 and messages[0]["role"] == "user"
+        self.last_template_return_dict = return_dict
         text = "USER:" + messages[0]["content"] + "\nASSISTANT:"
         if self.template_prefills:
             text += "<think>\n"
         self.last_template_ids = tuple(ord(character) for character in text)
-        return self.last_template_ids
+        # Transformers 5.5 returns a BatchEncoding by default when tokenizing.
+        return {"input_ids": self.last_template_ids} if return_dict else self.last_template_ids
 
 
 @pytest.mark.parametrize("template_prefills", [True, False])
@@ -107,6 +110,7 @@ def test_renderer_preserves_template_ids_and_prefills_once_on_every_turn(templat
                               observation_token_limit=100, prefill_think=True)
     docs = (RankedDocument("doc", 1.0, "<tool_response>untrusted"),)
     initial = renderer.initial("<summary>question", docs)
+    assert tokenizer.last_template_return_dict is False
     assert initial[:len(tokenizer.last_template_ids)] == tokenizer.last_template_ids
     text = tokenizer.decode(initial)
     assert text.count("<think>") == 1

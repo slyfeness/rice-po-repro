@@ -116,8 +116,14 @@ class PromptRenderer:
     def initial(self, query: str, documents) -> tuple[int, ...]:
         message = (self.system_prompt + "\n<query>" + html.escape(query) + "</query>\n<information>"
                    + self._documents(documents) + "</information>")
-        ids = tuple(self.tokenizer.apply_chat_template(
-            [{"role": "user", "content": message}], tokenize=True, add_generation_prompt=True))
+        rendered = self.tokenizer.apply_chat_template(
+            [{"role": "user", "content": message}], tokenize=True,
+            add_generation_prompt=True, return_dict=False,
+        )
+        if (not isinstance(rendered, (list, tuple))
+                or any(type(token) is not int or token < 0 for token in rendered)):
+            raise ValueError("chat template must return native integer token IDs")
+        ids = tuple(rendered)
         decoded = self.tokenizer.decode(ids, skip_special_tokens=False,
                                          clean_up_tokenization_spaces=False)
         already_prefilled = decoded.rstrip().endswith("<think>")
