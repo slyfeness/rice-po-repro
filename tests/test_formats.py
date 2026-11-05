@@ -3,7 +3,7 @@
 import pytest
 
 from ricepo.contracts import RankedDocument, Span
-from ricepo.formats import NativeTagParser, PromptRenderer
+from ricepo.formats import InsideTokenError, NativeTagParser, PromptRenderer
 from ricepo.rollout import MalformedGenerationError
 
 
@@ -67,6 +67,34 @@ def test_named_unwrapped_summary_adapter_still_prefers_the_strict_tagged_path():
     assert result.token_ids is ids
     assert result.reasoning_span == Span(0, 1)
     assert result.summary_span == Span(3, 4)
+
+
+def test_summary_end_overlap_adapter_assigns_only_mixed_closing_token_to_summary():
+    class ClosingOverlapTokenizer(PieceTokenizer):
+        pieces = {2: "reason", 3: "</think>", 4: "<summary>",
+                  6: "query</summary>", 7: "<eos>"}
+
+    ids = (2, 3, 4, 6, 7)
+    with pytest.raises(InsideTokenError):
+        parser(prefilled=True, tokenizer=ClosingOverlapTokenizer())(ids, "stop")
+    result = NativeTagParser(ClosingOverlapTokenizer(), prefilled_think=True,
+                             malformed_policy="raise",
+                             summary_mode="summary_end_overlap_inclusive_v1")(ids, "stop")
+    assert result.token_ids is ids
+    assert result.reasoning_span == Span(0, 1)
+    assert result.summary_span == Span(3, 4)
+    assert result.summary_text == "query"
+
+
+def test_summary_end_overlap_adapter_rejects_a_reasoning_boundary_overlap():
+    class ReasoningOverlapTokenizer(PieceTokenizer):
+        pieces = {4: "<summary>", 5: "query", 6: "</summary>",
+                  7: "<eos>", 9: "reason</think>"}
+
+    with pytest.raises(InsideTokenError):
+        NativeTagParser(ReasoningOverlapTokenizer(), prefilled_think=True,
+                        malformed_policy="raise",
+                        summary_mode="summary_end_overlap_inclusive_v1")((9, 4, 5, 6, 7), "stop")
 
 
 def test_parser_rejects_inside_token_and_ambiguous_native_boundaries():

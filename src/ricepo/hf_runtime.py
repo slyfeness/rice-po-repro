@@ -151,7 +151,8 @@ class HFNativeGenerator:
         # The named functional-smoke adapter accepts an EOS-terminated,
         # unwrapped summary only after the model has closed its think span.
         # It does not accept a length-truncated completion as a valid stop.
-        if (self.parser.summary_mode == NativeTagParser.PREFILLED_UNWRAPPED_SUMMARY
+        if (self.parser.summary_mode in {NativeTagParser.PREFILLED_UNWRAPPED_SUMMARY,
+                                         NativeTagParser.SUMMARY_END_OVERLAP_INCLUSIVE_V1}
                 and engine_reason == "eos" and "</think>" in text):
             closed = True
         reason = "stop" if closed else engine_reason

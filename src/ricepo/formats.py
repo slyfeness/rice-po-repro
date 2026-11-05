@@ -31,14 +31,17 @@ class NativeTagParser:
     """
     STRICT_TAGGED = "strict_tagged"
     PREFILLED_UNWRAPPED_SUMMARY = "prefilled_unwrapped_summary_ablation_v1"
+    SUMMARY_END_OVERLAP_INCLUSIVE_V1 = "summary_end_overlap_inclusive_v1"
 
     def __init__(self, tokenizer, *, prefilled_think: bool, malformed_policy: str,
                  summary_mode: str = STRICT_TAGGED):
         if type(prefilled_think) is not bool or malformed_policy != "raise":
             raise ValueError("choose an explicit prefilled_think boolean and malformed_policy='raise'")
-        if summary_mode not in {self.STRICT_TAGGED, self.PREFILLED_UNWRAPPED_SUMMARY}:
+        if summary_mode not in {self.STRICT_TAGGED, self.PREFILLED_UNWRAPPED_SUMMARY,
+                                self.SUMMARY_END_OVERLAP_INCLUSIVE_V1}:
             raise ValueError("unsupported native summary parsing mode")
-        if summary_mode == self.PREFILLED_UNWRAPPED_SUMMARY and not prefilled_think:
+        if summary_mode in {self.PREFILLED_UNWRAPPED_SUMMARY,
+                            self.SUMMARY_END_OVERLAP_INCLUSIVE_V1} and not prefilled_think:
             raise ValueError("unwrapped-summary mode requires an explicitly prefilled think prefix")
         self.tokenizer = tokenizer
         self.prefilled_think = prefilled_think
@@ -56,7 +59,8 @@ class NativeTagParser:
         while content_end and token_ids[content_end - 1] in terminal_ids:
             content_end -= 1
         text = decode(token_ids[:content_end])
-        unwrapped = self.summary_mode == self.PREFILLED_UNWRAPPED_SUMMARY
+        unwrapped = self.summary_mode in {self.PREFILLED_UNWRAPPED_SUMMARY,
+                                          self.SUMMARY_END_OVERLAP_INCLUSIVE_V1}
         has_summary_tag = "<summary>" in text or "</summary>" in text
         if unwrapped and not has_summary_tag:
             # This is a separately named non-paper format adapter.  It maps
@@ -85,13 +89,34 @@ class NativeTagParser:
             raise MalformedGenerationError("nested or duplicate output tags")
         targets = {match.start(1), match.end(1), match.start(2), match.end(2)}
         boundaries = {0: [0]}
+        prefixes = {0: ""}
         # Some tokenizers temporarily decode incomplete UTF-8 bytes as U+FFFD.
         # Accept only prefixes that are exact prefixes of the complete text.
         for end in range(1, content_end + 1):
             prefix = decode(token_ids[:end])
+            prefixes[end] = prefix
             if len(prefix) in targets and text.startswith(prefix):
                 boundaries.setdefault(len(prefix), []).append(end)
-        if not targets.issubset(boundaries):
+        missing = targets - boundaries.keys()
+        summary_end = match.end(2)
+        if (missing == {summary_end}
+                and self.summary_mode == self.SUMMARY_END_OVERLAP_INCLUSIVE_V1):
+            candidates = []
+            for end in range(1, content_end + 1):
+                left, right = prefixes[end - 1], prefixes[end]
+                if not (text.startswith(left) and text.startswith(right)
+                        and len(left) < summary_end < len(right)):
+                    continue
+                token_text = right[len(left):]
+                before, after = token_text[:summary_end - len(left)], token_text[summary_end - len(left):]
+                if before.strip() and after == "</summary>":
+                    candidates.append(end)
+            if len(candidates) == 1:
+                boundaries[summary_end] = candidates
+                missing = set()
+            elif len(candidates) > 1:
+                raise AmbiguousBoundaryError("summary end has multiple native overlap interpretations")
+        if missing:
             raise InsideTokenError("tag/content boundary lies inside a native token")
         if any(len(boundaries[target]) != 1 for target in targets):
             raise AmbiguousBoundaryError("tag/content boundary has ambiguous native token offsets")
@@ -109,6 +134,7 @@ def native_summary_mode(deployment_value: str) -> str:
     modes = {
         "strict_native_tags": NativeTagParser.STRICT_TAGGED,
         "prefilled_think_unwrapped_summary_ablation_v1": NativeTagParser.PREFILLED_UNWRAPPED_SUMMARY,
+        "summary_end_overlap_inclusive_v1": NativeTagParser.SUMMARY_END_OVERLAP_INCLUSIVE_V1,
     }
     try:
         return modes[deployment_value]
