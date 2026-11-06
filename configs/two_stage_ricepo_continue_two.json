@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "extends": "two_stage_ricepo.json",
+  "runtime_bindings": {"total_updates": 2},
+  "execution": {"enabled": false, "runtime_validated": false, "four_gpu_validated": false}
+}

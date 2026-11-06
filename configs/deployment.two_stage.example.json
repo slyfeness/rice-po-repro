@@ -38,5 +38,9 @@
   "checkpoint_io": "local_verified_v1",
   "checkpoint_staging_root": "/tmp",
   "activation_checkpointing": "eval_layers_v1",
-  "compare_grpo_credit_gradients": true
+  "compare_grpo_credit_gradients": true,
+  "sampling_backend": "serial_hf_v1",
+  "parent_run_root": null,
+  "parent_source_root": null,
+  "continuation_schedule_path": null
 }
