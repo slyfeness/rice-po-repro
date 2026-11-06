@@ -384,6 +384,7 @@ class RolloutRunner:
         original: Trajectory,
         anchor: Anchor,
         requests: Sequence[BranchRequest],
+        batched: bool = False,
     ) -> BranchRollouts:
         """Regenerate from the exact saved prefix, retaining the observed outcome.
 
@@ -438,8 +439,17 @@ class RolloutRunner:
             prefix_token_ids=prefix,
         )]
         trajectories = []
+        batch_results = None
+        if batched:
+            from .batched_rollout import continue_many
+            states=[dict(query_id=original.query_id,trajectory_id=request.trajectory_id,
+                original_query=original_query,policy_version=original.policy_version,token_ids=prefix,
+                generated_mask=original.generated_mask[:len(prefix)],previous_steps=original.steps[:anchor.depth-1],
+                seeds=seeds,final_depth=final_depth,honor_stop=False,initial_ndcg=original.initial_ndcg)
+                for request,seeds in zip(requests,seed_sets,strict=True)]
+            batch_results=iter(continue_many(self,states))
         for request, seeds in zip(requests, seed_sets, strict=True):
-            trajectory = self._continue(
+            trajectory = next(batch_results) if batch_results is not None else self._continue(
                 query_id=original.query_id,
                 trajectory_id=request.trajectory_id,
                 original_query=original_query,

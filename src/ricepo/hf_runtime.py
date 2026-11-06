@@ -105,6 +105,10 @@ class HFNativeGenerator:
             pad_token_id=tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id,
             return_dict_in_generate=False,output_scores=False,output_logits=False)
 
+    def generate_many(self,prefixes,seeds):
+        from .batched_generation import generate_many
+        return generate_many(self,prefixes,seeds)
+
     def generate(self, prefix_token_ids: Sequence[int], *, seed: int) -> Generation:
         import torch
         from transformers import GenerationConfig, LogitsProcessorList, StoppingCriteria, StoppingCriteriaList
@@ -297,6 +301,9 @@ def _train(config,deployment,root,attempt_dir,resume):
     resolved = resolve(config,"train")
     plan = resolved["values"]
     checkpoint_io=deployment.get('checkpoint_io','direct_shared_v1')
+    sampling_backend=deployment.get('sampling_backend','serial_hf_v1')
+    if sampling_backend not in ('serial_hf_v1','hf_native_wavefront_v1'):
+        raise ValueError('unsupported sampling backend')
     if checkpoint_io not in ('direct_shared_v1','local_verified_v1'):
         raise ValueError('unsupported checkpoint IO mode')
     parser_mode = native_summary_mode(deployment["output_parser_mode"])
@@ -378,6 +385,8 @@ def _train(config,deployment,root,attempt_dir,resume):
     binding["behavior"]["prompt_sha256"] = file_sha256(prompt_path)
     binding["behavior"]["seed_schedule"] = "controlled_v2"
     binding["behavior"]["failure_semantics"] = plan["format_failure_policy"]
+    if sampling_backend!='serial_hf_v1':
+        binding['behavior']['sampling_backend']=sampling_backend
     from .continuation import parent_run, scheduled_queries, validate_state_position
     parent = parent_run(deployment,binding,plan,train)
     global_start = parent['lineage']['global_start'] if parent else 0
@@ -509,12 +518,21 @@ def _train(config,deployment,root,attempt_dir,resume):
                 atomic_json(directory/"initial-evidence"/(fingerprint(q)+".json"),
                             {"query":q,"ranking":[asdict(d) for d in initial.documents]})
             prefix = renderer.initial(ex.query,initial.documents)
+            pending=[]
             for n in range(plan["trajectories_per_query"]):
                 identity = f"{global_i}-{fingerprint(q)}-{n}"
-                yield runners[ex.domain].run(query_id=q,trajectory_id=identity,original_query=ex.query,
+                arguments=dict(query_id=q,trajectory_id=identity,original_query=ex.query,
                     initial_prefix_token_ids=prefix,old_policy_version=policy_version,
                     initial_ndcg=reward.score(q,tuple(d.document_id for d in initial.documents)),
                     seeds=tuple(stable_seed(seed,"original",global_i,ex.domain,q,n,d) for d in range(1,plan["rollout_depth"]+1)))
+                if sampling_backend=='serial_hf_v1':
+                    yield runners[ex.domain].run(**arguments)
+                else:
+                    from .batched_rollout import OriginalRequest
+                    pending.append(OriginalRequest(**arguments))
+            if pending:
+                from .batched_rollout import run_many
+                yield from run_many(runners[ex.domain],pending)
 
     def collect_branches(t,a):
         ex = train[t.query_id]
@@ -522,7 +540,8 @@ def _train(config,deployment,root,attempt_dir,resume):
                     tuple(stable_seed(seed,"branch_v2",ex.domain,t.query_id,t.trajectory_id,a.depth,b,d)
                           for d in range(a.depth,plan["rollout_depth"]+1)))
                     for b in range(1,plan["total_branches_including_original"])]
-        return runners[ex.domain].branch(original_query=ex.query,original=t,anchor=a,requests=requests)
+        return runners[ex.domain].branch(original_query=ex.query,original=t,anchor=a,requests=requests,
+                                        batched=sampling_backend=='hf_native_wavefront_v1')
 
     def update(originals,batch,old_version,directory):
         if version["value"] != old_version:

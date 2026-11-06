@@ -1,10 +1,13 @@
 import unittest
 from types import SimpleNamespace
 from contextlib import nullcontext
+from pathlib import Path
+import tempfile,json
 import torch
 from ricepo.batched_generation import generate_many
 from ricepo.two_stage import TwoStageFormat,MODE
 from ricepo.contracts import Generation,InvalidGeneration
+from ricepo.audit import attempt
 from test_two_stage_format import Tok
 
 
@@ -35,6 +38,22 @@ def owner(limit=64):
 
 
 class BatchTests(unittest.TestCase):
+    def test_device_error_retains_all_returned_native_tokens(self):
+        o=owner();original=o.model.forward
+        def failing(*args,**kwargs):
+            if o.model.calls>=3:raise RuntimeError('injected device error')
+            return original(*args,**kwargs)
+        o.model.forward=failing
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(RuntimeError,'injected device'):
+                with attempt(Path(directory)):
+                    generate_many(o,[(200,),(201,)],[41,42])
+            events=[json.loads(p.read_text()) for p in Path(directory).glob('attempts/*/events/*.json')]
+            raw=[e for e in events if e['kind']=='raw_completion']
+            self.assertEqual(len(raw),2)
+            self.assertTrue(all(len(e['token_ids'])==3 for e in raw))
+            self.assertTrue(all(e['finish_reason'].startswith('interrupted:') for e in raw))
+
     def test_permutation_native_masks_rng_and_no_cache_after_model_change(self):
         o=owner();a=generate_many(o,[(200,),(201,)],[41,42]);b=generate_many(o,[(201,),(200,)],[42,41])
         self.assertEqual(a,tuple(reversed(b)))

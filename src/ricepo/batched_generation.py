@@ -47,32 +47,48 @@ def generate_many(owner,prefixes,seeds):
         cache=out.past_key_values;logits=out.logits[:,-1,:]
         rows=[[] for _ in indices];lps=[[] for _ in indices];tails=[b'' for _ in indices]
         reasons=[None]*n;before=[state_hash(generators[i]) for i in indices]
-        for step in range(max(limits)):
-            if owner.policy_version!=version:raise RuntimeError('live policy changed during batch generation')
-            tokens=torch.full((n,1),pad,dtype=torch.long,device=device)
-            active=torch.zeros((n,1),dtype=torch.long,device=device)
+        persisted=set()
+        try:
+            for step in range(max(limits)):
+                if owner.policy_version!=version:raise RuntimeError('live policy changed during batch generation')
+                tokens=torch.full((n,1),pad,dtype=torch.long,device=device)
+                active=torch.zeros((n,1),dtype=torch.long,device=device)
+                for j,i in enumerate(indices):
+                    if reasons[j] is not None:continue
+                    lp=torch.log_softmax(logits[j].float(),-1)
+                    probs=torch.softmax(logits[j].float(),-1)
+                    token=int(torch.multinomial(probs,1,generator=generators[i]))
+                    rows[j].append(token);lps[j].append(float(lp[token]));tokens[j,0]=token;active[j,0]=1
+                    raw=tails[j]+fmt.bytes.piece(token)
+                    if marker in raw:reasons[j]='think_closed' if name=='think' else 'summary_closed'
+                    elif token==eos:reasons[j]='eos'
+                    elif len(rows[j])>=limits[j]:reasons[j]='length'
+                    tails[j]=raw[-max(1,len(marker)-1):]
+                    if reasons[j] is not None:
+                        raw_completion(tuple(rows[j]),reasons[j],histories[j],seeds[i],version)
+                        persisted.add(j)
+                    elif (step+1)%128==0:
+                        event('partial_batch_completion',stage_name=name,batch_slot=i,seed=seeds[i],
+                              policy_version=version,prefix_sha256=fingerprint(histories[j]),
+                              token_ids=tuple(rows[j]),sampled_log_probs=tuple(lps[j]))
+                if all(reason is not None for reason in reasons):break
+                attention=torch.cat((attention,active),-1)
+                positions=(attention.sum(-1,keepdim=True)-1).clamp_min(0)
+                if cache is None:raise ValueError('batch decoder did not return its native KV state')
+                out=owner.model(input_ids=tokens,attention_mask=attention,position_ids=positions,
+                    past_key_values=cache,use_cache=True,return_dict=True,**kwargs)
+                cache=out.past_key_values;logits=out.logits[:,-1,:]
+        except BaseException as exc:
             for j,i in enumerate(indices):
-                if reasons[j] is not None:continue
-                lp=torch.log_softmax(logits[j].float(),-1)
-                probs=torch.softmax(logits[j].float(),-1)
-                token=int(torch.multinomial(probs,1,generator=generators[i]))
-                rows[j].append(token);lps[j].append(float(lp[token]));tokens[j,0]=token;active[j,0]=1
-                raw=tails[j]+fmt.bytes.piece(token)
-                if marker in raw:reasons[j]='think_closed' if name=='think' else 'summary_closed'
-                elif token==eos:reasons[j]='eos'
-                elif len(rows[j])>=limits[j]:reasons[j]='length'
-                tails[j]=raw[-max(1,len(marker)-1):]
-            if all(reason is not None for reason in reasons):break
-            attention=torch.cat((attention,active),-1)
-            positions=(attention.sum(-1,keepdim=True)-1).clamp_min(0)
-            if cache is None:raise ValueError('batch decoder did not return its native KV state')
-            out=owner.model(input_ids=tokens,attention_mask=attention,position_ids=positions,
-                past_key_values=cache,use_cache=True,return_dict=True,**kwargs)
-            cache=out.past_key_values;logits=out.logits[:,-1,:]
+                if rows[j] and j not in persisted:
+                    raw_completion(tuple(rows[j]),'interrupted:'+type(exc).__name__,histories[j],seeds[i],version)
+                event('batch_stage_interrupted',stage_name=name,batch_slot=i,seed=seeds[i],
+                      policy_version=version,prefix_sha256=fingerprint(histories[j]),
+                      token_ids=tuple(rows[j]),sampled_log_probs=tuple(lps[j]),already_persisted=j in persisted)
+            raise
         result={}
         for j,i in enumerate(indices):
             ids=tuple(rows[j]);after=state_hash(generators[i])
-            raw_completion(ids,reasons[j],histories[j],seeds[i],version)
             event('batched_stage',batch_slot=i,stage_name=name,sampled_log_probs=lps[j],
                 backend='hf_native_forward_batch_v1',seed=seeds[i],policy_version=version,
                 prefix_sha256=fingerprint(histories[j]),native_token_ids=ids,finish_reason=reasons[j],
