@@ -56,6 +56,8 @@ class VerifiedActionRecovery:
                 self.stages[stage_key]=e
         if set(self.paid)-set(self.actions)!={self.failed_key}:
             raise ValueError('missing paid actions beyond the identified partial failure')
+        if any(version!=binding['continuation']['parent_policy_version'] for version,_ in self.paid):
+            raise ValueError('paid actions do not all use the restored parent policy')
         for p in root.glob('iteration-*/trajectories.json'):
             for t in read(p):self.expected[t['trajectory_id']]=t
         for p in root.glob('attempts/*/items/counterfactual/*.json'):
