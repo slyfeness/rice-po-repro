@@ -4,7 +4,7 @@ import random
 
 from .audit import fingerprint, stable_seed
 from .artifacts import file_sha256
-from .state import read_json, verify_checkpoint
+from .state import read_json, verify_checkpoint, selected_so_far
 
 
 def continuation_recipe(parent, child):
@@ -70,6 +70,13 @@ def parent_run(deployment, binding, plan, train):
     if (step['policy_version'] != saved['policy_version']
             or step['artifacts'].get('update.json') != file_sha256(cp.parent/'update.json')):
         raise ValueError('parent optimizer receipt changed')
+    selected=selected_so_far(root,plan['checkpoint_selection'])
+    terminal=read_json(cp.parent/'iteration_complete.receipt.json')
+    if (not selected or finished.get('selected_checkpoint') != selected
+            or terminal.get('policy_version') != saved['policy_version']
+            or terminal.get('artifacts',{}).get('selected_checkpoint_so_far') != selected
+            or Path(selected['checkpoint']).resolve() != cp.resolve()):
+        raise ValueError('parent development selection differs from committed receipts')
     schedule_path = Path(deployment['continuation_schedule_path'])
     schedule = read_json(schedule_path)
     expected = [scheduled_queries(train,plan['training_seeds'][0],i,plan['queries_per_update'])

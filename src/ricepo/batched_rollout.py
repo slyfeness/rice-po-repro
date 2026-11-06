@@ -7,7 +7,7 @@ There is no decoding/re-encoding, resampling or history/cache shared by rows.
 from dataclasses import dataclass
 from copy import copy
 
-from .audit import operation, saved_item, fingerprint
+from .audit import operation, saved_item, fingerprint, check_scheduled_request
 
 
 @dataclass(frozen=True)
@@ -54,6 +54,7 @@ def continue_many(runner,states):
                         depth=len(states[i]['previous_steps'])+1,seed=seed,
                         prefix_sha256=fingerprint(prefix),policy_version=states[i]['policy_version'])
                     for i,prefix,seed in zip(active,prefixes,seeds,strict=True)]
+        for identity in identities:check_scheduled_request(identity)
         saved_item('batch_requests',identities,identities)
         kind='original_generation_batch' if states[active[0]]['honor_stop'] else 'branch_generation_batch'
         with operation(kind,requests=identities,input_tokens=sum(map(len,prefixes))):

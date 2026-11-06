@@ -161,6 +161,25 @@ def logical_request_id(version, query, trajectory, depth, seed):
     return fingerprint([version, query, trajectory, depth, seed, parent.get("split"), parent.get("iteration")])
 
 
+def check_scheduled_request(fields):
+    """Single-writer batch preflight; normal atomic registration still follows.
+
+    Reject even one already-paid row before generating a differently arranged
+    batch. A matching recovery request retains the existing recovery semantics.
+    This check is used inside the run's exclusive writer lock, not as a lock.
+    """
+    root=_attempt.get()
+    if root is None:return
+    key=logical_request_id(fields['policy_version'],fields['query_id'],fields['trajectory_id'],
+                           fields['depth'],fields['seed'])
+    path=root.parent.parent/'requests'/key/'first.json'
+    if path.exists():
+        prior=json.loads(path.read_text(encoding='utf8'))
+        identity={k:fields[k] for k in ('seed','query_id','trajectory_id','depth','policy_version','prefix_sha256')}
+        if not _recovery.get() or prior['identity']!=identity or prior['attempt']==root.name:
+            raise ValueError('duplicate or inconsistent generation request')
+
+
 def _register_request(fields):
     attempt_root = _attempt.get()
     key = fields["request_id"]

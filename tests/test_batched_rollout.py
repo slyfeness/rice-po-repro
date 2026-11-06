@@ -1,4 +1,7 @@
 import unittest
+import tempfile
+from pathlib import Path
+from ricepo.audit import attempt
 from ricepo.batched_rollout import OriginalRequest, run_many
 from ricepo.rollout import RolloutRunner,RolloutRules,BranchRequest
 from ricepo.contracts import Generation,InvalidGeneration,Span,RetrievalResult,RankedDocument,Anchor
@@ -62,3 +65,12 @@ class BatchedRolloutTests(unittest.TestCase):
         with self.assertRaises(ValueError):run_many(runner(),[req(1),req(1)])
         r=runner();r.generator.policy_version='new'
         with self.assertRaises(Exception):run_many(r,[req(1)])
+
+    def test_duplicate_registered_request_rejected_before_paid_generation(self):
+        r=runner()
+        with tempfile.TemporaryDirectory() as directory, attempt(Path(directory)):
+            run_many(r,[req(1)])
+            count=len(r.generator.calls)
+            with self.assertRaisesRegex(ValueError,'duplicate'):
+                run_many(r,[req(1),req(2,(6,7,8,9,10))])
+            self.assertEqual(len(r.generator.calls),count)

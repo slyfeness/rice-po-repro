@@ -20,15 +20,22 @@ class ContinuationTests(unittest.TestCase):
         deployment={'output_root':str(root),'prompt_path':'old','cache_root':'old','actor_precision':'float32'}
         binding=dict(config_sha256=fingerprint(config),recipe_fingerprint='recipe',
                      source_sha256=fingerprint(sources),deployment_sha256=fingerprint(deployment),
-                     dataset_receipt_sha256='data',manifest_sha256={'train':'train'},
+                     dataset_receipt_sha256='data',manifest_sha256={'train':'train','development':'dev'},
                      model_sha256='model',retriever_sha256='retriever',prompt_sha256='prompt',behavior={'precision':'float32'})
+        chosen=dict(policy_version='p',checkpoint=str(root/'iteration-000000/checkpoint'),development_macro=.2,iteration=0)
+        plan['checkpoint_selection']='best_development_macro'
         for name,value in [('config',config),('recipe',{'values':plan,'fingerprint':'recipe'}),
                            ('sources',sources),('binding',binding),('deployment',deployment),
-                           ('completed',{'completed_updates':1,'last_policy_version':'p','selected_checkpoint':{'development_macro':.2}})]:
+                           ('completed',{'completed_updates':1,'last_policy_version':'p','selected_checkpoint':chosen})]:
             atomic_json(root/(name+'.json'),value)
         d=root/'iteration-000000';cp=d/'checkpoint';cp.mkdir(parents=True)
         atomic_json(cp/'complete.json',{'iteration':0,'policy_version':'p'})
-        atomic_json(d/'iteration_complete.receipt.json',{})
+        report=d/'development/summary.json'
+        atomic_json(report,dict(scope='complete',split='development',policy_version='p',manifest_sha256='dev',
+                               expected_total=32,evaluated_total=32,macro=.2))
+        atomic_json(d/'development_complete.receipt.json',dict(policy_version='p',artifacts={
+            'relative_report':'development/summary.json','sha256':file_sha256(report)}))
+        atomic_json(d/'iteration_complete.receipt.json',dict(policy_version='p',artifacts={'selected_checkpoint_so_far':chosen}))
         atomic_json(d/'update.json',{'optimizer_steps':1})
         atomic_json(d/'optimizer_step_committed.receipt.json',{'policy_version':'p','artifacts':{'update.json':file_sha256(d/'update.json')}})
         child={**deployment,'output_root':str(Path(directory)/'child'),'parent_run_root':str(root),
@@ -61,6 +68,17 @@ class ContinuationTests(unittest.TestCase):
             with patch('ricepo.continuation.verify_checkpoint',return_value={'iteration':0,'policy_version':'p'}):
                 Path(dep['continuation_schedule_path']).write_text('{"batches":[]}')
                 with self.assertRaisesRegex(ValueError,'schedule'):
+                    parent_run(dep,binding,plan,train)
+
+    def test_parent_selection_cannot_be_replaced_by_unverified_score(self):
+        with tempfile.TemporaryDirectory() as d:
+            dep,binding,plan,train=self.parent_fixture(d)
+            path=Path(dep['parent_run_root'])/'completed.json'
+            import json
+            value=json.loads(path.read_text());value['selected_checkpoint']['development_macro']=1
+            path.write_text(json.dumps(value))
+            with patch('ricepo.continuation.verify_checkpoint',return_value={'iteration':0,'policy_version':'p'}):
+                with self.assertRaisesRegex(ValueError,'selection'):
                     parent_run(dep,binding,plan,train)
 
     def test_only_budget_may_change(self):
