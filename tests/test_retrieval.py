@@ -112,6 +112,39 @@ def test_exact_dense_cosine_is_independent_of_corpus_chunk_size():
     assert small == pytest.approx({"a": 2 ** -0.5, "b": 2 ** -0.5, "c": -(2 ** -0.5)})
 
 
+def test_dense_scorer_validates_document_norms_once_and_reuses_them(monkeypatch):
+    np = pytest.importorskip("numpy")
+    calls = 0
+    original_norm = np.linalg.norm
+
+    def counted_norm(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return original_norm(*args, **kwargs)
+
+    monkeypatch.setattr(np.linalg, "norm", counted_norm)
+    scorer = DenseVectorScorer(
+        document_ids=("a", "b", "c"),
+        vectors=np.asarray([[1, 0], [0, 2], [-3, 0]], dtype=np.float32),
+        encode_query=lambda query: [1, 1],
+        chunk_size=1,
+    )
+    scorer("first")
+    scorer("second")
+    # Three fixed corpus blocks are validated at construction and only each
+    # query's own norm is subsequently computed.
+    assert calls == 5
+
+
+def test_dense_scorer_rejects_invalid_fixed_documents_at_construction():
+    np = pytest.importorskip("numpy")
+    with pytest.raises(ValueError, match="invalid document embedding"):
+        DenseVectorScorer(
+            document_ids=("a",), vectors=np.asarray([[0, 0]], dtype=np.float32),
+            encode_query=lambda query: [1, 1], chunk_size=1,
+        )
+
+
 def test_last_nonpadding_embedding_handles_both_padding_sides_and_requires_eval():
     torch = pytest.importorskip("torch")
 

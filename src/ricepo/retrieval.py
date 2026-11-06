@@ -198,6 +198,19 @@ class DenseVectorScorer:
         if not np.issubdtype(vectors.dtype, np.floating):
             raise ValueError("corpus vectors must be floating point")
         self.vectors, self.encode_query, self.chunk_size = vectors, encode_query, chunk_size
+        # Corpus vectors are an immutable, pre-encoded retrieval asset.  Scan
+        # them once at load time using the same float32 blocks used for exact
+        # scoring, then retain only their norms.  Query-time validation must
+        # still cover the freshly encoded query, but must not repeatedly scan
+        # the fixed corpus merely to rediscover these norms.
+        self.document_norms = np.empty(len(self.ids), dtype=np.float32)
+        for start in range(0, len(self.ids), self.chunk_size):
+            stop = min(start + self.chunk_size, len(self.ids))
+            block = np.asarray(self.vectors[start:stop], dtype=np.float32)
+            norms = np.linalg.norm(block, axis=1)
+            if not np.isfinite(block).all() or not np.isfinite(norms).all() or not (norms > 0).all():
+                raise ValueError("invalid document embedding")
+            self.document_norms[start:stop] = norms
 
     def recipe(self):
         return {"method": "exact_float32_cosine", "chunk_rows": self.chunk_size,
@@ -216,11 +229,9 @@ class DenseVectorScorer:
         query_vector = query_vector / query_norm
         result = {}
         for start in range(0, len(self.ids), self.chunk_size):
-            block = np.asarray(self.vectors[start:start + self.chunk_size], dtype=np.float32)
-            norms = np.linalg.norm(block, axis=1)
-            if not np.isfinite(block).all() or not np.isfinite(norms).all() or not (norms > 0).all():
-                raise ValueError("invalid document embedding")
-            scores = (block @ query_vector) / norms
+            stop = min(start + self.chunk_size, len(self.ids))
+            block = np.asarray(self.vectors[start:stop], dtype=np.float32)
+            scores = (block @ query_vector) / self.document_norms[start:stop]
             if not np.isfinite(scores).all():
                 raise ValueError("nonfinite cosine score")
             result.update(zip(self.ids[start:start + len(scores)], map(float, scores), strict=True))
