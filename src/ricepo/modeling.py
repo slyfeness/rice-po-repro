@@ -19,6 +19,33 @@ from typing import TYPE_CHECKING, Any
 
 from .objective import _conditional_kl, _log_probabilities, exact_reference_kl
 
+
+def enable_eval_layer_checkpointing(model):
+    """Recompute decoder layers while preserving eval/dropout and context gradients."""
+    import torch
+    from torch.utils.checkpoint import checkpoint
+    if model.training:raise ValueError('eval layer checkpointing requires eval mode')
+    layers=getattr(getattr(model,'model',None),'layers',None)
+    if layers is None:raise ValueError('model does not expose supported decoder layers')
+    if hasattr(model,'_rice_checkpoint_statistics'):raise ValueError('checkpoint wrappers already installed')
+    statistics=dict(mode='eval_layers_v1',checkpoint_forwards=0,layer_executions=0)
+    for layer in layers:
+        original=layer.forward
+        def wrap(fn):
+            def forward(*args,**kwargs):
+                if not torch.is_grad_enabled():return fn(*args,**kwargs)
+                if kwargs.get('past_key_values') is not None or kwargs.get('use_cache',False):
+                    raise ValueError('training recomputation cannot reuse an inference KV cache')
+                statistics['checkpoint_forwards']+=1
+                def recompute(*a,**k):
+                    statistics['layer_executions']+=1
+                    return fn(*a,**k)
+                return checkpoint(recompute,*args,use_reentrant=False,**kwargs)
+            return forward
+        layer.forward=wrap(original)
+    model._rice_checkpoint_statistics=statistics
+    return statistics
+
 if TYPE_CHECKING:
     from torch import Tensor
 

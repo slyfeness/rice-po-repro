@@ -296,6 +296,9 @@ def _train(config,deployment,root,attempt_dir,resume):
     from .assessment import evaluate_queries
     resolved = resolve(config,"train")
     plan = resolved["values"]
+    checkpoint_io=deployment.get('checkpoint_io','direct_shared_v1')
+    if checkpoint_io not in ('direct_shared_v1','local_verified_v1'):
+        raise ValueError('unsupported checkpoint IO mode')
     parser_mode = native_summary_mode(deployment["output_parser_mode"])
     if (parser_mode=='two_stage_env_summary_v1') != (plan['native_span_parser']=='two_stage_env_summary_v1'):
         raise ValueError('two-stage generation must match its explicit research recipe')
@@ -337,7 +340,7 @@ def _train(config,deployment,root,attempt_dir,resume):
                 or retriever_device.index is None or actor_device == retriever_device
                 or max(actor_device.index,retriever_device.index) >= torch.cuda.device_count()):
             raise ValueError("two distinct visible CUDA devices required")
-        precision = deployment["dtype"]
+        precision = deployment.get('actor_precision',deployment['dtype'])
         if precision not in {"float32","bfloat16"}:
             raise ValueError("unsupported precision")
         def autocast():
@@ -407,6 +410,12 @@ def _train(config,deployment,root,attempt_dir,resume):
     actor = load_actor(actor_load)
     reference = load_actor(actor_path)
     reference.requires_grad_(False)
+    activation_mode=deployment.get('activation_checkpointing','none')
+    activation_statistics=None
+    if activation_mode=='eval_layers_v1':
+        from .modeling import enable_eval_layer_checkpointing
+        activation_statistics=enable_eval_layer_checkpointing(actor)
+    elif activation_mode!='none':raise ValueError('unsupported activation checkpointing mode')
     if local_model_identity(actor_path) != actor_source:
         raise ValueError("actor/tokenizer assets changed while loading")
     opt = plan["optimizer_hyperparameters"]
@@ -518,10 +527,24 @@ def _train(config,deployment,root,attempt_dir,resume):
                 items.append(UpdateItem(t.trajectory_id,old_version,t.token_ids,mask,adv,sampled if sampled is not None else teacher))
         atomic_json(directory/"old-policy-update-items.json",items)
         with torch.enable_grad():
+            observer=comparison=None
+            if deployment.get('compare_grpo_credit_gradients'):
+                if plan['method']!='ricepo':raise ValueError('RICE/GRPO gradient comparison belongs to RICE update only')
+                from .credit_gradient import prepare_comparison
+                observer,comparison=prepare_comparison(actor,optimizer,originals,items,
+                    forward=forward,device=actor_device,recipe=plan)
             diagnostics = ppo_plan_update(actor,optimizer,items,policy_version=old_version,forward=forward,
-                                          device=actor_device,recipe=plan)
+                                          device=actor_device,recipe=plan,step_observer=observer)
+            if comparison is not None:
+                comparison['reference_has_gradients']=any(p.grad is not None for p in reference.parameters())
+                atomic_json(directory/'credit-vs-grpo-gradient.json',comparison)
+                diagnostics['credit_gradient_comparison']=comparison
         version["value"] = register_policy()
         diagnostics["actual_state_dict_changed"] = version["value"] != old_version
+        if activation_statistics is not None:
+            diagnostics['activation_checkpointing']={**activation_statistics,
+                'actual_recomputation_observed':activation_statistics['layer_executions']>activation_statistics['checkpoint_forwards'],
+                'model_training_mode':actor.training}
         return {"new_policy_version":version["value"],"optimizer":diagnostics}
 
     def barrier(before,after):
@@ -536,11 +559,30 @@ def _train(config,deployment,root,attempt_dir,resume):
         dev_due = last or (i+1) % plan["development_every_updates"] == 0
         save_due = dev_due or (i+1) % plan["checkpoint_every_updates"] == 0
         def write_payload(staging):
-            actor.save_pretrained(staging/"actor",safe_serialization=True)
-            tokenizer.save_pretrained(staging/"actor")
-            torch.save(dict(optimizer=optimizer.state_dict(),iteration=i,seed=seed,policy_version=current,
-                       binding=bound,cpu_rng=torch.random.get_rng_state(),cuda_rng=torch.cuda.get_rng_state(actor_device)),
-                       staging/"optimizer-and-rng.pt")
+            from .checkpoint_io import verified_local_copy,state_digest,rng_probe
+            payload=dict(optimizer=optimizer.state_dict(),iteration=i,seed=seed,policy_version=current,
+                binding=bound,cpu_rng=torch.random.get_rng_state(),cuda_rng=torch.cuda.get_rng_state(actor_device))
+            expected_digest=state_digest(payload) if checkpoint_io=='local_verified_v1' else None
+            def write_local(folder):
+                actor.save_pretrained(folder/'actor',safe_serialization=True)
+                tokenizer.save_pretrained(folder/'actor')
+                # Python file descriptor catches flush/fsync errors before publication.
+                with (folder/'optimizer-and-rng.pt').open('wb') as fd:
+                    torch.save(payload,fd);fd.flush();os.fsync(fd.fileno())
+                atomic_json(folder/'rng-probe.json',rng_probe(payload,actor_device))
+            def verify_local(folder):
+                model,info=AutoModelForCausalLM.from_pretrained(str(folder/'actor'),torch_dtype=torch.float32,
+                    output_loading_info=True,**local)
+                if any(info.get(k) for k in ('missing_keys','mismatched_keys','error_msgs')):
+                    raise ValueError('local checkpoint model load is incomplete')
+                model.eval()
+                if identify(model,behavior)[0]!=current:raise ValueError('local checkpoint differs from live policy')
+                del model
+                saved=torch.load(folder/'optimizer-and-rng.pt',map_location='cpu',weights_only=True)
+                if state_digest(saved)!=expected_digest:raise ValueError('serialized optimizer or RNG differs from live snapshot')
+            if checkpoint_io=='local_verified_v1':
+                verified_local_copy(staging,write_local,verify_local,temporary_root=deployment.get('checkpoint_staging_root'))
+            else:write_local(staging)
         if save_due:
             cp_path = directory/"checkpoint"
             if not recovered:

@@ -136,7 +136,7 @@ def _parameter_probe(model):
 
 
 def ppo_plan_update(model, optimizer, items: Sequence[UpdateItem], *, policy_version: str,
-                    forward: Callable, device, recipe) -> dict:
+                    forward: Callable, device, recipe, step_observer=None) -> dict:
     """Single-process PPO over frozen original trajectories in declared order.
 
     One optimizer step consumes one whole optimizer minibatch. Every sequence
@@ -195,10 +195,12 @@ def ppo_plan_update(model, optimizer, items: Sequence[UpdateItem], *, policy_ver
                     kl_sum += float(kl[mask].double().sum())
                     loss_sum += float(loss.detach())
                 del current, kl, loss
+            if step_observer is not None:step_observer('before_clip')
             norm = torch.nn.utils.clip_grad_norm_(model.parameters(), limit, error_if_nonfinite=True)
             from .audit import operation
             with operation("optimizer_minibatch_step",epoch=epoch,minibatch_start=start):
                 optimizer.step()
+            if step_observer is not None:step_observer('after_step')
             steps.append({"epoch": epoch, "minibatch_start": start, "generated_tokens": tokens,
                           "sequences": len(group), "loss_denominator": denominator,
                           "normalized_loss": loss_sum / denominator,

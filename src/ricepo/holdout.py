@@ -111,7 +111,7 @@ def _actor_runtime(path, tokenizer_path, prompt, settings, deployment, policy_ve
             or fixed_device.index is None or device == fixed_device
             or max(device.index, fixed_device.index) >= torch.cuda.device_count()):
         raise ValueError("generated evaluation requires distinct Slurm-visible actor and retriever CUDA devices")
-    precision = deployment["dtype"]
+    precision = deployment.get('actor_precision',deployment['dtype'])
     if precision not in ("float32", "bfloat16"):
         raise ValueError("unsupported reference precision")
     before = local_model_identity(path)
@@ -204,7 +204,7 @@ def _evaluate(config, deployment, *, command, output_root, checkpoint_dir=None, 
                     policy_path, tokenizer_path, prompt, settings, deployment, lambda: policy_version)
                 behavior = dict(**tokenizer_behavior, root_seed=settings["training_seeds"][0],
                                 temperature=settings["temperature"], top_p=settings["top_p"], top_k=settings["top_k"],
-                                repetition_penalty=1.0, model_mode="eval", precision=deployment["dtype"],
+                                repetition_penalty=1.0, model_mode="eval", precision=deployment.get('actor_precision',deployment['dtype']),
                                 initial_actor_payload=models["actor_model_path"]["payload_sha256"],
                                 prefilled_think=True, rng="sha256-json-stream-v1")
                 behavior["output_parser_mode"] = deployment["output_parser_mode"]
