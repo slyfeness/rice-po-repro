@@ -38,6 +38,27 @@ def owner(limit=64):
 
 
 class BatchTests(unittest.TestCase):
+    def test_unrepresentable_row_is_retained_as_failure_without_resampling(self):
+        from test_two_stage_format import MissingTokenTok
+        o=owner();o.tokenizer=MissingTokenTok();o.two_stage_format=TwoStageFormat(o.tokenizer)
+        class MissingSummary(Scripted):
+            def forward(self,*args,**kwargs):
+                out=super().forward(*args,**kwargs)
+                logits=torch.full((len(out.logits),1,1002),-1000.)
+                logits[:,:,:1001]=out.logits
+                for i,row in enumerate(out.past_key_values):
+                    if b'<summary>' in bytes(t for t in row.tolist() if 0<=t<256):
+                        logits[i].fill_(-1000.);logits[i,0,1001]=1000.
+                return SimpleNamespace(logits=logits,past_key_values=out.past_key_values)
+        o.model=MissingSummary().eval()
+        gs=generate_many(o,[(200,),(201,)],[41,42])
+        self.assertEqual(len(gs),2)
+        for g in gs:
+            self.assertIsInstance(g,InvalidGeneration)
+            self.assertEqual(g.category,'native_token_unmapped')
+            self.assertEqual(g.token_ids[-1],1001)
+            self.assertIsNotNone(g.sampled_log_probs[-1])
+
     def test_device_error_retains_all_returned_native_tokens(self):
         o=owner();original=o.model.forward
         def failing(*args,**kwargs):

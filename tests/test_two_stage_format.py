@@ -8,7 +8,20 @@ class Tok(BytesTokenizer):
     def encode(self,text,add_special_tokens=False):return list(text.encode('utf8'))
     def convert_ids_to_tokens(self,ids):return ['<eos>' if t==1000 else self.alphabet[t] for t in ids]
 
+class MissingTokenTok(Tok):
+    bos_token_id=None
+    def convert_ids_to_tokens(self,ids):
+        return [None if t==1001 else super(MissingTokenTok,self).convert_ids_to_tokens([t])[0] for t in ids]
+
 class TwoStageFormatTests(unittest.TestCase):
+    def test_unrepresentable_sample_is_invalid_without_logit_mask_or_text_repair(self):
+        f=TwoStageFormat(MissingTokenTok());a=tuple(b'r</think>');b=(ord('s'),1001)
+        g=f.record(a,b,(-1.,)*len(a),(-2.,)*len(b),'think_closed','native_token_unmapped')
+        self.assertIsInstance(g,InvalidGeneration)
+        self.assertEqual(g.category,'native_token_unmapped')
+        self.assertEqual(g.token_ids,a+f.control_ids+b)
+        self.assertEqual(sum(g.action_mask),len(a)+len(b))
+        self.assertEqual(g.sampled_log_probs[-1],-2.)
     def test_eos_summary_preserves_text_ids_and_environment_ownership(self):
         f=TwoStageFormat(Tok());a=tuple('reason正</think>'.encode());b=tuple(' exact 正 '.encode())+(1000,)
         g=f.record(a,b,(-1.,)*len(a),(-2.,)*len(b),'think_closed','eos')

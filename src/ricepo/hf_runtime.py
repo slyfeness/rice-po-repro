@@ -391,6 +391,13 @@ def _train(config,deployment,root,attempt_dir,resume):
     global_start = parent['lineage']['global_start'] if parent else 0
     if parent:
         binding['continuation'] = parent['lineage']
+    action_recovery=None
+    if deployment.get('native_action_replay_sources'):
+        if not parent or sampling_backend!='serial_hf_v1' or parser_mode!='two_stage_env_summary_v1':
+            raise ValueError('native action recovery supports the serial two-stage continuation only')
+        from .action_recovery import VerifiedActionRecovery
+        action_recovery=VerifiedActionRecovery(deployment['native_action_replay_sources'],binding,plan)
+        binding['native_action_recovery']=action_recovery.provenance
     bound = bind_run(root,binding,resume=resume)
     fixed_files = {"config.json":config,"deployment.json":deployment,"recipe.json":resolved,
                    "effective-generation.json":effective_generation,
@@ -471,6 +478,7 @@ def _train(config,deployment,root,attempt_dir,resume):
         max_context_tokens=plan["max_context_tokens"],prefilled_think=True,precision_context=autocast,
         summary_mode=parser_mode, structured_stop=protocol == CHAT_TURN, parser_settings=effective_parser,
         failure_semantics=plan["format_failure_policy"])
+    if action_recovery:generator.action_replay=action_recovery
     if deployment.get("native_replay_sources"):
         from .native_replay import SavedNativeCompletions
         generator.completion_replay = SavedNativeCompletions(deployment["native_replay_sources"],binding)
@@ -534,6 +542,7 @@ def _train(config,deployment,root,attempt_dir,resume):
                 yield from run_many(runners[ex.domain],pending)
 
     def collect_branches(t,a):
+        if action_recovery:action_recovery.check_anchor(a)
         ex = train[t.query_id]
         requests = [BranchRequest(f"{t.trajectory_id}-d{a.depth}-b{b}",
                     tuple(stable_seed(seed,"branch_v2",ex.domain,t.query_id,t.trajectory_id,a.depth,b,d)

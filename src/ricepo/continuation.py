@@ -59,7 +59,7 @@ def parent_run(deployment, binding, plan, train):
                     if k not in {'test_scope','expected_test_domains'}}) != parent['deployment_sha256']:
         raise ValueError('parent deployment identity changed')
     allowed = {'output_root','cache_root','prompt_path','parent_run_root','parent_source_root',
-               'continuation_schedule_path','compare_grpo_credit_gradients'}
+               'continuation_schedule_path','compare_grpo_credit_gradients','native_action_replay_sources'}
     for key in old_deployment.keys() | deployment.keys():
         if key not in allowed and old_deployment.get(key) != deployment.get(key):
             raise ValueError('continuation deployment changed: '+key)

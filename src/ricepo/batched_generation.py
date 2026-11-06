@@ -7,7 +7,7 @@ No cache survives a model-weight change. Finished rows are never resampled.
 import inspect
 import hashlib
 import re
-from .two_stage import MODE
+from .two_stage import MODE,UnrepresentableNativeToken
 from .audit import raw_completion,event,fingerprint
 from .rollout import RolloutLengthError
 
@@ -59,11 +59,14 @@ def generate_many(owner,prefixes,seeds):
                     probs=torch.softmax(logits[j].float(),-1)
                     token=int(torch.multinomial(probs,1,generator=generators[i]))
                     rows[j].append(token);lps[j].append(float(lp[token]));tokens[j,0]=token;active[j,0]=1
-                    raw=tails[j]+fmt.bytes.piece(token)
-                    if marker in raw:reasons[j]='think_closed' if name=='think' else 'summary_closed'
-                    elif token==eos:reasons[j]='eos'
-                    elif len(rows[j])>=limits[j]:reasons[j]='length'
-                    tails[j]=raw[-max(1,len(marker)-1):]
+                    try:raw=tails[j]+fmt.bytes.piece(token)
+                    except UnrepresentableNativeToken:
+                        reasons[j]='native_token_unmapped'
+                    else:
+                        if marker in raw:reasons[j]='think_closed' if name=='think' else 'summary_closed'
+                        elif token==eos:reasons[j]='eos'
+                        elif len(rows[j])>=limits[j]:reasons[j]='length'
+                        tails[j]=raw[-max(1,len(marker)-1):]
                     if reasons[j] is not None:
                         raw_completion(tuple(rows[j]),reasons[j],histories[j],seeds[i],version)
                         persisted.add(j)

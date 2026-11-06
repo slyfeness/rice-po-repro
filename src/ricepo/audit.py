@@ -90,7 +90,7 @@ def operation(phase, **identity):
     fields = {**(_request.get() or {}), **identity, "phase": phase, "operation_id": operation_id}
     if phase in {"branch_generation","original_generation"} and _attempt.get() is not None:
         fields.update(_register_request(fields))
-        if fields.get("saved_native_replay"):
+        if fields.get("saved_native_replay") or fields.get('recovery_reexecution'):
             fields.update(recovery_replay=True,independent_sample=False)
     token = _request.set(fields)
     try:

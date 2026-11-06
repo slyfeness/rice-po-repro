@@ -52,3 +52,15 @@ def test_eos_empty_summary_and_length_preserve_actual_failed_actions(first,secon
     assert isinstance(result,InvalidGeneration) and reason in result.reason
     assert sum(result.action_mask)<=budget
     if len(model.calls)==1:assert all(result.action_mask)
+
+def test_unmapped_native_id_terminates_and_retains_its_actual_probability():
+    from test_two_stage_format import MissingTokenTok
+    from ricepo.two_stage import TwoStageFormat
+    a=tuple(b'r</think>');b=(ord('s'),1001,ord('x'))
+    generator,model=build(a,b,64)
+    generator.tokenizer=MissingTokenTok();generator.two_stage_format=TwoStageFormat(generator.tokenizer)
+    result=generator.generate((7,),seed=44)
+    assert isinstance(result,InvalidGeneration) and result.category=='native_token_unmapped'
+    assert result.token_ids==a+generator.two_stage_format.control_ids+b[:2]
+    assert len(result.sampled_log_probs)==len(result.token_ids) and result.sampled_log_probs[-1] is not None
+    assert all(model.identity)  # Sampling logits were returned unchanged.

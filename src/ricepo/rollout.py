@@ -159,6 +159,11 @@ class RolloutRunner:
         if not expected or self.generator.policy_version != expected:
             raise PolicyVersionError(f"generator policy must remain frozen at {expected!r}")
 
+    def _verified_trace(self,trace):
+        replay=getattr(self.generator,'action_replay',None)
+        if replay and hasattr(replay,'validate_trace'):replay.validate_trace(trace)
+        return trace
+
     def _check_length(self, ids: Sequence[int]) -> None:
         if len(ids) > self.rules.max_context_tokens:
             raise RolloutLengthError("native-token history exceeds max_context_tokens")
@@ -258,9 +263,10 @@ class RolloutRunner:
             request_id = logical_request_id(policy_version, query_id, trajectory_id, depth, seed)
             replay = getattr(self.generator,"action_replay",None) or getattr(self.generator,"completion_replay",None)
             saved_native_replay = bool(replay and replay(prefix,seed,policy_version) is not None)
+            reexecution=bool(replay and hasattr(replay,'paid_reexecution') and replay.paid_reexecution(prefix,seed,policy_version))
             with operation(kind, request_id=request_id, query_id=query_id, trajectory_id=trajectory_id,
                            seed=seed, depth=depth, input_tokens=len(prefix), policy_version=policy_version,
-                           saved_native_replay=saved_native_replay,prefix_sha256=fingerprint(prefix)):
+                           saved_native_replay=saved_native_replay,recovery_reexecution=reexecution,prefix_sha256=fingerprint(prefix)):
                 generation = self.generator.generate(prefix, seed=seed)
             self._check_policy(policy_version)
             if isinstance(generation,InvalidGeneration):
@@ -273,9 +279,9 @@ class RolloutRunner:
                 last = steps[-1].local_reward if steps else initial_ndcg
                 _finite_reward(last,label="last valid retrieval NDCG")
                 failure = FailureAction(depth,prefix,generation,seed,policy_version)
-                return Trajectory(query_id,trajectory_id,policy_version,prefix+ids,
+                return self._verified_trace(Trajectory(query_id,trajectory_id,policy_version,prefix+ids,
                     mask+generation_action_mask(generation),tuple(steps),0.0,"invalid_action_terminal_zero_v1",
-                    failure,initial_ndcg,last,0.0)
+                    failure,initial_ndcg,last,0.0))
             generated_ids = self._validate_generation(generation)
             self._check_length(prefix + generated_ids)
             query = self.query_composer.compose(original_query, generation.summary_text)
@@ -333,7 +339,7 @@ class RolloutRunner:
         frozen_steps = tuple(steps)
         reward = _finite_reward(self.final_reward(frozen_steps), label="final reward")
         self._check_policy(policy_version)
-        return Trajectory(
+        return self._verified_trace(Trajectory(
             query_id=query_id,
             trajectory_id=trajectory_id,
             policy_version=policy_version,
@@ -344,7 +350,7 @@ class RolloutRunner:
             termination=termination,
             initial_ndcg=initial_ndcg,
             last_valid_ndcg=reward if self.failure_semantics=="invalid_action_terminal_zero_v1" else None,
-        )
+        ))
 
     def run(
         self,

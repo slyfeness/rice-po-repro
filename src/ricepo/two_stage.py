@@ -10,6 +10,11 @@ from .audit import raw_completion,event,fingerprint
 MODE='two_stage_env_summary_v1'
 
 
+class UnrepresentableNativeToken(ValueError):
+    """A sampled model-vocabulary row has no tokenizer text representation."""
+    code='native_token_unmapped'
+
+
 class NativeBytes:
     """Exact ByteLevel pieces, including literal added tokens. Cache per token ID."""
     def __init__(self,tokenizer):
@@ -25,6 +30,8 @@ class NativeBytes:
     def piece(self,token):
         if token not in self.cache:
             p=self.tokenizer.convert_ids_to_tokens([token])[0]
+            if p is None:
+                raise UnrepresentableNativeToken('sampled token ID '+str(token)+' has no tokenizer representation')
             try:self.cache[token]=p.encode('utf8') if token in self.added else bytes(self.inverse[c] for c in p)
             except (KeyError,TypeError) as e:raise AmbiguousBoundaryError('unmapped native byte token') from e
         return self.cache[token]
@@ -63,6 +70,8 @@ class TwoStageFormat:
         # decoding cannot supply an exact retrieval query or unique byte span.
         # Reject this real action; retain every native token and probability.
         try:self.bytes.join(ids).decode('utf8',errors='strict')
+        except UnrepresentableNativeToken as exc:
+            return invalid('native_token_unmapped',str(exc))
         except UnicodeDecodeError:
             return invalid('native_text_encoding','sampled native bytes are not valid UTF-8; no exact Summary available')
         if think_reason!='think_closed':
@@ -131,32 +140,45 @@ def generate_two_stage(owner,prefix,seed):
                 return scores  # Identity observer: exact same tensor, no mask/warp.
         observer=Observer()
         class Stop(StoppingCriteria):
-            def __init__(self):self.previous=len(history);self.tail=b'';self.closed=False
+            def __init__(self):self.previous=len(history);self.tail=b'';self.closed=False;self.unmapped=False;self.ids=[]
             def __call__(self,input_ids,scores,**kwargs):
                 new=tuple(input_ids[0,self.previous:].tolist())
                 if len(new)!=1 or observer.pending is None:raise RuntimeError('sampled-token observer alignment differs')
                 observer.values.append(float(observer.pending[new[0]]));observer.pending=None
-                block=fmt.bytes.join(new)
+                self.ids.extend(new);self.previous+=1
+                try:block=fmt.bytes.join(new)
+                except UnrepresentableNativeToken:
+                    self.unmapped=True
+                    return torch.tensor([True],dtype=torch.bool,device=input_ids.device)
                 self.closed=marker in self.tail+block
                 self.tail=(self.tail+block)[-max(1,len(marker)-1):]
-                self.previous+=1
                 return torch.tensor([self.closed],dtype=torch.bool,device=input_ids.device)
         stop=Stop();inputs=torch.tensor([history],dtype=torch.long,device=device)
         kwargs=dict(input_ids=inputs,attention_mask=torch.ones_like(inputs),
             generation_config=owner._generation_recipe(limit),logits_processor=LogitsProcessorList([observer]),
             stopping_criteria=StoppingCriteriaList([stop]),synced_gpus=False)
         if owner._supports_use_model_defaults:kwargs['use_model_defaults']=False
-        before=rng_hash();out=owner.model.generate(**kwargs);after=rng_hash()
+        before=rng_hash()
+        try:out=owner.model.generate(**kwargs)
+        except BaseException as exc:
+            if stop.ids:raw_completion(tuple(stop.ids),'interrupted:'+type(exc).__name__,history,seed,version)
+            event('two_stage_stage_interrupted',stage_name=stage,native_token_ids=tuple(stop.ids),
+                sampled_log_probs=observer.values,unconsumed_observer=observer.pending is not None,
+                prefix_sha256=fingerprint(history),seed=seed,policy_version=version)
+            raise
+        after=rng_hash()
         if out.ndim!=2 or out.shape[0]!=1 or tuple(out[0,:len(history)].tolist())!=history:
             raise ValueError('two-stage model changed native prefix')
         ids=tuple(out[0,len(history):].tolist())
         if len(ids)!=len(observer.values) or not ids or len(ids)>limit:raise ValueError('native sampling trace is incomplete')
         eos=ids[-1]==owner.tokenizer.eos_token_id
-        reason=('think_closed' if stage=='think' else 'summary_closed') if stop.closed else 'eos' if eos else 'length'
+        reason='native_token_unmapped' if stop.unmapped else ('think_closed' if stage=='think' else 'summary_closed') if stop.closed else 'eos' if eos else 'length'
         raw_completion(ids,reason,history,seed,version)
         event('two_stage_stage_saved',stage_name=stage,protocol=MODE,sampled_log_probs=observer.values,
             prefix_sha256=fingerprint(history),native_token_ids=ids,finish_reason=reason,
             rng_before_sha256=before,rng_after_sha256=after)
+        if replay and hasattr(replay,'validate_stage'):
+            replay.validate_stage(history,seed,version,stage,ids,tuple(observer.values),before,after)
         if owner.policy_version!=version:raise RuntimeError('policy changed between sampling stages')
         if len(ids)==available and available<budget and reason=='length':
             raise RolloutLengthError('native context ceiling exhausted during '+stage)
@@ -178,5 +200,7 @@ def generate_two_stage(owner,prefix,seed):
                 b,bp,br,r2,r3=sample(history,remaining,'summary',b'</summary>')
                 if r2!=r1:raise RuntimeError('RNG stream changed between Think and Summary')
         result=fmt.record(a,b,ap,bp,ar,br,(r0,r1,r2,r3))
+        if replay and hasattr(replay,'validate_action'):
+            replay.validate_action(prefix,seed,version,result)
         event('two_stage_action_record',generation=result)
         return result
