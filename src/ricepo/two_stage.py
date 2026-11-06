@@ -155,7 +155,8 @@ def generate_two_stage(owner,prefix,seed):
         reason=('think_closed' if stage=='think' else 'summary_closed') if stop.closed else 'eos' if eos else 'length'
         raw_completion(ids,reason,history,seed,version)
         event('two_stage_stage_saved',stage_name=stage,protocol=MODE,sampled_log_probs=observer.values,
-            prefix_sha256=fingerprint(history),native_token_ids=ids,rng_before_sha256=before,rng_after_sha256=after)
+            prefix_sha256=fingerprint(history),native_token_ids=ids,finish_reason=reason,
+            rng_before_sha256=before,rng_after_sha256=after)
         if owner.policy_version!=version:raise RuntimeError('policy changed between sampling stages')
         if len(ids)==available and available<budget and reason=='length':
             raise RolloutLengthError('native context ceiling exhausted during '+stage)

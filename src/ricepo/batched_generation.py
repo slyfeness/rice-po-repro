@@ -8,7 +8,7 @@ import inspect
 import hashlib
 import re
 from .two_stage import MODE
-from .audit import raw_completion,event
+from .audit import raw_completion,event,fingerprint
 from .rollout import RolloutLengthError
 
 def generate_many(owner,prefixes,seeds):
@@ -74,7 +74,9 @@ def generate_many(owner,prefixes,seeds):
             ids=tuple(rows[j]);after=state_hash(generators[i])
             raw_completion(ids,reasons[j],histories[j],seeds[i],version)
             event('batched_stage',batch_slot=i,stage_name=name,sampled_log_probs=lps[j],
-                backend='hf_native_forward_batch_v1',rng_before_sha256=before[j],rng_after_sha256=after)
+                backend='hf_native_forward_batch_v1',seed=seeds[i],policy_version=version,
+                prefix_sha256=fingerprint(histories[j]),native_token_ids=ids,finish_reason=reasons[j],
+                rng_before_sha256=before[j],rng_after_sha256=after)
             if reasons[j]=='length' and limits[j]<budgets[j]:raise RolloutLengthError('batch context ceiling reached before action budget')
             result[i]=(ids,tuple(lps[j]),reasons[j],before[j],after)
         return result
@@ -93,6 +95,7 @@ def generate_many(owner,prefixes,seeds):
             b,bp,br,r2,r3=second.get(i,((),(),'not_started',None,None))
             if i in second and r1!=r2:raise RuntimeError('batch Summary reset its request RNG')
             g=fmt.record(a,b,ap,bp,ar,br,(r0,r1,r2,r3))
-            event('batched_action_record',batch_slot=i,generation=g)
+            event('batched_action_record',batch_slot=i,generation=g,seed=seeds[i],policy_version=version,
+                prefix_sha256=fingerprint(prefixes[i]))
             records.append(g)
         return tuple(records)
