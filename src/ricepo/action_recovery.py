@@ -58,6 +58,13 @@ class VerifiedActionRecovery:
             raise ValueError('missing paid actions beyond the identified partial failure')
         if any(version!=binding['continuation']['parent_policy_version'] for version,_ in self.paid):
             raise ValueError('paid actions do not all use the restored parent policy')
+        think_key=(*self.failed_key,self.paid[self.failed_key]['prefix_sha256'],'think')
+        think=self.stages.get(think_key)
+        if (not think or think.get('finish_reason')!='think_closed' or not think.get('native_token_ids')
+                or len(think.get('sampled_log_probs',()))!=len(think['native_token_ids'])
+                or not think.get('rng_before_sha256') or not think.get('rng_after_sha256')):
+            raise ValueError('missing complete saved Think evidence for the partial request')
+        self.failed_think_verified=False
         for p in root.glob('iteration-*/trajectories.json'):
             for t in read(p):self.expected[t['trajectory_id']]=t
         for p in root.glob('attempts/*/items/counterfactual/*.json'):
@@ -85,13 +92,17 @@ class VerifiedActionRecovery:
 
     def validate_stage(self,history,seed,version,stage,ids,lps,before,after):
         expected=self.stages.get((version,seed,fingerprint(tuple(history)),stage))
-        if expected is None:return
+        if expected is None:
+            if (version,seed)==self.failed_key and stage=='think':
+                raise ValueError('missing exact saved Think prefix during recovery')
+            return
         if (tuple(expected['native_token_ids'])!=tuple(ids)
                 or expected['rng_before_sha256']!=before or expected['rng_after_sha256']!=after):
             raise ValueError('recovered native stage or RNG differs from saved evidence')
         from .probability_check import compare_log_probs
         check=compare_log_probs(expected['sampled_log_probs'],lps,[True]*len(ids))
         if not check['within_bf16_tolerance']:raise ValueError('recovered stage probability mismatch')
+        if (version,seed)==self.failed_key and stage=='think':self.failed_think_verified=True
         event('recovery_saved_stage_verified',stage_name=stage,check=check)
 
     def validate_action(self,prefix,seed,version,generation):
@@ -99,6 +110,8 @@ class VerifiedActionRecovery:
         if key==self.failed_key and (not isinstance(generation,InvalidGeneration)
                                     or generation.category!='native_token_unmapped'):
             raise ValueError('partial recovery terminal cause changed; no successful resampling allowed')
+        if key==self.failed_key and not self.failed_think_verified:
+            raise ValueError('partial recovery requires actual saved Think verification')
         if key==self.failed_key:event('recovery_partial_action_verified',generation=generation,
                                       source_binding_sha256=self.provenance['source_binding_sha256'])
 

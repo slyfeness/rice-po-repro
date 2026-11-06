@@ -28,7 +28,7 @@ class RecoveryTests(unittest.TestCase):
         failed={**first,'seed':43,'prefix_sha256':fingerprint((7,)),'trajectory_id':'branch'}
         atomic_json(events/'action.json',dict(kind='two_stage_action_record',generation=asdict(g),**first))
         atomic_json(events/'think.json',dict(kind='two_stage_stage_saved',stage_name='think',native_token_ids=a,
-            sampled_log_probs=(-1.,)*len(a),rng_before_sha256='before',rng_after_sha256='after',**failed))
+            sampled_log_probs=(-1.,)*len(a),rng_before_sha256='before',rng_after_sha256='after',finish_reason='think_closed',**failed))
         for n,identity in enumerate((first,failed)):
             atomic_json(root/f'requests/{n}/first.json',dict(attempt='first',identity=identity))
         atomic_json(root/'attempts/first/failure.json',dict(reason='unmapped native byte token',operation=failed))
@@ -52,10 +52,26 @@ class RecoveryTests(unittest.TestCase):
                 recovery.validate_action((7,),43,'p',g)
             f=TwoStageFormat(MissingTokenTok())
             bad=f.record(a,(1001,),(-1.,)*len(a),(-2.,),'think_closed','native_token_unmapped')
-            recovery.validate_action((7,),43,'p',bad)
             with self.assertRaisesRegex(ValueError,'native stage'):
                 recovery.validate_stage((7,),43,'p','think',(3,),(-1.,),'before','after')
             recovery.validate_stage((7,),43,'p','think',a,(-1.,)*len(a),'before','after')
+            recovery.validate_action((7,),43,'p',bad)
+
+    def test_missing_saved_think_refuses_recovery_before_sampling(self):
+        with tempfile.TemporaryDirectory() as d:
+            root,binding,plan,g,a=self.fixture(d)
+            (root/'attempts/first/events/think.json').unlink()
+            with self.assertRaisesRegex(ValueError,'saved Think'):
+                VerifiedActionRecovery([{'run':str(root),'source':str(Path(d)/'code')}],binding,plan)
+
+    def test_partial_action_requires_actual_think_verification(self):
+        with tempfile.TemporaryDirectory() as d:
+            root,binding,plan,g,a=self.fixture(d)
+            recovery=VerifiedActionRecovery([{'run':str(root),'source':str(Path(d)/'code')}],binding,plan)
+            f=TwoStageFormat(MissingTokenTok())
+            bad=f.record(a,(1001,),(-1.,)*len(a),(-2.,),'think_closed','native_token_unmapped')
+            with self.assertRaisesRegex(ValueError,'Think verification'):
+                recovery.validate_action((7,),43,'p',bad)
 
     def test_wrong_assets_or_already_committed_update_rejected(self):
         with tempfile.TemporaryDirectory() as d:
