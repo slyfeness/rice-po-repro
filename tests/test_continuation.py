@@ -24,7 +24,10 @@ class ContinuationTests(unittest.TestCase):
                      model_sha256='model',retriever_sha256='retriever',prompt_sha256='prompt',behavior={'precision':'float32'})
         chosen=dict(policy_version='p',checkpoint=str(root/'iteration-000000/checkpoint'),development_macro=.2,iteration=0)
         plan['checkpoint_selection']='best_development_macro'
-        for name,value in [('config',config),('recipe',{'values':plan,'fingerprint':'recipe'}),
+        recipe={'values':plan}
+        recipe['fingerprint']=fingerprint(recipe)
+        binding['recipe_fingerprint']=recipe['fingerprint']
+        for name,value in [('config',config),('recipe',recipe),
                            ('sources',sources),('binding',binding),('deployment',deployment),
                            ('completed',{'completed_updates':1,'last_policy_version':'p','selected_checkpoint':chosen})]:
             atomic_json(root/(name+'.json'),value)
@@ -79,6 +82,16 @@ class ContinuationTests(unittest.TestCase):
             path.write_text(json.dumps(value))
             with patch('ricepo.continuation.verify_checkpoint',return_value={'iteration':0,'policy_version':'p'}):
                 with self.assertRaisesRegex(ValueError,'selection'):
+                    parent_run(dep,binding,plan,train)
+
+    def test_recipe_values_must_match_the_bound_fingerprint(self):
+        with tempfile.TemporaryDirectory() as d:
+            dep,binding,plan,train=self.parent_fixture(d)
+            import json
+            path=Path(dep['parent_run_root'])/'recipe.json';value=json.loads(path.read_text())
+            value['values']['temperature']=.6;plan['temperature']=.6;path.write_text(json.dumps(value))
+            with patch('ricepo.continuation.verify_checkpoint',return_value={'iteration':0,'policy_version':'p'}):
+                with self.assertRaisesRegex(ValueError,'recipe identity'):
                     parent_run(dep,binding,plan,train)
 
     def test_only_budget_may_change(self):

@@ -1,6 +1,6 @@
 # Existing 32-query retrieval diagnosis
 
-This is a descriptive analysis of the existing initial, GRPO-update-1 and RICE-update-1 development trajectories. No new generation, prompt search, query selection or reward modification was used. All 96 saved D0/per-round rankings were rescored against the frozen qrels using the same `PyTrecReward.score` (`ndcg_cut_10`); every stored score agreed. The complete query membership was checked against the 32-query manifest.
+This is a descriptive analysis of the existing initial, GRPO-update-1 and RICE-update-1 development trajectories. No new generation, prompt search, training-query selection or reward modification was used. All D0/per-round rankings belonging to the 96 trajectories were rescored against the frozen qrels using the same `PyTrecReward.score` (`ndcg_cut_10`); every stored score agreed. The complete query membership was checked against the 32-query manifest.
 
 The observational unit is one `(domain, query_id, policy)` trajectory, paired across policies. A round exists only after a real legal retrieval action. Missing later rounds are not imputed. `task_score` is the explicitly independent failure-adjusted utility, while `last_valid_ndcg` is the last measured retrieval result, including D0 when no later valid retrieval exists. Query digests are stable pseudonyms, not anonymity guarantees.
 

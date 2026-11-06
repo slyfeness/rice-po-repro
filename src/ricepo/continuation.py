@@ -41,8 +41,10 @@ def parent_run(deployment, binding, plan, train):
         raise ValueError('this continuation entry requires a completed one-update parent')
     recipe = read_json(root/'recipe.json')
     continuation_recipe(recipe['values'],plan)
+    recipe_payload={k:v for k,v in recipe.items() if k not in {'fingerprint','unresolved_fields','issues','execution'}}
     if (fingerprint(read_json(root/'config.json')) != parent['config_sha256']
-            or recipe['fingerprint'] != parent['recipe_fingerprint']):
+            or recipe['fingerprint'] != parent['recipe_fingerprint']
+            or fingerprint(recipe_payload) != parent['recipe_fingerprint']):
         raise ValueError('parent config or recipe identity changed')
     source_root = Path(deployment['parent_source_root'])/'src'/'ricepo'
     sources = {p.name:file_sha256(p) for p in sorted(source_root.glob('*.py'))}
