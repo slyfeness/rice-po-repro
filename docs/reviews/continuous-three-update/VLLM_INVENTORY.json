@@ -1,0 +1,33 @@
+{
+  "scope": "CPU installed-package inventory only; no engine, model, inference, GPU or installation",
+  "job_id": "174836",
+  "packages": {
+    "vllm": "0.19.1",
+    "torch": "2.10.0",
+    "transformers": "5.5.1",
+    "numpy": "1.26.4"
+  },
+  "candidate_not_validated": true,
+  "import_succeeded": true,
+  "private_report_sha256": "806e1e5e32dc6c0683d8e7246478a3758e55612776a35332d80c27cbab1535ea",
+  "interfaces": {
+    "native_prompt_ids": "Must be verified by a real engine test; CPU signature inventory alone is insufficient",
+    "sampling_parameters_present": [
+      "seed",
+      "temperature",
+      "top_p",
+      "top_k",
+      "logprobs",
+      "detokenize",
+      "include_stop_str_in_output"
+    ]
+  },
+  "not_run": [
+    "GPU engine initialization",
+    "FP32 GPU inference",
+    "two-stage native termination",
+    "sampler versus teacher probability test",
+    "actual checkpoint weight reload",
+    "throughput benchmark"
+  ]
+}

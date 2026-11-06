@@ -1,0 +1,15 @@
+{
+  "inputs": {
+    "EVIDENCE.json": "634e7824784a6c2e47ca1fd08c4b9006f5586ef00c6dfaea82107c023c2ac79c",
+    "RETRIEVAL_EVIDENCE.json": "78ade281147723e201955d71938ab41d08da19567df07eafefe67756bce32837"
+  },
+  "script_sha256": "e4c020c00ed4efeaba8a5252093780c86580f87de3d422b15e6be7769718f227",
+  "matplotlib": "3.10.9",
+  "units": "Raw [0,1] utility; missing development at update 2 is null, not zero.",
+  "scope": "Public redacted aggregate presentation only; no model, dataset, private trajectory or GPU computation.",
+  "files": {
+    "CURVES.png": "d419fe5cba6644a5890825a6e4bcff49bd8ebc2e4ce814d40d0dc2befc09f8bc",
+    "CURVES.svg": "f9b4ad2ad39685dfd21f6eb59406f2de21c5fb5b3d7dfe69079ac48100029546",
+    "CURVE_DATA.json": "453d7a82945641c241fe12c2f7d5e625b39dbf6ad3f858cd6a1c727e6034e2e0"
+  }
+}

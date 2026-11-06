@@ -1,3 +1,9 @@
+## 2026-11-06 显式续训与加速入口
+
+新增独立child-run，从完整第一更新检查点加载Actor、优化器、CPU/CUDA RNG，固定Reference仍从初始模型加载。父配置不原地延长；全局更新序号与本地目录序号分别保存。串行续训与可选hf_native_wavefront_v1资格分开；本轮未接通vLLM训练或四rank。精确使用运行绑定源码恢复，不能仅改policy_version字符串。[入口与限制](reviews/continuous-three-update/RUNTIME.md) · [实际batch验收](reviews/continuous-three-update/BATCH_ACCEPTANCE.md) · [vLLM现状](reviews/continuous-three-update/VLLM_STATUS.md)。
+
+---
+
 ## 2026-11-06 两阶段受限验收
 
 新增 two_stage_env_summary_v1、actor_precision=float32、eval_layers_v1 和 local_verified_v1；仍为单进程Actor/Reference一设备+Diver另一设备。真实训练包源码对应公开等价提交98267806afc70bf73c26385460918d918b02ea49；恢复必须使用绑定的精确包源码，可配合新scripts/validation/verify_training_checkpoint.py，不能绕过source fingerprint。见[测量及限制](reviews/two-stage-native-v1/SUMMARY.md)。

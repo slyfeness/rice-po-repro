@@ -1,0 +1,33 @@
+"""Matched16 raw conditional request schedule, serial HF FP32 speed reference."""
+import os,json,time
+from pathlib import Path
+import torch
+from transformers import AutoModelForCausalLM,AutoTokenizer,GenerationConfig
+from ricepo.artifacts import atomic_json,file_sha256
+from ricepo.audit import fingerprint,stable_seed
+from ricepo.state import verify_checkpoint
+from ricepo.policy_identity import identify
+from ricepo.environment import configure_caches
+r=Path(os.environ['RICE_PROJECT']);root=r/'runs'/('hf-serial16-'+os.environ['SLURM_JOB_ID']);root.mkdir();configure_caches(r/'cache'/root.name);read=lambda p:json.loads(p.read_text())
+base=read(r/'runs/vllm-fp32-probe-174858/selection.json')['prefixes'];parent=r/'runs/continuation-grpo-174716';cp=parent/'iteration-000001/checkpoint';binding=read(parent/'binding.json');receipt=verify_checkpoint(cp,fingerprint(binding))
+model=AutoModelForCausalLM.from_pretrained(str(cp/'actor'),torch_dtype=torch.float32,local_files_only=True,trust_remote_code=False).to('cuda:0').eval();model.requires_grad_(False)
+version,identity=identify(model,binding['behavior'])
+if version!=receipt['policy_version']:raise ValueError('actual policy differs')
+tok=AutoTokenizer.from_pretrained(str(cp/'actor'),local_files_only=True,trust_remote_code=False)
+records=[];seconds=0;count=0
+for i in range(16):
+ p=base[i%4];seed=stable_seed(42,'vllm_fp32_graph_batch_v1',i)
+ start=time.monotonic()
+ with torch.random.fork_rng(devices=[0]),torch.inference_mode():
+  torch.manual_seed(seed);torch.cuda.manual_seed(seed)
+  config=GenerationConfig(do_sample=True,temperature=1.,top_p=1.,top_k=0,max_new_tokens=512,eos_token_id=tok.eos_token_id,pad_token_id=tok.eos_token_id,repetition_penalty=1.)
+  out=model.generate(input_ids=torch.tensor([p],device='cuda:0'),attention_mask=torch.ones((1,len(p)),dtype=torch.long,device='cuda:0'),generation_config=config)
+  ids=out[0,len(p):].tolist()
+ torch.cuda.synchronize();elapsed=time.monotonic()-start;seconds+=elapsed;count+=len(ids)
+ row=dict(request_index=i,prefix_index=i%4,prefix_sha256=fingerprint(p),seed=seed,token_ids=ids,generation_seconds=elapsed)
+ atomic_json(root/('native-'+str(i)+'.json'),row);records.append(row)
+ print('HF_BASELINE_REQUEST',i,len(ids),elapsed,flush=True)
+atomic_json(root/'summary.json',dict(requests=16,actual_model_tokens=count,generation_seconds=seconds,tokens_per_second=count/seconds,policy_version=version,actual_state_dict_sha256=identity['state_dict_sha256'],peak_allocated=torch.cuda.max_memory_allocated(),peak_reserved=torch.cuda.max_memory_reserved(),
+ prefix_lengths=list(map(len,base)),max_new_tokens=512,temperature=1.,top_p=1.,top_k_disabled=0,
+ scope='HF serial reference for the same16 fixed prefix/seed/budget requests as graph batch16; different RNG implementations can produce different text/length. No two-stage stopping, retrieval, reward or optimizer.'))
+print('HF_SERIAL16_COMPLETE',root,flush=True)

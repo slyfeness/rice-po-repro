@@ -1,0 +1,19 @@
+#!/bin/bash
+#SBATCH -p ${SLURM_PARTITION}
+#SBATCH -A ${SLURM_ACCOUNT}
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH --gres=gpu:1
+#SBATCH -c 8
+#SBATCH --mem=96G
+#SBATCH -t 01:00:00
+date -u '+BATCH_ENTRY %Y-%m-%dT%H:%M:%SZ'
+set -euo pipefail
+export RICE_PROJECT=${PROJECT_ROOT}
+source ${BULK_ROOT}/envs/ricepo-retrieval-overlay-v1/bin/activate
+export PYTHONPATH="$RICE_PROJECT/releases/batch-wavefront-v1/src" OMP_NUM_THREADS=4
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 HF_DATASETS_OFFLINE=1
+export TMPDIR="$RICE_PROJECT/tmp/long-switch-$SLURM_JOB_ID"
+mkdir "$TMPDIR"
+unset HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy
+python -u "$RICE_PROJECT/control/122-long-policy-switch.py"

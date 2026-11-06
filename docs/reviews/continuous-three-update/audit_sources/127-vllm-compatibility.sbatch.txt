@@ -1,0 +1,17 @@
+#!/bin/bash
+#SBATCH -p ${SLURM_PARTITION}
+#SBATCH -A ${SLURM_ACCOUNT}
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 4
+#SBATCH --mem=24G
+#SBATCH -t 00:15:00
+date -u '+BATCH_ENTRY %Y-%m-%dT%H:%M:%SZ'
+set -euo pipefail
+export RICE_PROJECT=${PROJECT_ROOT}
+source ${BULK_ROOT}/envs/ricepo-retrieval-overlay-v1/bin/activate
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 HF_DATASETS_OFFLINE=1
+export TMPDIR="$RICE_PROJECT/tmp/vllm-cpu-$SLURM_JOB_ID" XDG_CACHE_HOME="$RICE_PROJECT/cache/vllm-cpu-$SLURM_JOB_ID"
+mkdir -p "$TMPDIR" "$XDG_CACHE_HOME"
+unset HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy
+python -u "$RICE_PROJECT/control/127-vllm-compatibility.py"

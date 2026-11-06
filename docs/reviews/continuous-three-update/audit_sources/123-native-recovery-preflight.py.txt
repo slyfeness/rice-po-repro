@@ -1,0 +1,19 @@
+import os,json
+from pathlib import Path
+from ricepo.action_recovery import VerifiedActionRecovery
+from ricepo.artifacts import atomic_json
+from transformers import AutoTokenizer
+r=Path(os.environ['RICE_PROJECT']);old=r/'runs/continuation-ricepo-174715'
+read=lambda p:json.loads(p.read_text())
+dep=read(old/'deployment.json');tok=AutoTokenizer.from_pretrained(dep['actor_model_path'],local_files_only=True,trust_remote_code=False)
+config=read(Path(dep['actor_model_path'])/'config.json');vocab=config['vocab_size']
+top=max(tok.get_vocab().values())+1
+unmapped=[i for i in range(top,vocab) if tok.convert_ids_to_tokens([i])[0] is None]
+if not unmapped:raise ValueError('model/tokenizer unmapped-row diagnosis not supported by actual assets')
+replay=VerifiedActionRecovery([dict(run=str(old),source=str(r/'releases/continuation-v1'))],read(old/'binding.json'),read(old/'recipe.json')['values'])
+out=r/'reports'/('native-recovery-preflight-'+os.environ['SLURM_JOB_ID'])
+atomic_json(out/'complete.json',dict(passed=True,model_vocab_size=vocab,tokenizer_length=len(tok),
+    tokenizer_max_id_plus_one=top,unmapped_model_row_count=len(unmapped),unmapped_first=unmapped[0],
+    replay=replay.provenance,
+    limitation='Old Summary native IDs were not persisted by the throwing stopping callback. Recovery must reproduce the same partial request, verify saved Think IDs/RNG and retain the same unmapped-token terminal cause.'))
+print('NATIVE_RECOVERY_PREFLIGHT',vocab,len(tok),len(unmapped),replay.provenance,flush=True)

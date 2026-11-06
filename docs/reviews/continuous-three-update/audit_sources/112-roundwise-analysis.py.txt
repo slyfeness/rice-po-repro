@@ -1,0 +1,73 @@
+"""Private frozen-artifact analysis; public output excludes dataset and generated text."""
+import os,json,math,re
+from pathlib import Path
+from statistics import mean
+from ricepo.artifacts import atomic_json,file_sha256
+from ricepo.audit import fingerprint
+from ricepo.retrieval import PyTrecReward
+from ricepo.roundwise_analysis import summarize,paired_divergence
+r=Path(os.environ['RICE_PROJECT'])
+out=r/'reports'/('roundwise-'+os.environ['SLURM_JOB_ID']);out.mkdir()
+manifest=r/'datasets/biology-batch-bundle-v1/development.jsonl'
+examples=[json.loads(line) for line in manifest.read_text().splitlines() if line]
+rows={json.dumps([x['domain'],x['query_id']],ensure_ascii=False,separators=(',',':')):x for x in examples}
+reward=PyTrecReward({k:v['qrels'] for k,v in rows.items()})
+roots={'initial':r/'runs/two-stage-initial-174631/evaluation'}
+for m,j in [('grpo',174611),('ricepo',174610)]:
+    roots[m]=next((r/f'runs/two-stage-online-{m}-{j}/iteration-000000/development-attempts').iterdir())
+all_rows={};indices={}
+def ranking_stats(q,documents):
+    ids=[x['document_id'] for x in documents]
+    return dict(ndcg=reward.score(q,ids),relevant_ranks=[i+1 for i,d in enumerate(ids) if rows[q]['qrels'].get(d,0)>0],
+                ranking_sha256=fingerprint(ids),ranked_ids=ids)
+for method,root in roots.items():
+    results=json.loads((root/'results-by-query.json').read_text())
+    keyed={json.dumps([x['domain'],x['query_id']],ensure_ascii=False,separators=(',',':')):x for x in results}
+    if keyed.keys()!=rows.keys() or len(results)!=len(rows):raise ValueError('incomplete membership')
+    extracted=[];evidence={}
+    for path in sorted((root/'trajectories').glob('*.json')):
+        t=json.loads(path.read_text());q=t['query_id'];base=path.stem
+        initial_path=root/'initial'/(base+'.json');initial=json.loads(initial_path.read_text())
+        stats=ranking_stats(q,initial['initial']['documents'])
+        if abs(stats['ndcg']-t['initial_ndcg'])>1e-12:raise ValueError('D0 score mismatch')
+        terms=set(re.findall(r'\w+',rows[q]['query'].casefold()))
+        rounds=[]
+        for s in t['steps']:
+            measured=ranking_stats(q,s['retrieval']['documents'])
+            if abs(measured['ndcg']-s['local_reward'])>1e-12:raise ValueError('saved/recomputed NDCG mismatch')
+            summary=s['generation']['summary_text']
+            summary_terms=set(re.findall(r'\w+',summary.casefold()))
+            rounds.append(dict(depth=s['depth'],summary=summary,retrieval_query=s['retrieval']['query'],
+                summary_sha256=fingerprint(' '.join(summary.casefold().split())),
+                retrieval_query_sha256=fingerprint(s['retrieval']['query']),
+                query_term_retention=len(terms&summary_terms)/len(terms) if terms else None,**measured))
+        row=keyed[q]
+        if row['failed']!=(t['failure'] is not None):raise ValueError('failure mismatch')
+        if abs(row['last_valid_ndcg']-(rounds[-1]['ndcg'] if rounds else stats['ndcg']))>1e-12:raise ValueError('last-valid mismatch')
+        extracted.append(dict(query_id=fingerprint(q),source_query_id=q,original_query=rows[q]['query'],d0=stats['ndcg'],
+            d0_relevant_ranks=stats['relevant_ranks'],rounds=rounds,failed=row['failed'],
+            failure_depth=t['failure']['depth'] if t['failure'] else None,
+            failure_category=t['failure']['generation']['category'] if t['failure'] else None,
+            task_score=row['failure_adjusted_task_score'],last_valid_ndcg=row['last_valid_ndcg'],
+            policy_version=t['policy_version'],trajectory_sha256=file_sha256(path),initial_sha256=file_sha256(initial_path)))
+        evidence[base]=dict(trajectory_sha256=file_sha256(path),initial_sha256=file_sha256(initial_path))
+    if len(extracted)!=32 or len({x['query_id'] for x in extracted})!=32:raise ValueError('trajectory membership')
+    all_rows[method]=extracted;indices[method]=dict(summary_sha256=file_sha256(root/'summary.json'),files=evidence)
+    atomic_json(out/(method+'-private.json'),extracted)
+public={}
+for method,extracted in all_rows.items():
+    safe=[]
+    for row in extracted:
+        safe.append({k:v for k,v in row.items() if k not in {'source_query_id','original_query','rounds'}}|
+                    {'rounds':[{k:v for k,v in turn.items() if k not in {'summary','retrieval_query','ranked_ids'}} for turn in row['rounds']]})
+    public[method]=dict(summary=summarize(extracted),queries=safe)
+common=set.intersection(*({row['query_id'] for row in v if not row['failed']} for v in all_rows.values()))
+public['common_complete']={m:dict(count=len(common),matched_d0=mean(x['d0'] for x in v if x['query_id'] in common) if common else None,
+    final_ndcg=mean(x['last_valid_ndcg'] for x in v if x['query_id'] in common) if common else None) for m,v in all_rows.items()}
+public['grpo_ricepo_paired']=paired_divergence(all_rows['grpo'],all_rows['ricepo'])
+public['manifest_sha256']=file_sha256(manifest);public['evidence']=indices
+public['all_saved_scores_recomputed']=True
+public['interpretation']='Descriptive paired analysis. Lexical retention is a proxy; stochastic path differences do not identify a causal training effect.'
+atomic_json(out/'public-roundwise.json',public)
+for m in roots:print(m,json.dumps(public[m]['summary']),flush=True)
+print('ANALYSIS_COMPLETE',out,flush=True)

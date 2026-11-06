@@ -2,7 +2,9 @@
 
 面向祝融，目标为 DeepSeek-R1-Distill-Qwen-1.5B 和 BRIGHT。最初源码审查基准为 `d4b490a96f8ceb31392ca55abf31325bedb7078c`。[论文 v3](https://arxiv.org/html/2605.26352v3) · [逐项修改表](docs/REVISION_MATRIX.csv) · [验证状态](docs/VALIDATION.md)
 
-最新受限结果：[两阶段协议与真实信用更新报告](docs/reviews/two-stage-native-v1/SUMMARY.md)。RICE 完成16原轨迹、80新分支；9/16锚点可估计，4个非零局部优势实际参与PPO，模型/优化器/RNG检查点已独立恢复。三组完整32题开发分数：初始0.15929、GRPO0.04710、RICE0.02771（均为失败调整任务分数）。链路已打通，性能未达标；两阶段与失败环境是独立约定，公开模板仍禁执行。[此前失败阶段](docs/reviews/first-ricepo-smoke/FAILURE_ZERO_RESULTS.md)保留，不改写历史。
+最新受限结果：[连续三更新与检索退化报告](docs/reviews/continuous-three-update/SUMMARY.md)。RICE-PO与GRPO均完成三个真实更新及独立检查点恢复；RICE每次均有非零局部信用，推理传播仅一次且在末轮。完整32题失败调整任务分数：Initial 0.159289、GRPO3 0.055125、RICE3 0.070683；两者尚未恢复初始性能。两阶段/失败环境为独立实现，公开模板继续禁执行。
+
+[VLLM IEEE FP32候选](docs/reviews/continuous-three-update/VLLM_STATUS.md)已通过80条长条件历史概率检查；同16请求/6734原生token生成155.78→23.30秒，约6.69倍。该候选尚未完成两阶段Trainer与训练后权重同步接入。真实HF整套采样加速约1.10倍。此前[第一更新报告](docs/reviews/two-stage-native-v1/SUMMARY.md)和[更早失败阶段](docs/reviews/first-ricepo-smoke/FAILURE_ZERO_RESULTS.md)保留各自历史范围。
 
 ## 配置和方法
 

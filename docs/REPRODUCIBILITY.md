@@ -1,3 +1,9 @@
+## 2026-11-06 连续更新阶段
+
+本阶段以768f60f为基准，保留已提交的第一更新与私有资产；两种方法在新child-run内继续全局更新2/3，使用同一冻结查询日程。128/32/103数据包和summary_only检索组成不变；四查询诊断批次不能冒充论文128查询训练。两阶段/失败零效用仍是独立约定；详见[数据身份](reviews/continuous-three-update/DATA_AUDIT.md)、[逐轮退化](reviews/continuous-three-update/RETRIEVAL_AUDIT.md)及[局限](reviews/continuous-three-update/OPEN_ISSUES.md)。历史结果与未运行声明保留各自阶段适用范围。
+
+---
+
 ## 2026-11-06 两阶段受限验收
 
 本轮实际使用128/32/103冻结包中的4训练查询，所有三组完整32题开发均计入失败，正式测试未执行。非零局部信用与权重变化已核验，开发性能下降；详见[独立复现边界](reviews/two-stage-native-v1/SUMMARY.md)。上游来源核验不因本地指纹一致而升级。

@@ -1,0 +1,21 @@
+#!/bin/bash
+#SBATCH -p ${SLURM_PARTITION}
+#SBATCH -A ${SLURM_ACCOUNT}
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH --gres=gpu:1
+#SBATCH -c 8
+#SBATCH --mem=96G
+#SBATCH -t 01:00:00
+date -u '+BATCH_ENTRY %Y-%m-%dT%H:%M:%SZ'
+set -euo pipefail
+export RICE_PROJECT=${PROJECT_ROOT}
+source ${BULK_ROOT}/envs/ricepo-retrieval-overlay-v1/bin/activate
+export PYTHONPATH="$RICE_PROJECT/releases/native-recovery-v2/src" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 HF_DATASETS_OFFLINE=1 OMP_NUM_THREADS=4
+export TMPDIR="$RICE_PROJECT/tmp/vllm-graph-$SLURM_JOB_ID" XDG_CACHE_HOME="$RICE_PROJECT/cache/vllm-graph-$SLURM_JOB_ID"
+mkdir -p "$TMPDIR" "$XDG_CACHE_HOME"
+export VLLM_RPC_BASE_PATH="${BULK_ROOT}/tmp/rg-$SLURM_JOB_ID" VLLM_CACHE_ROOT="$XDG_CACHE_HOME/vllm" TRITON_CACHE_DIR="$XDG_CACHE_HOME/triton"
+mkdir -p "$VLLM_RPC_BASE_PATH" "$VLLM_CACHE_ROOT" "$TRITON_CACHE_DIR"
+export TRITON_F32_DEFAULT=ieee
+unset HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy
+python -u "$RICE_PROJECT/control/138-vllm-graph-ieee.py"

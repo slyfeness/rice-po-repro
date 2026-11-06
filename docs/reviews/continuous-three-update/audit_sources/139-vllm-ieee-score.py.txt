@@ -1,0 +1,36 @@
+"""Independent full-history scoring of all saved graph/batch native outputs."""
+import os,json,time
+from pathlib import Path
+import torch
+from transformers import AutoModelForCausalLM
+from ricepo.artifacts import atomic_json,file_sha256
+from ricepo.audit import fingerprint
+from ricepo.state import verify_checkpoint
+from ricepo.policy_identity import identify
+from ricepo.modeling import sampled_old_log_probs
+from ricepo.probability_check import compare_log_probs
+r=Path(os.environ['RICE_PROJECT']);source=r/'runs/vllm-graph-batch-174918';root=r/'runs'/('vllm-graph-score-'+os.environ['SLURM_JOB_ID']);root.mkdir();read=lambda p:json.loads(p.read_text())
+summary=read(source/'summary.json');base=read(r/'runs/vllm-fp32-probe-174858/selection.json')['prefixes']
+parent=r/'runs/continuation-grpo-174716';cp=parent/'iteration-000001/checkpoint';binding=read(parent/'binding.json');receipt=verify_checkpoint(cp,fingerprint(binding))
+model=AutoModelForCausalLM.from_pretrained(str(cp/'actor'),torch_dtype=torch.float32,local_files_only=True,trust_remote_code=False).to('cuda:0').eval();model.requires_grad_(False)
+version,identity=identify(model,binding['behavior'])
+if version!=receipt['policy_version'] or version!=summary['checkpoint_policy']:raise ValueError('teacher checkpoint mismatch')
+results=[];records={};start=time.monotonic()
+for n in (16,64):
+ gs=read(source/('native-'+str(n)+'.json'));records[n]=gs;checks=[]
+ for i,g in enumerate(gs):
+  p=base[i%4]
+  if g['request_index']!=i or g['prefix_index']!=i%4 or g['prefix_sha256']!=fingerprint(p):raise ValueError('native identity mismatch')
+  ids=p+g['token_ids'];mask=[False]*len(p)+[True]*len(g['token_ids'])
+  with torch.inference_mode():teacher=sampled_old_log_probs(model,ids,mask,device='cuda:0',logit_chunk_size=64,max_context_tokens=32768,policy_call_kwargs={})[0].cpu().tolist()
+  c=dict(request_index=i,native_length=len(ids),**compare_log_probs([0.]*len(p)+g['sampled_log_probs'],teacher,mask));checks.append(c)
+  atomic_json(root/('batch-'+str(n)+'-request-'+str(i)+'.json'),c)
+ row=dict(requests=n,checks=checks,all_passed=all(c['within_bf16_tolerance'] for c in checks),source_native_sha256=file_sha256(source/('native-'+str(n)+'.json')));results.append(row)
+ atomic_json(root/('batch-'+str(n)+'-summary.json'),row)
+atomic_json(root/'summary.json',dict(results=results,all_passed=all(x['all_passed'] for x in results),actual_teacher_policy=version,actual_teacher_state_dict_sha256=identity['state_dict_sha256'],
+ elapsed_seconds=time.monotonic()-start,first16_ids_same_across_batch_sizes=all(a['token_ids']==b['token_ids'] for a,b in zip(records[16],records[64][:16],strict=True)),
+ first16_seeds_same=all(a['seed']==b['seed'] for a,b in zip(records[16],records[64][:16],strict=True)),peak_allocated=torch.cuda.max_memory_allocated(),
+ triton_fp32_default=summary.get('triton_fp32_default'),
+ scope='All80 fixed conditional requests, real FP32 teacher and full native histories; no two-stage stop, weight-update synchronization or PPO qualification'))
+print('GRAPH_SCORE_COMPLETE',root,flush=True)
+if not all(x['all_passed'] for x in results):raise ValueError('full-history graph sampler probability gate failed')

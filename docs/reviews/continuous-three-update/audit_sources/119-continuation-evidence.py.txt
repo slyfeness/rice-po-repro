@@ -1,0 +1,282 @@
+"""CPU-only final evidence extraction; explicit allowlist, no dataset/generated text."""
+import os,json,math,csv,io,re,subprocess,statistics,importlib.metadata as md,platform
+from pathlib import Path
+from collections import defaultdict
+from ricepo.artifacts import atomic_json,file_sha256
+from ricepo.audit import fingerprint,cost_report
+r=Path(os.environ['RICE_PROJECT']);out=r/'reports'/('continuation-public-'+os.environ['SLURM_JOB_ID']);out.mkdir()
+read=lambda p:json.loads(p.read_text())
+index=[]
+def evidence(path,alias):
+    if path.is_file():index.append(dict(alias=alias,bytes=path.stat().st_size,sha256=file_sha256(path)))
+def load(path,alias):
+    evidence(path,alias);return read(path)
+def dist(v):
+    v=sorted(v)
+    return dict(count=len(v),min=min(v) if v else None,median=statistics.median(v) if v else None,
+                max=max(v) if v else None,mean=statistics.fmean(v) if v else None,values=v)
+def development(directory):
+    marker=directory/'development_complete.receipt.json'
+    if not marker.exists():return dict(status='not_complete')
+    stage=read(marker);ref=stage['artifacts']
+    if ref.get('skipped'):return dict(status='skipped_cadence')
+    report=directory/ref['relative_report']
+    if file_sha256(report)!=ref['sha256']:raise ValueError('development report changed')
+    summary=load(report,directory.parent.name+'/'+directory.name+'/development-summary')
+    rows=load(report.parent/'results-by-query.json',directory.parent.name+'/'+directory.name+'/development-queries')
+    if len(rows)!=32 or len({(q['domain'],q['query_id']) for q in rows})!=32:raise ValueError('development membership')
+    return dict(status='complete',summary={k:v for k,v in summary.items() if k!='backend_versions'},
+        queries=[dict(query_hash=fingerprint(json.dumps([q['domain'],q['query_id']],ensure_ascii=False,separators=(',',':'))),
+            d0=q['initial_ndcg_at_10'],last_valid_ndcg=q['last_valid_ndcg'],normal_final_ndcg=q['ndcg_at_10'],
+            task_score=q['failure_adjusted_task_score'],failed=q['failed']) for q in rows],
+        matched_complete_d0=statistics.fmean(q['initial_ndcg_at_10'] for q in rows if not q['failed']) if any(not q['failed'] for q in rows) else None)
+result=dict(training={},baseline_manifest_sha256='5639686d224963c22e17981135453495e508646a7c270752c804fdc064cc1b71')
+for method,parent_job,child_job in [('ricepo',174610,174747),('grpo',174611,174716)]:
+    result['training'][method]=[]
+    for tag,offset in [(f'two-stage-online-{method}-{parent_job}',0),(f'continuation-{method}-{child_job}',1)]:
+        root=r/'runs'/tag;binding=load(root/'binding.json',tag+'/binding');recipe=read(root/'recipe.json');plan=recipe['values']
+        recipe_payload={k:v for k,v in recipe.items() if k not in {'fingerprint','unresolved_fields','issues','execution'}}
+        if fingerprint(recipe_payload)!=binding['recipe_fingerprint']:raise ValueError('bound recipe content differs')
+        if offset:
+            keys=('queries_per_update','trajectories_per_query','anchors_per_query','total_branches_including_original',
+                  'influence_threshold','residual_threshold','rollout_depth','local_advantage_normalization',
+                  'actor_learning_rate','actor_kl_coefficient','ppo_epochs','optimizer_minibatch_size','microbatch_size',
+                  'gradient_accumulation','loss_reduction','temperature','top_p','top_k','max_new_tokens_per_step',
+                  'query_composition','format_failure_policy','native_span_parser','development_every_updates','total_updates')
+            result.setdefault('frozen_parameters',{})[method]={k:plan[k] for k in keys if k in plan}
+        for d in sorted(root.glob('iteration-*')):
+            local=int(d.name[10:]);global_update=offset+local+1;alias=tag+'/'+d.name
+            row=dict(run_alias=tag,local_iteration=local,global_update=global_update,
+                binding_sha256=fingerprint(binding),source_sha256=binding['source_sha256'],
+                config_sha256=binding['config_sha256'],recipe_fingerprint=binding['recipe_fingerprint'],
+                reference_initial_actor_payload=binding['behavior']['initial_actor_payload'],sampling_backend='serial_hf_v1')
+            for name in ('rollout_complete','branches_complete','credit_complete','optimizer_step_committed','checkpoint_complete','development_complete','iteration_complete'):
+                row[name]=(d/(name+'.receipt.json')).is_file()
+            if (d/'trajectories.json').exists():
+                traces=load(d/'trajectories.json',alias+'/originals');groups=defaultdict(list)
+                for t in traces:groups[t['query_id']].append(t)
+                if len(groups)!=4 or any(len(v)!=4 for v in groups.values()):raise ValueError('incomplete original group')
+                baseline={}
+                for q,ts in groups.items():
+                    rewards=[t['final_reward'] for t in ts];mu=math.fsum(rewards)/len(rewards)
+                    var=math.fsum((v-mu)**2 for v in rewards)/len(rewards)
+                    for t in ts:baseline[t['trajectory_id']]=(t['final_reward']-mu)/(math.sqrt(var)+plan['normalization_epsilon'])
+                tokens=sum(sum(t['generated_mask']) for t in traces)
+                row.update(originals=len(traces),normal_originals=sum(t['failure'] is None for t in traces),
+                    original_rewards=[t['final_reward'] for t in traces],last_valid_ndcg=[t['last_valid_ndcg'] for t in traces],
+                    original_training_utilities=[t['final_reward'] for t in traces],
+                    normal_final_ndcg=[t['final_reward'] if t['failure'] is None else None for t in traces],
+                    failure_mask=[t['failure'] is not None for t in traces],sampled_original_tokens=tokens,
+                    original_valid_retrieval_calls=sum(len(t['steps']) for t in traces),
+                    trajectory_advantages=[baseline[t['trajectory_id']] for t in traces],
+                    nonzero_trajectory_advantages=sum(x!=0 for x in baseline.values()),
+                    query_schedule_sha256=file_sha256(d/'query-batch.json'),
+                    query_hashes=[fingerprint(q) for q in read(d/'query-batch.json')])
+                ts={t['trajectory_id']:t for t in traces}
+            if (d/'advantages.json').exists():
+                batch=load(d/'advantages.json',alias+'/advantages');positions=dict(zip(batch['trajectory_ids'],batch['advantages'],strict=True))
+                row['changed_advantage_action_tokens']=sum(m and a!=baseline[k] for k,aa in positions.items()
+                    for a,m in zip(aa,ts[k]['generated_mask'],strict=True))
+                row['masked_positions_zero_advantage']=all(m or a==0 for k,aa in positions.items()
+                    for a,m in zip(aa,ts[k]['generated_mask'],strict=True))
+            if (d/'credit-diagnostics.json').exists():
+                credit=load(d/'credit-diagnostics.json',alias+'/credit-diagnostics');details=[]
+                for a in credit['anchors']:
+                    local_rewards=[x['local'] for x in a['outcomes']];final=[x['final'] for x in a['outcomes']]
+                    residual=[f-l for f,l in zip(final,local_rewards,strict=True)]
+                    v=statistics.pvariance(local_rewards);vr=statistics.pvariance(residual);mu=statistics.fmean(local_rewards)
+                    orig=[x for x in a['outcomes'] if x['original']]
+                    if len(orig)!=1 or len(local_rewards)!=6:raise ValueError('original count or branch denominator')
+                    if abs(v-a['influence_variance'])>1e-12 or abs(vr-a['residual_variance'])>1e-12:raise ValueError('variance mismatch')
+                    if abs(orig[0]['local']-mu-a['summary_after'])>1e-12:raise ValueError('local advantage mismatch')
+                    expected_gate=a['influence_variance']>=.05 and a['residual_variance']<=.03
+                    if a['propagated']!=expected_gate:raise ValueError('frozen paper gate mismatch')
+                    t=ts[a['trajectory']];step=t['steps'][a['depth']-1];ss=step['summary_span'];rs=step['reasoning_span'];aa=positions[a['trajectory']]
+                    summary_values=aa[ss['start']:ss['end']];reason_values=aa[rs['start']:rs['end']]
+                    expected_reason=a['summary_after'] if a['propagated'] else baseline[a['trajectory']]
+                    if not all(x==a['summary_after'] for x in summary_values) or not all(x==expected_reason for x in reason_values):
+                        atomic_json(out/'advantage-mismatch.json',dict(alias=alias,depth=a['depth'],
+                            source_baseline=a['trajectory_advantage'],recomputed_baseline=baseline[a['trajectory']],
+                            summary_max_error=max((abs(x-a['summary_after']) for x in summary_values),default=0),
+                            reasoning_max_error=max((abs(x-expected_reason) for x in reason_values),default=0)))
+                        raise ValueError('advantage replacement or reasoning fallback mismatch')
+                    details.append(dict(query_hash=fingerprint(a['query']),trajectory_hash=fingerprint(a['trajectory']),
+                        depth=a['depth'],entropy=a['entropy'],local_rewards=local_rewards,final_utilities=final,
+                        residuals=residual,influence_variance=v,residual_variance=vr,gates=a['gates'],
+                        failed_conditions=a['failed_conditions'],propagated=a['propagated'],
+                        summary_advantage=a['summary_after'],trajectory_advantage=baseline[a['trajectory']],
+                        summary_tokens=len(summary_values),reasoning_tokens=len(reason_values),original_once=True,
+                        advantage_and_moments_recomputed=True,terminal_anchor=a['terminal_anchor']))
+                assigned=sum(x['summary_tokens'] for x in details)
+                changed_summary=sum(x['summary_tokens'] for x in details if x['summary_advantage']!=x['trajectory_advantage'])
+                changed_reasoning=sum(x['reasoning_tokens'] for x in details if x['propagated'] and x['summary_advantage']!=x['trajectory_advantage'])
+                row['credit']=dict(selected=credit['selected_anchor_count'],estimable=credit['estimable_anchor_count'],
+                    fallback=len(credit.get('fallback',[])),nonzero_local=credit['nonzero_local_credit_count'],
+                    propagation_count=credit['gate_pass_count'],assigned_summary_tokens=assigned,
+                    assigned_summary_fraction_all_actions=assigned/tokens,details=details,
+                    changed_summary_tokens=changed_summary,changed_reasoning_tokens=changed_reasoning,
+                    changed_summary_fraction_all_actions=changed_summary/tokens,
+                    changed_credit_anchor_count=sum(x['summary_advantage']!=x['trajectory_advantage'] for x in details),
+                    influence_distribution=dist([a['influence_variance'] for a in details]),
+                    residual_distribution=dist([a['residual_variance'] for a in details]),
+                    failed_influence=sum(not a['gates']['local'] for a in details),
+                    failed_residual=sum(not a['gates']['residual'] for a in details),
+                    fallback_depths=[a['anchor']['depth'] for a in credit.get('fallback',[])])
+                cs=load(d/'counterfactual-trajectories.json',alias+'/counterfactuals')
+                row['new_branches']=sum(len(c['trajectories']) for c in cs)
+                row['normal_new_branches']=sum(t['failure'] is None for c in cs for t in c['trajectories'])
+                row['sampled_new_branch_tokens']=sum(sum(t['generated_mask'][len(ts[c['group']['anchor']['trajectory_id']]['steps'][c['group']['anchor']['depth']-1]['prefix_token_ids']):]) for c in cs for t in c['trajectories'])
+                row['new_branch_retrieval_calls']=sum(sum(s['depth']>=c['group']['anchor']['depth'] for s in t['steps']) for c in cs for t in c['trajectories'])
+            for name in ('update','reload-verification'):
+                if (d/(name+'.json')).exists():row[name]=load(d/(name+'.json'),alias+'/'+name)
+            if (d/'checkpoint/complete.json').exists():
+                cp=load(d/'checkpoint/complete.json',alias+'/checkpoint-complete')
+                row['checkpoint']=dict(policy_version=cp['policy_version'],files=cp['files'],actor_payload_sha256=cp['actor_payload_sha256'])
+            probs=[read(p) for p in (d/'behavior-probability-checks').glob('*.json')]
+            if probs:row['probability']=dict(trajectories=len(probs),max_abs_error=max(x['max_abs_error'] for x in probs),
+                max_trajectory_p99=max(x['p99_abs_error'] for x in probs),all_passed=all(x['within_bf16_tolerance'] for x in probs))
+            row['development']=development(d);result['training'][method].append(row)
+        if offset:
+            result.setdefault('child_run',{})[method]=dict(cost=cost_report(root),
+                loaded_state=[load(p,tag+'/loaded-state') for p in root.glob('attempts/*/loaded-state.json')],
+                resources=load(r/'reports'/(tag+'-resources.json'),tag+'/resources') if (r/'reports'/(tag+'-resources.json')).exists() else None)
+            if (root/'completed.json').exists():
+                completed=read(root/'completed.json');result['child_run'][method]['global_completed_updates']=completed.get('global_completed_updates')
+                for k in ('selected_checkpoint','lineage_selected_checkpoint'):
+                    selected=completed.get(k)
+                    result['child_run'][method][k]={key:selected[key] for key in ('policy_version','development_macro','iteration')} if selected else None
+            if method=='ricepo':
+                recovery_events=[]
+                for p in root.glob('attempts/*/events/*.json'):
+                    e=read(p)
+                    if e['kind']=='recovery_partial_action_verified':
+                        g=e['generation'];recovery_events.append(dict(request_id=e.get('request_id'),
+                            category=g['category'],native_last_id=g['token_ids'][-1],
+                            actual_replayed_model_tokens=sum(g['action_mask']),
+                            all_native_actions_have_probabilities=all(not m or lp is not None for m,lp in zip(g['action_mask'],g['sampled_log_probs'],strict=True)),
+                            original_summary_native_ids_unavailable=True))
+                result['child_run'][method]['partial_recovery']=recovery_events
+            for p in root.glob('attempts/*/failure.json'):
+                failure=read(p);result['child_run'][method].setdefault('failures',[]).append(dict(type=failure['type'],category=failure['category']))
+            devices=r/'reports'/f'continuation-{child_job}-devices.json'
+            if devices.exists():result['child_run'][method]['devices']=load(devices,tag+'/devices')
+for path in (r/'reports').glob('continuation-*-reload-*.json'):
+    result.setdefault('independent_reload',{})[path.stem]=load(path,'independent-reload/'+path.stem)
+bench=r/'runs/wavefront-workload-174719'
+failed=r/'runs/continuation-ricepo-174715'
+result['preserved_failed_attempt']=dict(alias=failed.name,cost=cost_report(failed),
+    complete_originals_file_sha256=file_sha256(failed/'iteration-000000/trajectories.json'),
+    completed_new_branches=len(list(failed.glob('attempts/*/items/counterfactual/*.json'))),
+    optimizer_updates_committed=0,old_partial_summary_tokens_unavailable=True,
+    recorded_generation_cost_is_lower_bound=True)
+failure_path=next(failed.glob('attempts/*/failure.json'))
+evidence(failure_path,'preserved-failure/failure-record')
+evidence(r/'slurm/continuation-ricepo-174715.err','preserved-failure/private-stderr')
+if (bench/'summary.json').exists():
+    result['batch_workload']=load(bench/'summary.json','wavefront-workload/summary')
+    padding={}
+    for mode in ('serial','batch'):
+        raw={};stages=defaultdict(list)
+        for p in (bench/mode).glob('attempts/*/events/*.json'):
+            e=read(p)
+            if e['kind']=='raw_completion':raw[e['seed'],e['prefix_sha256']]=e
+            elif e['kind']=='batched_stage':stages[e['operation_id'],e['stage_name']].append(e)
+        unpadded=sum(len(e['prefix_token_ids']) for e in raw.values())
+        counts=dict(returned_stages=len(raw),model_generated_tokens=sum(e['generated_tokens'] for e in raw.values()),
+                    unpadded_prefill_input_tokens=unpadded)
+        if stages:
+            padded=slots=useful=0
+            for group in stages.values():
+                records=[raw[e['seed'],e['prefix_sha256']] for e in group]
+                n=len(records);lengths=[len(e['token_ids']) for e in records]
+                padded+=n*max(len(e['prefix_token_ids']) for e in records)
+                slots+=n*(max(lengths)-1);useful+=sum(x-1 for x in lengths)
+            counts.update(padded_prefill_input_tokens=padded,decoder_row_slots=slots,
+                          useful_decoder_row_slots=useful,decoder_row_slot_utilization=useful/slots if slots else None,
+                          note='Inferred executed row slots from completed stage lengths; not measured GPU kernel time or FLOPs.')
+        padding[mode]=counts
+    result['batch_padding_accounting']=padding
+else:
+    result['batch_workload']=dict(status='not_complete',available_modes={m:load(bench/m/'summary.json','wavefront-workload/'+m) for m in ('serial','batch') if (bench/m/'summary.json').exists()})
+switch=r/'runs/long-policy-switch-174731/summary.json'
+if switch.exists():result['long_policy_switch']=load(switch,'long-policy-switch/summary')
+for job in (174846,174858):
+    probe=r/'runs'/('vllm-fp32-probe-'+str(job))
+    for name in ('summary','vllm-metrics','hf-metrics','failure'):
+        if (probe/(name+'.json')).is_file():
+            result.setdefault('vllm_conditional_probes',{}).setdefault(str(job),{})[name]=load(probe/(name+'.json'),'vllm-conditional-probe/'+str(job)+'/'+name)
+    for name in ('selection','vllm-native','hf-native'):
+        evidence(probe/(name+'.json'),'vllm-conditional-probe/'+str(job)+'/private-'+name)
+    evidence(r/'slurm'/('vllm-fp32-'+str(job)+'.err'),'vllm-conditional-probe/'+str(job)+'/private-stderr')
+    devices=r/'reports'/('continuation-'+str(job)+'-devices.json')
+    if devices.exists():
+        result.setdefault('vllm_conditional_probes',{}).setdefault(str(job),{})['devices']=load(devices,'vllm-conditional-probe/'+str(job)+'/devices')
+for job,tag in ((174872,'vllm-hf-recovery'),(174880,'vllm-graph-batch'),(174881,'vllm-graph-score'),(174891,'hf-serial16'),(174918,'vllm-graph-batch'),(174919,'vllm-graph-score')):
+    folder=r/'runs'/(tag+'-'+str(job))
+    for name in ('summary','hf-metrics'):
+        if (folder/(name+'.json')).is_file():
+            result.setdefault('vllm_followup',{}).setdefault(str(job),{})[name]=load(folder/(name+'.json'),tag+'/'+str(job)+'/'+name)
+for job,tag in ((174874,'vllm-graph'),(174876,'vllm-graph'),(174880,'vllm-graph'),(174881,'vllm-score'),(174918,'vllm-ieee'),(174919,'vllm-ieee-score')):
+    evidence(r/'slurm'/(tag+'-'+str(job)+'.err'),'vllm-followup/'+str(job)+'/private-stderr')
+ieee=r/'runs/vllm-graph-batch-174918';hf16=r/'runs/hf-serial16-174891'
+if (ieee/'native-16.json').exists() and (hf16/'summary.json').exists():
+    a=read(ieee/'native-16.json');b=[read(hf16/('native-'+str(i)+'.json')) for i in range(16)]
+    result['vllm_ieee_matched_hf16']=dict(requests=16,
+        native_ids_identical=all(x['token_ids']==y['token_ids'] for x,y in zip(a,b,strict=True)),
+        seeds_identical=all(x['seed']==y['seed'] for x,y in zip(a,b,strict=True)),
+        prefix_fingerprints_identical=all(x['prefix_sha256']==y['prefix_sha256'] for x,y in zip(a,b,strict=True)))
+    for j in range(16):evidence(hf16/('native-'+str(j)+'.json'),'hf-serial16/private-native-'+str(j))
+jobs=os.environ.get('PHASE_GPU_JOBS','174715,174716,174719,174725,174729,174730,174731,174747,174748,174846,174858,174872,174874,174876,174877,174880,174881,174891,174918,174919')
+accounting=subprocess.check_output(['sacct','-X','-j',jobs,'--format=JobID,State,ElapsedRaw,AllocTRES,ExitCode,Submit,Start,End','-P'],text=True,env={**os.environ,'TZ':'UTC'})
+allocations=list(csv.DictReader(io.StringIO(accounting),delimiter='|'));seconds=0;timeline=[]
+for a in allocations:
+    a['State']=a['State'].split()[0]
+    match=re.search(r'(?:^|,)gres/gpu=(\d+)(?:,|$)',a.get('AllocTRES',''));gpus=int(match[1]) if match else 0
+    seconds+=gpus*int(a['ElapsedRaw'])
+    if a['Start'] not in ('Unknown','None') and a['End'] not in ('Unknown','None'):
+        timeline.extend([(a['Start'],gpus),(a['End'],-gpus)])
+active=maximum=0
+for _,delta in sorted(timeline,key=lambda e:(e[0],e[1])):active+=delta;maximum=max(maximum,active)
+used=10.791666444444445+seconds/3600
+result['budget']=dict(previous_gpu_hours=10.791666444444445,this_phase_gpu_hours=seconds/3600,
+    cumulative_gpu_hours=used,remaining_gpu_hours=None,cap_gpu_hours=None,previous_cap_gpu_hours=32,cap_removed_by_user=True,
+    maximum_concurrent_gpus=maximum,allocations=allocations,
+    all_terminal=all(a['State'] not in ('RUNNING','PENDING','COMPLETING') for a in allocations))
+result['environment']=dict(python=platform.python_version(),packages={})
+for name in ('torch','transformers','numpy','pytrec-eval','gensim','pyserini','tokenizers','safetensors','vllm','triton'):
+    try:result['environment']['packages'][name]=md.version(name)
+    except md.PackageNotFoundError:result['environment']['packages'][name]='metadata absent; no compatibility assertion'
+# JUnit is evidence of actual execution, not an inference from source presence.
+import xml.etree.ElementTree as ET
+result['executed_tests']=[]
+for job,path in [(174714,r/'reports/continuation-preflight-174714/targeted.xml'),
+                 (174718,r/'reports/wavefront-tests-174718.xml'),
+                 (174724,r/'reports/continuation-final-tests-174724.xml'),
+                 (174743,r/'reports/native-recovery-tests-174743.xml'),
+                 (174746,r/'reports/native-recovery-tests-174746.xml')]:
+    root=ET.parse(path).getroot();cases=list(root.iter('testcase'))
+    result['executed_tests'].append(dict(job_id=job,tests=len(cases),
+        failed=sum(c.find('failure') is not None for c in cases),
+        errors=sum(c.find('error') is not None for c in cases),
+        skipped=sum(c.find('skipped') is not None for c in cases),
+        sha256=file_sha256(path)))
+    evidence(path,'junit/'+str(job))
+for method in ('ricepo','grpo'):
+    rows=result['training'][method]
+    if [x['global_update'] for x in rows]!=[1,2,3]:raise ValueError('update lineage incomplete')
+    if not all(x['iteration_complete'] for x in rows):raise ValueError('not all updates committed')
+    if rows[-1]['development']['status']!='complete':raise ValueError('final full development incomplete')
+for i in range(3):
+    if result['training']['ricepo'][i]['query_hashes']!=result['training']['grpo'][i]['query_hashes']:
+        raise ValueError('paired global training schedule differs')
+if not result['budget']['all_terminal']:
+    raise ValueError('GPU allocations unfinished')
+if result['budget']['maximum_concurrent_gpus']>4:raise ValueError('four-GPU concurrency exceeded')
+
+for path in sorted((r/'control').glob('1[123][0-9]*')):
+    if path.is_file():evidence(path,'private-controller/'+path.name)
+evidence(r/'control/verify_continuation_checkpoint.py','private-controller/verify_continuation_checkpoint.py')
+result['evidence_index']=index
+atomic_json(out/'EVIDENCE.json',result)
+print('PUBLIC_EVIDENCE',out,flush=True)
+print('BUDGET',result['budget'],flush=True)

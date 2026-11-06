@@ -1,3 +1,9 @@
+## 2026-11-06 连续更新与批量采样
+
+新增显式父检查点续训、按全局序号冻结查询日程、现有32题逐轮退化分析，以及可选HF原生wavefront采样。信用公式、完整词表熵、总体方差、0.05/0.03门控、center_only、优势替换和PPO目标保持。新的unmapped原生ID处理归入明确的独立非法终态环境；不是论文格式修复。见[本轮映射](reviews/continuous-three-update/CHANGES.md)、[恢复证据边界](reviews/continuous-three-update/RECOVERY.md)和[实际批量验收](reviews/continuous-three-update/BATCH_ACCEPTANCE.md)。
+
+---
+
 ## 2026-11-06 两阶段受限验收
 
 新增[原生两阶段独立协议](TWO_STAGE_PROTOCOL.md)；其环境边界与失败语义不是论文作者确认设置。compute_credit、优势替换和PPO目标保持，改动映射及真实证据见[本轮修改表](reviews/two-stage-native-v1/CHANGES.md)。

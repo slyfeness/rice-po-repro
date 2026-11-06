@@ -1,0 +1,51 @@
+"""FP32 vLLM graph/batch throughput on fixed native histories; no training."""
+import os,json,time
+from pathlib import Path
+from ricepo.artifacts import atomic_json,file_sha256
+from ricepo.audit import fingerprint,stable_seed
+from ricepo.state import verify_checkpoint
+from ricepo.environment import configure_caches
+r=Path(os.environ['RICE_PROJECT']);root=r/'runs'/('vllm-graph-batch-'+os.environ['SLURM_JOB_ID']);root.mkdir();read=lambda p:json.loads(p.read_text())
+source=r/'runs/vllm-fp32-probe-174858';selection=read(source/'selection.json');base=selection['prefixes']
+parent=r/'runs/continuation-grpo-174716';cp=parent/'iteration-000001/checkpoint';binding=read(parent/'binding.json');receipt=verify_checkpoint(cp,fingerprint(binding))
+configure_caches(r/'cache'/root.name)
+os.environ['VLLM_RPC_BASE_PATH']='${BULK_ROOT}/tmp/rf-'+os.environ['SLURM_JOB_ID']
+Path(os.environ['VLLM_RPC_BASE_PATH']).mkdir(parents=True,exist_ok=True)
+os.environ['VLLM_CACHE_ROOT']=str(r/'cache'/root.name/'vllm')
+from vllm import LLM,SamplingParams
+import torch
+start=time.monotonic()
+llm=LLM(model=str(cp/'actor'),tokenizer=str(cp/'actor'),dtype='float32',tensor_parallel_size=1,
+ max_model_len=32768,max_num_seqs=64,max_num_batched_tokens=16384,gpu_memory_utilization=.80,
+ enforce_eager=False,enable_prefix_caching=True,hf_overrides={'sliding_window':None},
+ generation_config='vllm',trust_remote_code=False,attention_config={'backend':'TRITON_ATTN'})
+initialization=time.monotonic()-start
+if llm.llm_engine.model_config.hf_config.vocab_size!=151936:raise ValueError('model vocabulary changed')
+def worker_info():
+ # Query only this allocation's actual CUDA UUID; this is a device-memory
+ # snapshot, not a worker allocator peak. Optional evidence cannot abort generation.
+ import subprocess
+ try:
+  uuid=str(torch.cuda.get_device_properties(0).uuid)
+  used=subprocess.check_output(['nvidia-smi','-i',uuid,'--query-gpu=memory.used','--format=csv,noheader,nounits'],text=True).strip()
+  return dict(device_memory_used_mib_snapshot=float(used),basis='post-batch NVML snapshot, not peak')
+ except Exception as exc:return dict(memory_snapshot_available=False,error_type=type(exc).__name__)
+results=[]
+for n in (16,64):
+ prefixes=[base[i%4] for i in range(n)];seeds=[stable_seed(42,'vllm_fp32_graph_batch_v1',i) for i in range(n)]
+ params=[SamplingParams(n=1,temperature=1.,top_p=1.,top_k=-1,max_tokens=512,seed=s,logprobs=0,
+  detokenize=False,presence_penalty=0.,frequency_penalty=0.,repetition_penalty=1.,ignore_eos=False) for s in seeds]
+ start=time.monotonic();outputs=llm.generate([{'prompt_token_ids':p} for p in prefixes],params,use_tqdm=False);seconds=time.monotonic()-start;records=[]
+ for i,(p,seed,o) in enumerate(zip(prefixes,seeds,outputs,strict=True)):
+  if list(o.prompt_token_ids)!=p or len(o.outputs)!=1:raise ValueError('request identity changed')
+  c=o.outputs[0];ids=list(c.token_ids);lp=[float(step[t].logprob) for step,t in zip(c.logprobs,ids,strict=True)]
+  records.append(dict(request_index=i,prefix_index=i%4,prefix_sha256=fingerprint(p),seed=seed,token_ids=ids,sampled_log_probs=lp,finish_reason=c.finish_reason))
+ atomic_json(root/('native-'+str(n)+'.json'),records)
+ count=sum(len(x['token_ids']) for x in records);row=dict(requests=n,actual_model_tokens=count,generation_seconds=seconds,tokens_per_second=count/seconds,worker_memory=worker_info(),native_sha256=file_sha256(root/('native-'+str(n)+'.json')))
+ results.append(row);atomic_json(root/('batch-'+str(n)+'-metrics.json'),row);print('BATCH_RESULT',row,flush=True)
+atomic_json(root/'summary.json',dict(results=results,initialization_seconds=initialization,checkpoint_policy=receipt['policy_version'],checkpoint_complete_sha256=file_sha256(cp/'complete.json'),
+ selection_source_sha256=file_sha256(source/'selection.json'),fixed_prefix_lengths=list(map(len,base)),dtype='float32',attention_backend='TRITON_ATTN',enforce_eager=False,max_num_seqs=64,
+ gpu_memory_utilization=.8,prefix_cache=True,max_new_tokens=512,temperature=1.,top_p=1.,top_k_disabled_translation=-1,
+ native_numerical_validation='pending independent full-history scoring',
+ scope='Raw conditional-history throughput only, 4 fixed prefixes repeated with independent predetermined seeds. Batch64 follows batch16 with warmer cache. No two-stage stopping/retrieval/PPO, no formal training qualification.'))
+print('GRAPH_BATCH_COMPLETE',root,flush=True)

@@ -1,3 +1,9 @@
+## 2026-11-06 连续训练验收
+
+本阶段实际执行情况见[逐项测试与失败记录](reviews/continuous-three-update/TEST_RESULTS.md)。64项针对性CPU测试、真实长轨迹采样概率与实际权重切换核验已执行；静态AST/JSON检查另记。原生unmapped ID的恢复仅限已定义失效环境，vLLM在IEEE FP32下实际完成80条长条件历史概率核验，完整两阶段/权重同步/Trainer仍未验收。每一历史报告保留原来的运行范围，公开模板与全局验证布尔字段不因此升级。
+
+---
+
 ## 2026-11-06 两阶段受限验收
 
 本阶段真实CPU、GPU、完整在线信用更新与跨进程恢复已执行，详见[本轮结果](reviews/two-stage-native-v1/SUMMARY.md)和[测试记录](reviews/two-stage-native-v1/TEST_RESULTS.md)。这些结果限定独立两阶段/失败环境，非严格论文性能或四rank验证；历史各阶段的“未运行”声明不改写。
