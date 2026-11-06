@@ -6,6 +6,7 @@ from test_native_byte_coverage import BytesTokenizer
 class Tok(BytesTokenizer):
     all_special_tokens=['<eos>']
     def encode(self,text,add_special_tokens=False):return list(text.encode('utf8'))
+    def convert_ids_to_tokens(self,ids):return ['<eos>' if t==1000 else self.alphabet[t] for t in ids]
 
 class TwoStageFormatTests(unittest.TestCase):
     def test_eos_summary_preserves_text_ids_and_environment_ownership(self):

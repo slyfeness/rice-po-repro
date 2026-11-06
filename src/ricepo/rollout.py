@@ -169,7 +169,11 @@ class RolloutRunner:
         ids = _tokens(generation.token_ids, label="generation")
         if not ids:
             raise MalformedGenerationError("empty generation")
-        if sum(generation_action_mask(generation)) > self.rules.max_new_tokens:
+        try:
+            action_count=sum(generation_action_mask(generation))
+        except ValueError as exc:
+            raise MalformedGenerationError(str(exc)) from exc
+        if action_count > self.rules.max_new_tokens:
             raise RolloutLengthError("generation exceeds max_new_tokens")
         if generation.finish_reason not in self.rules.accepted_finish_reasons:
             raise MalformedGenerationError(
