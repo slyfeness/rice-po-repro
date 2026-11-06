@@ -1,0 +1,37 @@
+{
+  "base_commit": "7e35862688b63e6be7b954e2a2cf51ac753a2518",
+  "scope": "source snapshots and executed CPU gates; full vLLM GPU gate still running",
+  "source_archives": {
+    "protocol-vllm-v1.tar": "ef08db11f269661a46c4eafd60da548b0bf88e9c666921e4b6f034eacd91be0d",
+    "protocol-vllm-v2.tar": "eeafa7fb66078c6ff4c770926f5b684730e8b213a7f9523ffc3e1032d71fd1aa",
+    "protocol-vllm-v3.tar": "ed88c96cf46ed95642d9ca95d6536641dc3aac4755fd4213a4fd3e042c98052d"
+  },
+  "tests": [
+    {
+      "job": 175000,
+      "result": "failed: missing new adapter; expected RED"
+    },
+    {
+      "job": 175002,
+      "passed": 22,
+      "failed": 0
+    },
+    {
+      "job": 175003,
+      "passed": 22,
+      "failed": 0,
+      "overlaps": 175002
+    },
+    {
+      "job": 175007,
+      "result": "not run: incorrect test filename"
+    },
+    {
+      "job": 175008,
+      "passed": 41,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "publication_scan": "known private identifiers/credentials/size/JSON checked; no third-party license changed"
+}

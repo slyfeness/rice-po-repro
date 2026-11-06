@@ -1,0 +1,28 @@
+#!/bin/bash
+#SBATCH --job-name=swap-config2
+#SBATCH --partition=AUTHORIZED_PARTITION
+#SBATCH --account=AUTHORIZED_ACCOUNT
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --gres=gpu:4
+#SBATCH --cpus-per-task=24
+#SBATCH --mem=384G
+#SBATCH --time=48:00:00
+#SBATCH --output=${SWAP_ROOT}/logs/config2-%j.out
+#SBATCH --error=${SWAP_ROOT}/logs/config2-%j.err
+/bin/date -u -Is
+printf 'BATCH_ENTRY\n'
+/bin/hostname
+set -euo pipefail
+ROOT=${SWAP_ROOT}
+cd "$ROOT"
+export PYTHONPATH="$ROOT:$ROOT/third_party/legacy-stage2:$ROOT/third_party/legacy-stage2/scripts"
+export PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
+unset HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy
+test -f "reports/four-gpu-config2-cpu-$PREFLIGHT_JOB/PASS"
+scontrol show job "$SLURM_JOB_ID"
+nvidia-smi
+"$ROOT/envs/runtime/bin/python" -u scripts/zhurong_four_gpu_generation_config2.py
+/bin/date -u -Is
+printf 'CONFIG2_EXIT_OK\n'
