@@ -2,9 +2,9 @@
 
 面向祝融，目标为 DeepSeek-R1-Distill-Qwen-1.5B 和 BRIGHT。最初源码审查基准为 `d4b490a96f8ceb31392ca55abf31325bedb7078c`。[论文 v3](https://arxiv.org/html/2605.26352v3) · [逐项修改表](docs/REVISION_MATRIX.csv) · [验证状态](docs/VALIDATION.md)
 
-最新受限结果：[连续三更新与检索退化报告](docs/reviews/continuous-three-update/SUMMARY.md)。RICE-PO与GRPO均完成三个真实更新及独立检查点恢复；RICE每次均有非零局部信用，推理传播仅一次且在末轮。完整32题失败调整任务分数：Initial 0.159289、GRPO3 0.055125、RICE3 0.070683；两者尚未恢复初始性能。两阶段/失败环境为独立实现，公开模板继续禁执行。
+最新结果：[检索协议、四卡部署与完整vLLM验收](docs/reviews/four-gpu-deployment-review/SUMMARY.md)。IEEE FP32 vLLM已完成两阶段五轮rollout、真实反事实信用、两次PPO更新、更新后权重切换和独立检查点/优化器/RNG恢复。完整32题失败调整分数RICE0.10583、GRPO0.11130；RICE没有性能优越性证据。新谱系每更新1查询，保留明确的两阶段/失败环境偏离，公开模板继续禁执行。新四卡拓扑及更大批次待审核。
 
-[VLLM IEEE FP32候选](docs/reviews/continuous-three-update/VLLM_STATUS.md)已通过80条长条件历史概率检查；同16请求/6734原生token生成155.78→23.30秒，约6.69倍。该候选尚未完成两阶段Trainer与训练后权重同步接入。真实HF整套采样加速约1.10倍。此前[第一更新报告](docs/reviews/two-stage-native-v1/SUMMARY.md)和[更早失败阶段](docs/reviews/first-ricepo-smoke/FAILURE_ZERO_RESULTS.md)保留各自历史范围。
+此前[HF三更新](docs/reviews/continuous-three-update/SUMMARY.md)和[早期单更新](docs/reviews/two-stage-native-v1/SUMMARY.md)保留原范围，不与本次新谱系拼接。
 
 ## 配置和方法
 

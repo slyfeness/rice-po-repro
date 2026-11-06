@@ -1,3 +1,9 @@
+## 2026-11-06 完整vLLM受限验收
+
+[真实结果](reviews/four-gpu-deployment-review/SUMMARY.md)、[执行/失败记录](reviews/four-gpu-deployment-review/TEST_RESULTS.md)：完整五轮原生rollout/反事实/4096预算、24完整历史概率、RICE与GRPO各两个真实更新、实际权重切换、完整32题开发及独立模型/优化器/RNG恢复均已执行。独立失败环境、新后端RNG、小查询预算均显式标记；不代表严格论文性能、最大上下文容量或四rank程序通过。全局验证布尔字段不升级，历史声明保留其原时间范围。
+
+---
+
 ## 2026-11-06 连续训练验收
 
 本阶段实际执行情况见[逐项测试与失败记录](reviews/continuous-three-update/TEST_RESULTS.md)。64项针对性CPU测试、真实长轨迹采样概率与实际权重切换核验已执行；静态AST/JSON检查另记。原生unmapped ID的恢复仅限已定义失效环境，vLLM在IEEE FP32下实际完成80条长条件历史概率核验，完整两阶段/权重同步/Trainer仍未验收。每一历史报告保留原来的运行范围，公开模板与全局验证布尔字段不因此升级。
