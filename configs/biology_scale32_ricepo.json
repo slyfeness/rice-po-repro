@@ -16,14 +16,6 @@
         "separator": "\n"
       },
       "reason": "Independent reading of paper Section 4.2.2: original query, one LF, then the generated Summary; prior summary_only lineage is not reused."
-    },
-    "development_every_updates": {
-      "value": 1,
-      "reason": "The one-update capacity acceptance records a complete frozen development evaluation."
-    },
-    "checkpoint_every_updates": {
-      "value": 1,
-      "reason": "The one-update capacity acceptance requires a complete recoverable checkpoint."
     }
   },
   "execution": {
