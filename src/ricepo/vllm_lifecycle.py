@@ -11,7 +11,7 @@ import tempfile
 from pathlib import Path
 from .audit import event,fingerprint
 from .artifacts import atomic_json
-from .vllm_two_stage import VLLMTwoStage,BACKEND
+from .vllm_two_stage import VLLMTwoStage,BACKEND,vllm_runtime_options
 
 def fresh_rpc_path(root):
     """Atomic unique attempt directory; retained after shutdown for traceability."""
@@ -34,9 +34,11 @@ def _worker(connection,spec):
             identity=local_model_identity(spec['model'])
             if identity!=spec['assets']:raise ValueError('published sampling snapshot changed')
             tok=AutoTokenizer.from_pretrained(spec['model'],local_files_only=True,trust_remote_code=False)
-            engine=VLLMEngine(spec['model'],tok,spec['policy'],max_context_tokens=spec['context'])
+            engine=VLLMEngine(spec['model'],tok,spec['policy'],max_context_tokens=spec['context'],
+                              runtime_options=spec['runtime_options'])
             if local_model_identity(spec['model'])!=identity:raise ValueError('sampling snapshot changed during engine load')
-            connection.send(('ready',dict(policy=spec['policy'],assets=identity,pid=os.getpid())))
+            connection.send(('ready',dict(policy=spec['policy'],assets=identity,pid=os.getpid(),
+                                          runtime_options=engine.runtime_options)))
             while True:
                 command=connection.recv()
                 if command[0]=='close':break
@@ -107,7 +109,7 @@ class WorkerTransport:
 class PhaseSeparatedGenerator:
     """HF model/optimizer residency changes only; objective and histories stay fixed."""
     def __init__(self,*,actor,reference,optimizer,tokenizer,version,behavior,device,root,rpc_root,
-                 max_new_tokens=4096,max_context_tokens=32768):
+                 max_new_tokens=4096,max_context_tokens=32768,vllm_runtime=None):
         self.actor,self.reference,self.optimizer=actor,reference,optimizer
         self.tokenizer,self.version,self.behavior=tokenizer,version,behavior
         self.device=device;self.root=Path(root);self.rpc_root=Path(rpc_root)
@@ -115,6 +117,7 @@ class PhaseSeparatedGenerator:
         masks=os.environ['CUDA_VISIBLE_DEVICES'].split(',');self.cuda_mask=masks[device.index]
         self.worker=None;self.sampler=None;self.serial=0;self.snapshots={};self.moves=[]
         self.max_new_tokens=max_new_tokens;self.max_context_tokens=max_context_tokens
+        self.vllm_runtime=vllm_runtime_options(vllm_runtime)
     @property
     def policy_version(self):return self.version()
     def _offload(self):
@@ -149,12 +152,15 @@ class PhaseSeparatedGenerator:
             self.snapshots[version]=(folder/'actor',assets)
         model,assets=self.snapshots[version];self.serial+=1
         spec=dict(model=str(model),assets=assets,policy=version,cuda_mask=self.cuda_mask,context=self.max_context_tokens,
+            runtime_options=self.vllm_runtime,
             rpc_path=str(fresh_rpc_path(self.rpc_root)),evidence=str(self.root/('worker-'+str(self.serial))))
         self.worker=WorkerTransport(spec)
         self.sampler=VLLMTwoStage(self.worker,self.tokenizer,self.version,self.max_new_tokens,self.max_context_tokens)
         atomic_json(self.root/('worker-'+str(self.serial)+'-ready.json'),dict(policy=version,assets=assets,
-            load_seconds=time.monotonic()-start,cache_policy='new process; no KV reuse across model snapshots'))
-        event('vllm_policy_ready',policy_version=version,load_seconds=time.monotonic()-start)
+            runtime_options=self.vllm_runtime,worker_ready=self.worker.ready,load_seconds=time.monotonic()-start,
+            cache_policy='new process; no KV reuse across model snapshots'))
+        event('vllm_policy_ready',policy_version=version,runtime_options=self.vllm_runtime,
+              load_seconds=time.monotonic()-start)
     def prepare_scoring(self):
         if self.worker is not None:
             self.worker.close();self.worker=None;self.sampler=None

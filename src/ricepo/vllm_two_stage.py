@@ -13,6 +13,51 @@ from .rollout import RolloutLengthError
 BACKEND='vllm_ieee_two_stage_v1'
 TAGS=('<think>','</think>','<summary>','</summary>','<tool_response>','</tool_response>')
 
+# These are the only vLLM controls the RICE deployment benchmark is allowed to
+# vary.  The sampling distribution, IEEE FP32 arithmetic, attention behavior
+# and native-token protocol are deliberately *not* knobs.  Keeping this small
+# schema makes an evaluated deployment recipe portable and prevents an
+# apparently innocent throughput setting from silently changing the policy.
+DEFAULT_RUNTIME = {
+    'max_num_seqs': 64,
+    'max_num_batched_tokens': 16384,
+    'gpu_memory_utilization': .80,
+    'enforce_eager': False,
+    'enable_prefix_caching': True,
+    'attention_backend': 'TRITON_ATTN',
+}
+
+
+def vllm_runtime_options(options=None):
+    """Validate benchmarkable scheduler settings without relaxing fidelity.
+
+    ``None`` is the previously verified FP32 baseline.  Unknown keys are
+    rejected rather than being accepted by vLLM with version-dependent
+    defaults.  This function is intentionally import-light so static recipe
+    expansion and CPU tests do not need vLLM installed.
+    """
+    if options is None:
+        options = {}
+    if not isinstance(options, dict):
+        raise ValueError('vLLM runtime options must be an object')
+    unknown = set(options).difference(DEFAULT_RUNTIME)
+    if unknown:
+        raise ValueError('unsupported vLLM runtime option(s): '+','.join(sorted(unknown)))
+    resolved = {**DEFAULT_RUNTIME, **options}
+    if type(resolved['max_num_seqs']) is not int or resolved['max_num_seqs'] <= 0:
+        raise ValueError('max_num_seqs must be a positive integer')
+    if type(resolved['max_num_batched_tokens']) is not int or resolved['max_num_batched_tokens'] <= 0:
+        raise ValueError('max_num_batched_tokens must be a positive integer')
+    memory = resolved['gpu_memory_utilization']
+    if isinstance(memory, bool) or not isinstance(memory, (int, float)) or not .5 <= float(memory) <= .95:
+        raise ValueError('gpu_memory_utilization must be within [0.5, 0.95]')
+    if resolved['enforce_eager'] is not False or resolved['enable_prefix_caching'] is not True:
+        raise ValueError('RICE benchmark requires CUDA Graphs and prefix caching')
+    if resolved['attention_backend'] != 'TRITON_ATTN':
+        raise ValueError('RICE IEEE benchmark requires TRITON_ATTN')
+    resolved['gpu_memory_utilization'] = float(memory)
+    return resolved
+
 class VLLMTwoStage:
     def __init__(self,engine,tokenizer,policy_version_getter,max_new_tokens=4096,max_context_tokens=32768):
         self.engine=engine;self.format=TwoStageFormat(tokenizer);self.version=policy_version_getter
@@ -75,15 +120,20 @@ class VLLMEngine:
     Stop strings terminate after sampling and keep the entire native stop token.
     Unrepresentable rows are stop IDs, never masked out of the distribution.
     """
-    def __init__(self,model_path,tokenizer,policy_version,*,max_context_tokens=32768):
+    def __init__(self,model_path,tokenizer,policy_version,*,max_context_tokens=32768,runtime_options=None):
         import os
         if os.environ.get('TRITON_F32_DEFAULT')!='ieee':raise ValueError('IEEE Triton must be set before engine import')
         from vllm import LLM
         self.version=policy_version
+        self.runtime_options=vllm_runtime_options(runtime_options)
         self.llm=LLM(model=str(model_path),tokenizer=str(model_path),dtype='float32',tensor_parallel_size=1,
-            max_model_len=max_context_tokens,max_num_seqs=64,max_num_batched_tokens=16384,gpu_memory_utilization=.8,
-            enforce_eager=False,enable_prefix_caching=True,hf_overrides={'sliding_window':None},
-            generation_config='vllm',trust_remote_code=False,attention_config={'backend':'TRITON_ATTN'})
+            max_model_len=max_context_tokens,max_num_seqs=self.runtime_options['max_num_seqs'],
+            max_num_batched_tokens=self.runtime_options['max_num_batched_tokens'],
+            gpu_memory_utilization=self.runtime_options['gpu_memory_utilization'],
+            enforce_eager=self.runtime_options['enforce_eager'],
+            enable_prefix_caching=self.runtime_options['enable_prefix_caching'],hf_overrides={'sliding_window':None},
+            generation_config='vllm',trust_remote_code=False,
+            attention_config={'backend':self.runtime_options['attention_backend']})
         size=self.llm.llm_engine.model_config.hf_config.vocab_size
         self.unmapped=[i for i in range(size) if tokenizer.convert_ids_to_tokens(i) is None]
     def sample(self,requests,stage,policy):

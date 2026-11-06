@@ -61,6 +61,25 @@ class BatchedRolloutTests(unittest.TestCase):
             self.assertEqual(branch.steps[2].prefix_token_ids,s.prefix_token_ids)
             self.assertEqual(branch.steps[:2],t.steps[:2])
 
+    def test_cross_anchor_wave_preserves_each_saved_prefix_and_branch_group(self):
+        source=runner();first=source.run(**req(1).serial_kwargs());second=source.run(**req(2,(6,7,8,9,10)).serial_kwargs())
+        anchors=[]
+        for trace,depth in ((first,2),(second,3)):
+            step=trace.steps[depth-1]
+            anchors.append(Anchor(trace.query_id,trace.trajectory_id,depth,1,step.reasoning_span,step.summary_span))
+        jobs=[]
+        for trace,anchor,ids in zip((first,second),anchors,(('b11','b12'),('b21','b22')),strict=True):
+            jobs.append(dict(original_query='question',original=trace,anchor=anchor,
+                requests=[BranchRequest(ids[0],(11,12,13,14)[:6-anchor.depth]),
+                          BranchRequest(ids[1],(21,22,23,24)[:6-anchor.depth])]))
+        expected=tuple(runner().branch(**job) for job in jobs)
+        actual=runner().branch_many(jobs)
+        self.assertEqual(actual,expected)
+        for collection,anchor in zip(actual,anchors,strict=True):
+            self.assertTrue(all(trace.steps[anchor.depth-1].prefix_token_ids == anchor_prefix
+                                for trace,anchor_prefix in ((t,collection.group.outcomes[0].prefix_token_ids)
+                                                             for t in collection.trajectories)))
+
     def test_policy_mutation_or_duplicate_request_rejected(self):
         with self.assertRaises(ValueError):run_many(runner(),[req(1),req(1)])
         r=runner();r.generator.policy_version='new'

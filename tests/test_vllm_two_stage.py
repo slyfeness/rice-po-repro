@@ -4,6 +4,17 @@ from test_two_stage_format import Tok
 from ricepo.contracts import Generation,InvalidGeneration
 from ricepo.vllm_two_stage import VLLMTwoStage
 
+
+def test_runtime_options_only_expose_scheduler_controls_and_keep_ieee_protocol():
+    from ricepo.vllm_two_stage import vllm_runtime_options
+    resolved=vllm_runtime_options({'max_num_seqs':128,'max_num_batched_tokens':32768,
+                                   'gpu_memory_utilization':.9})
+    assert resolved['max_num_seqs']==128 and resolved['enable_prefix_caching'] is True
+    with pytest.raises(ValueError,match='unsupported'):
+        vllm_runtime_options({'dtype':'bfloat16'})
+    with pytest.raises(ValueError,match='CUDA Graphs'):
+        vllm_runtime_options({'enforce_eager':True})
+
 class Engine:
     def __init__(self,first,second):self.scripts=[first,second];self.calls=[]
     def sample(self,requests,stage,policy):

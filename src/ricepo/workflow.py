@@ -21,6 +21,11 @@ class IterationComponents:
     collect_branches: Callable[[Trajectory, Anchor], BranchRollouts] | None
     update: Callable
     phase_barrier: Callable[[str, str], None]
+    # Optional scheduler-only extension.  It receives ordered (trajectory,
+    # anchor) pairs and must return the same ordered branch collections.
+    # Scientific branch construction remains the responsibility of the normal
+    # callback; this hook only coalesces actions that are already ready.
+    collect_branches_batch: Callable[[Sequence[tuple[Trajectory, Anchor]]], Sequence[BranchRollouts]] | None = None
 
 
 def _validate_branch_trace(trace: Trajectory, source: Trajectory, anchor: Anchor) -> None:
@@ -136,11 +141,17 @@ def _collect_credit(components, grouped, originals, root, policy_version, recipe
     stage_receipt(root, "entropy", policy_version=policy_version,
                   artifacts={"anchors.json":anchor_digest, "summary-entropies.json":entropy_digest})
     components.phase_barrier("entropy","branches")
-    collections = []
-    for a in anchors:
-        collection = components.collect_branches(originals[a.trajectory_id], a)
+    if components.collect_branches_batch is not None:
+        collections=list(components.collect_branches_batch(
+            tuple((originals[a.trajectory_id],a) for a in anchors)))
+        if len(collections)!=len(anchors):
+            raise ValueError('cross-anchor scheduler changed the branch collection count')
+    else:
+        collections = []
+        for a in anchors:
+            collections.append(components.collect_branches(originals[a.trajectory_id], a))
+    for a,collection in zip(anchors,collections,strict=True):
         saved_item("branch_group", [iteration,a.trajectory_id,a.depth], collection)
-        collections.append(collection)
     total = recipe["total_branches_including_original"]
     if zero:
         from .failure_zero import validate_collections

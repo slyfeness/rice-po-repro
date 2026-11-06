@@ -40,6 +40,14 @@
   "activation_checkpointing": "eval_layers_v1",
   "compare_grpo_credit_gradients": false,
   "sampling_backend": "vllm_ieee_two_stage_v1",
+  "vllm_runtime": {
+    "max_num_seqs": 64,
+    "max_num_batched_tokens": 16384,
+    "gpu_memory_utilization": 0.8,
+    "enforce_eager": false,
+    "enable_prefix_caching": true,
+    "attention_backend": "TRITON_ATTN"
+  },
   "parent_run_root": null,
   "parent_source_root": null,
   "continuation_schedule_path": null,

@@ -383,23 +383,9 @@ class RolloutRunner:
             initial_ndcg=initial_ndcg,
         )
 
-    def branch(
-        self,
-        *,
-        original_query: str,
-        original: Trajectory,
-        anchor: Anchor,
-        requests: Sequence[BranchRequest],
-        batched: bool = False,
-    ) -> BranchRollouts:
-        """Regenerate from the exact saved prefix, retaining the observed outcome.
-
-        The original must have reached the maximum depth of five; every new
-        branch also reaches five. An early-stopped original is rejected rather
-        than silently changing its recorded final reward. Seeds and
-        branch IDs are explicit and distinct; a stateful generator must honor each
-        supplied seed independently. New trajectories are statistics/audit data.
-        """
+    def _prepare_branch(self, *, original_query: str, original: Trajectory, anchor: Anchor,
+                        requests: Sequence[BranchRequest]):
+        """Validate one branch group and retain only its immutable native state."""
         if (anchor.query_id, anchor.trajectory_id) != (original.query_id, original.trajectory_id):
             raise ValueError("anchor does not identify the original trajectory")
         final_depth = self.rules.depth if self.failure_semantics=="invalid_action_terminal_zero_v1" else len(original.steps)
@@ -444,39 +430,66 @@ class RolloutRunner:
             policy_version=original.policy_version,
             prefix_token_ids=prefix,
         )]
-        trajectories = []
-        batch_results = None
-        if batched:
-            from .batched_rollout import continue_many
-            states=[dict(query_id=original.query_id,trajectory_id=request.trajectory_id,
-                original_query=original_query,policy_version=original.policy_version,token_ids=prefix,
-                generated_mask=original.generated_mask[:len(prefix)],previous_steps=original.steps[:anchor.depth-1],
-                seeds=seeds,final_depth=final_depth,honor_stop=False,initial_ndcg=original.initial_ndcg)
-                for request,seeds in zip(requests,seed_sets,strict=True)]
-            batch_results=iter(continue_many(self,states))
-        for request, seeds in zip(requests, seed_sets, strict=True):
-            trajectory = next(batch_results) if batch_results is not None else self._continue(
-                query_id=original.query_id,
-                trajectory_id=request.trajectory_id,
-                original_query=original_query,
-                policy_version=original.policy_version,
-                token_ids=prefix,
-                generated_mask=original.generated_mask[:len(prefix)],
-                previous_steps=original.steps[:anchor.depth - 1],
-                seeds=seeds,
-                final_depth=final_depth,
-                honor_stop=False,
-                initial_ndcg=original.initial_ndcg,
-            )
+        states=[dict(query_id=original.query_id,trajectory_id=request.trajectory_id,
+            original_query=original_query,policy_version=original.policy_version,token_ids=prefix,
+            generated_mask=original.generated_mask[:len(prefix)],previous_steps=original.steps[:anchor.depth-1],
+            seeds=seeds,final_depth=final_depth,honor_stop=False,initial_ndcg=original.initial_ndcg)
+            for request,seeds in zip(requests,seed_sets,strict=True)]
+        return dict(anchor=anchor,requests=requests,prefix=prefix,outcomes=outcomes,states=states)
+
+    def _finish_branch(self, plan, trajectories):
+        if len(trajectories)!=len(plan['requests']):
+            raise ValueError('branch completion count differs from the frozen request group')
+        outcomes=list(plan['outcomes'])
+        for trajectory in trajectories:
             saved_item('counterfactual', trajectory.trajectory_id, trajectory)
-            trajectories.append(trajectory)
             outcomes.append(BranchOutcome(
-                branch_id=request.trajectory_id,
+                branch_id=trajectory.trajectory_id,
                 is_original=False,
-                local_reward=(trajectory.steps[anchor.depth - 1].local_reward
-                              if len(trajectory.steps)>=anchor.depth else None),
+                local_reward=(trajectory.steps[plan['anchor'].depth - 1].local_reward
+                              if len(trajectory.steps)>=plan['anchor'].depth else None),
                 final_reward=trajectory.final_reward,
                 policy_version=trajectory.policy_version,
-                prefix_token_ids=prefix,
+                prefix_token_ids=plan['prefix'],
             ))
-        return BranchRollouts(BranchGroup(anchor=anchor, outcomes=tuple(outcomes)), tuple(trajectories))
+        return BranchRollouts(BranchGroup(anchor=plan['anchor'], outcomes=tuple(outcomes)), tuple(trajectories))
+
+    def branch(
+        self,
+        *,
+        original_query: str,
+        original: Trajectory,
+        anchor: Anchor,
+        requests: Sequence[BranchRequest],
+        batched: bool = False,
+    ) -> BranchRollouts:
+        """Regenerate one exact-prefix branch group without modifying its source."""
+        plan=self._prepare_branch(original_query=original_query,original=original,anchor=anchor,requests=requests)
+        if batched:
+            from .batched_rollout import continue_many
+            trajectories=continue_many(self,plan['states'])
+        else:
+            trajectories=tuple(self._continue(**state) for state in plan['states'])
+        return self._finish_branch(plan,trajectories)
+
+    def branch_many(self, jobs: Sequence[dict]) -> tuple[BranchRollouts,...]:
+        """Wavefront all ready anchors for one retriever without future context.
+
+        Each row keeps its own frozen prefix, seeds and previous retrieval
+        history.  The shared call only changes vLLM scheduling; ``continue_many``
+        consumes every row's real retrieval result before it is eligible for the
+        next depth.
+        """
+        plans=[self._prepare_branch(**dict(job)) for job in jobs]
+        if not plans:
+            return ()
+        states=[state for plan in plans for state in plan['states']]
+        identities=[state['trajectory_id'] for state in states]
+        if len(identities)!=len(set(identities)):
+            raise ValueError('cross-anchor branch identities must be globally unique')
+        from .batched_rollout import continue_many
+        result={trace.trajectory_id:trace for trace in continue_many(self,states)}
+        if len(result)!=len(states):
+            raise ValueError('cross-anchor branch wave omitted a trajectory')
+        return tuple(self._finish_branch(plan,tuple(result[state['trajectory_id']] for state in plan['states']))
+                     for plan in plans)

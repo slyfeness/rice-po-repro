@@ -315,6 +315,9 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
     effective_generation = dict(parser=effective_parser, output_parser_mode=deployment["output_parser_mode"],
         turn_protocol=turn_protocol(deployment), prompt=plan["prompt_artifact"], seed_schedule="controlled_v2",
         failure_semantics=plan["format_failure_policy"])
+    if sampling_backend=='vllm_ieee_two_stage_v1':
+        from .vllm_two_stage import vllm_runtime_options
+        effective_generation['vllm_runtime']=vllm_runtime_options(deployment.get('vllm_runtime'))
     with operation("asset_binding"):
         frozen = verify_bundle(deployment)
         domain_specs = deployment["domains"]
@@ -494,7 +497,8 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         generator=PhaseSeparatedGenerator(actor=actor,reference=reference,optimizer=optimizer,tokenizer=tokenizer,
             version=lambda:version['value'],behavior=behavior,device=actor_device,root=attempt_dir/'vllm',
             rpc_root=require_cluster_storage(deployment['vllm_rpc_root']),
-            max_new_tokens=plan['max_new_tokens_per_step'],max_context_tokens=plan['max_context_tokens'])
+            max_new_tokens=plan['max_new_tokens_per_step'],max_context_tokens=plan['max_context_tokens'],
+            vllm_runtime=effective_generation['vllm_runtime'])
         cleanup.callback(generator.close)
     reward = PyTrecReward(qrels)
     runners = {domain:RolloutRunner(generator=generator,retriever=backend,reward_scorer=reward,
@@ -532,6 +536,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             raise ValueError('sampling departed from frozen continuation schedule')
         directory = root/f"iteration-{i:06d}"
         atomic_json(directory/"query-batch.json",selected)
+        pending_by_domain={}
         for q in selected:
             ex = train[q]
             with operation("retrieval_D0", query_id=q,iteration=i):
@@ -539,7 +544,6 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                 atomic_json(directory/"initial-evidence"/(fingerprint(q)+".json"),
                             {"query":q,"ranking":[asdict(d) for d in initial.documents]})
             prefix = renderer.initial(ex.query,initial.documents)
-            pending=[]
             for n in range(plan["trajectories_per_query"]):
                 identity = f"{global_i}-{fingerprint(q)}-{n}"
                 arguments=dict(query_id=q,trajectory_id=identity,original_query=ex.query,
@@ -550,23 +554,54 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                     yield runners[ex.domain].run(**arguments)
                 else:
                     from .batched_rollout import OriginalRequest
-                    pending.append(OriginalRequest(**arguments))
-            if pending:
-                from .batched_rollout import run_many
-                yield from run_many(runners[ex.domain],pending)
+                    pending_by_domain.setdefault(ex.domain,[]).append(OriginalRequest(**arguments))
+        # A wave contains every currently ready original trajectory in one
+        # domain.  Retrieval feedback is still consumed before that individual
+        # trajectory enters its next wave; grouping does not pre-fill future
+        # observations or share any state between requests.
+        if pending_by_domain:
+            from .batched_rollout import run_many
+            for domain,pending in pending_by_domain.items():
+                with operation('cross_query_original_wave',iteration=i,domain=domain,
+                               request_count=len(pending),configured_max_num_seqs=
+                               effective_generation.get('vllm_runtime',{}).get('max_num_seqs',len(pending))):
+                    yield from run_many(runners[domain],pending)
 
     sampled_branches=[]
-    def collect_branches(t,a):
+    def branch_job(t,a):
         if action_recovery:action_recovery.check_anchor(a)
         ex = train[t.query_id]
         requests = [BranchRequest(f"{t.trajectory_id}-d{a.depth}-b{b}",
                     tuple(stable_seed(seed,"branch_v2",ex.domain,t.query_id,t.trajectory_id,a.depth,b,d)
                           for d in range(a.depth,plan["rollout_depth"]+1)))
                     for b in range(1,plan["total_branches_including_original"])]
-        result=runners[ex.domain].branch(original_query=ex.query,original=t,anchor=a,requests=requests,
+        return ex.domain,dict(original_query=ex.query,original=t,anchor=a,requests=requests)
+
+    def collect_branches(t,a):
+        domain,job=branch_job(t,a)
+        result=runners[domain].branch(**job,
                                         batched=sampling_backend!='serial_hf_v1')
         if sampling_backend=='vllm_ieee_two_stage_v1':sampled_branches.extend(result.trajectories)
         return result
+
+    def collect_branches_batch(items):
+        """Submit all ready counterfactuals for each retriever as one wave."""
+        scheduled={}
+        result=[None]*len(items)
+        for index,(trajectory,anchor) in enumerate(items):
+            domain,job=branch_job(trajectory,anchor)
+            scheduled.setdefault(domain,[]).append((index,job))
+        for domain,jobs in scheduled.items():
+            with operation('cross_query_branch_wave',domain=domain,anchor_count=len(jobs),
+                           request_count=sum(len(job['requests']) for _,job in jobs),
+                           configured_max_num_seqs=effective_generation['vllm_runtime']['max_num_seqs']):
+                collections=runners[domain].branch_many(tuple(job for _,job in jobs))
+            for (index,_),collection in zip(jobs,collections,strict=True):
+                result[index]=collection
+                sampled_branches.extend(collection.trajectories)
+        if any(value is None for value in result):
+            raise ValueError('cross-anchor scheduler omitted a branch collection')
+        return tuple(result)
 
     def update(originals,batch,old_version,directory):
         if version["value"] != old_version:
@@ -626,7 +661,8 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         torch.cuda.synchronize(actor_device)
         torch.cuda.synchronize(retriever_device)
 
-    components = IterationComponents(rollout_batch,entropy,collect_branches if entropy else None,update,barrier)
+    components = IterationComponents(rollout_batch,entropy,collect_branches if entropy else None,update,barrier,
+        collect_branches_batch=collect_branches_batch if sampling_backend=='vllm_ieee_two_stage_v1' and entropy else None)
     def finish(i, *, recovered=False):
         directory = root/f"iteration-{i:06d}"
         current = version["value"]
