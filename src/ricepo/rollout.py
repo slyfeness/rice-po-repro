@@ -256,7 +256,7 @@ class RolloutRunner:
             self._check_policy(policy_version)
             kind = "original_generation" if honor_stop else "branch_generation"
             request_id = logical_request_id(policy_version, query_id, trajectory_id, depth, seed)
-            replay = getattr(self.generator,"completion_replay",None)
+            replay = getattr(self.generator,"action_replay",None) or getattr(self.generator,"completion_replay",None)
             saved_native_replay = bool(replay and replay(prefix,seed,policy_version) is not None)
             with operation(kind, request_id=request_id, query_id=query_id, trajectory_id=trajectory_id,
                            seed=seed, depth=depth, input_tokens=len(prefix), policy_version=policy_version,

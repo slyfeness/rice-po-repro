@@ -59,6 +59,12 @@ class TwoStageFormat:
             g=InvalidGeneration(ids,summary_reason if entered else think_reason,category,reason,mask,MODE,lp,stages)
             generation_action_mask(g)
             return g
+        # ByteLevel permits sampling incomplete/invalid UTF-8. Replacement
+        # decoding cannot supply an exact retrieval query or unique byte span.
+        # Reject this real action; retain every native token and probability.
+        try:self.bytes.join(ids).decode('utf8',errors='strict')
+        except UnicodeDecodeError:
+            return invalid('native_text_encoding','sampled native bytes are not valid UTF-8; no exact Summary available')
         if think_reason!='think_closed':
             return invalid('generation_length' if think_reason=='length' else 'tag_structure','Think did not sample its closing tag: '+think_reason)
         t=self.decode(think)
@@ -98,6 +104,13 @@ def generate_two_stage(owner,prefix,seed):
     prefix=tuple(prefix);device=torch.device(owner.device)
     if owner.model.training or not prefix or type(seed) is not int or not 0<=seed<2**63:
         raise ValueError('two-stage generation needs frozen eval model, native prefix and seed')
+    replay=getattr(owner,'action_replay',None)
+    cached=replay(prefix,seed,owner.policy_version) if replay else None
+    if cached is not None:
+        generation_action_mask(cached)
+        if cached.protocol!=MODE:raise ValueError('saved action protocol differs')
+        event('two_stage_saved_action_replay',generation=cached,recovery_replay=True,independent_sample=False)
+        return cached
     if getattr(owner,'completion_replay',None):raise ValueError('legacy raw-completion replay cannot represent mixed two-stage records')
     fmt=owner.two_stage_format;version=owner.policy_version
     cuda=[device.index] if device.type=='cuda' else []

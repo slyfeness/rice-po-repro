@@ -68,6 +68,22 @@ class InvalidGeneration:
     stages: tuple[GenerationStage, ...] = ()
 
 
+def generation_from_record(record):
+    """Deserialize native evidence without tokenization or text repair."""
+    fields=dict(record)
+    fields['token_ids']=tuple(fields['token_ids'])
+    for key in ('action_mask','sampled_log_probs'):
+        if fields.get(key) is not None:fields[key]=tuple(fields[key])
+    fields['stages']=tuple(GenerationStage(**{**s,'token_span':Span(**s['token_span'])})
+                           for s in fields.get('stages',()))
+    cls=InvalidGeneration if 'category' in fields else Generation
+    if cls is Generation:
+        for key in ('reasoning_span','summary_span'):fields[key]=Span(**fields[key])
+    result=cls(**fields)
+    generation_action_mask(result)
+    return result
+
+
 def generation_action_mask(generation):
     """Legacy means sampled IDs only. Mixed histories require an explicit protocol."""
     size=len(generation.token_ids)

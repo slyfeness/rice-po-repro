@@ -28,4 +28,15 @@ class TwoStageFormatTests(unittest.TestCase):
             self.assertIsInstance(g,InvalidGeneration)
             self.assertEqual(sum(g.action_mask),len(a)+len(b))
 
+    def test_invalid_utf8_is_retained_as_unextractable_action_not_repaired(self):
+        from dataclasses import asdict
+        from ricepo.contracts import generation_from_record
+        f=TwoStageFormat(Tok());a=tuple(b'r</think>');b=tuple(b's\xbe</summary>')
+        g=f.record(a,b,(-1.,)*len(a),(-2.,)*len(b),'think_closed','summary_closed')
+        self.assertIsInstance(g,InvalidGeneration)
+        self.assertEqual(g.category,'native_text_encoding')
+        self.assertEqual(g.token_ids,a+f.control_ids+b)
+        self.assertEqual(sum(g.action_mask),len(a)+len(b))
+        self.assertEqual(generation_from_record(asdict(g)),g)
+
 if __name__=='__main__':unittest.main()
