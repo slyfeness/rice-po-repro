@@ -8,6 +8,15 @@ from ricepo import hf_runtime
 
 
 class RuntimeRecipeStorage(TestCase):
+    def test_initial_evaluation_mode_only_allows_a_fresh_run(self):
+        self.assertTrue(hasattr(hf_runtime, "initial_evaluation_mode"))
+        self.assertTrue(hf_runtime.initial_evaluation_mode({"initial_evaluation_only": True},
+                                                           parent=None, resume=False))
+        with self.assertRaisesRegex(ValueError, "fresh"):
+            hf_runtime.initial_evaluation_mode({"initial_evaluation_only": True}, parent=object(), resume=False)
+        with self.assertRaisesRegex(ValueError, "fresh"):
+            hf_runtime.initial_evaluation_mode({"initial_evaluation_only": True}, parent=None, resume=True)
+
     def test_asset_binding_does_not_mutate_research_recipe(self):
         config = load_config(Path(__file__).resolve().parents[1] / "configs/controlled_biology.json")
         recipe = resolve(config, "train")

@@ -285,6 +285,22 @@ def _domain_retriever(domain, spec, deployment, settings, model_spec, encoder, r
     return backend,audit
 
 
+def initial_evaluation_mode(deployment, *, parent, resume):
+    """Validate the fresh, frozen-policy development-only evaluation mode.
+
+    This deliberately has no training or checkpoint semantics: it is used to
+    establish the update-0 comparator through the same live rollout backend as
+    a candidate run.  A continuation or recovery would make that identity
+    ambiguous, so both are refused.
+    """
+    enabled = deployment.get("initial_evaluation_only", False)
+    if type(enabled) is not bool:
+        raise ValueError("initial_evaluation_only must be a boolean")
+    if enabled and (parent is not None or resume):
+        raise ValueError("initial evaluation mode requires a fresh run")
+    return enabled
+
+
 def run(config, deployment, *, resume=False):
     require_execution(config, command="train")
     require_slurm()
@@ -523,6 +539,21 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         failure_semantics=plan["format_failure_policy"],
         excluded_ids_by_query={q:ex.excluded_ids for q,ex in examples.items() if ex.domain==domain})
         for domain,backend in retrievers.items()}
+    if initial_evaluation_mode(deployment, parent=parent, resume=resume):
+        output = root / "initial-development"
+        with operation("initial_development_evaluation"):
+            summary = evaluate_queries(
+                examples=dev, expected_ids=frozen.identities["development"], split="development",
+                phase="initial_development", method=plan["method"], root_seed=seed,
+                policy_version=version["value"], rollout_depth=plan["rollout_depth"],
+                retrievers=retrievers, runners=runners, renderer=renderer, reward=reward, output=output,
+                scope="complete", manifest_sha256=frozen.manifest_sha256["development"],
+                backend_fingerprints={d:fingerprint(sources[d]) for d in retrievers},
+                samples_per_query=plan["eval_samples_per_query"])
+        result = {"status":"initial_development_complete", "policy_version":version["value"],
+                  "samples_per_query":plan["eval_samples_per_query"], "summary":summary}
+        atomic_json(root / "initial-evaluation-complete.json", result)
+        return result
     scoring = make_forward(reference_model=reference,device=actor_device,logit_chunk_size=deployment["logit_chunk_size"],
                            max_context_tokens=plan["max_context_tokens"],policy_call_kwargs={},reference_call_kwargs={})
     def forward(model,item):
