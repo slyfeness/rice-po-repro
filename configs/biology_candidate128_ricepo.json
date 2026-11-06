@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "extends": "paper_reference.json",
+  "profile": "ablation",
+  "runtime_bindings": {
+    "total_updates": 10
+  },
+  "deviations": {
+    "max_new_tokens_per_step": {
+      "value": 4096,
+      "reason": "Previously frozen functional generation capacity for the independent two-stage protocol."
+    },
+    "native_span_parser": {
+      "value": "two_stage_env_summary_v1",
+      "reason": "Authorized independent two-stage protocol: sampled Think close, masked deterministic Summary opener, then nonempty sampled Summary close or EOS."
+    },
+    "prompt_artifact": {
+      "value": "prompts/ricepo_prefilled_think_smoke.txt",
+      "reason": "Frozen explicitly non-paper compatibility prompt; no prompt search occurs within the candidate experiment."
+    },
+    "format_failure_policy": {
+      "value": "invalid_action_terminal_zero_v1",
+      "reason": "Authorized independent zero-utility terminal for invalid actions; it does not invent a retrieval or change valid-action NDCG."
+    },
+    "query_composition": {
+      "value": {
+        "mode": "original_and_summary",
+        "separator": "\n"
+      },
+      "reason": "Independent Section 4.2.2 interpretation: retrieve with the original question followed by the generated Summary."
+    },
+    "development_every_updates": {
+      "value": 4,
+      "reason": "Pre-registered complete development evaluations after updates 4, 8 and the mandatory final update 10."
+    },
+    "checkpoint_every_updates": {
+      "value": 2,
+      "reason": "Pre-registered complete recovery checkpoints after every two updates and at development cadence."
+    },
+    "eval_samples_per_query": {
+      "value": 4,
+      "reason": "Pre-registered four independent fixed-seed development samples per query; aggregate within query before domain macro averaging."
+    }
+  },
+  "execution": {
+    "enabled": false,
+    "runtime_validated": false,
+    "four_gpu_validated": false
+  }
+}

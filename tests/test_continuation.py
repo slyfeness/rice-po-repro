@@ -1,10 +1,12 @@
 """Continuation identity and global schedule; no model assets required."""
+import json
 import unittest
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
 from ricepo.audit import fingerprint
 from ricepo.artifacts import atomic_json, file_sha256
+from ricepo import continuation
 from ricepo.continuation import parent_run
 from ricepo.continuation import continuation_recipe, scheduled_queries, validate_state_position
 
@@ -105,6 +107,23 @@ class ContinuationTests(unittest.TestCase):
         a = scheduled_queries(keys, 42, 1, 4)
         self.assertEqual(a, scheduled_queries(reversed(keys),42,1,4))
         self.assertNotEqual(a, scheduled_queries(keys,42,0,4))
+
+    def test_fresh_schedule_asset_must_match_the_frozen_seed_rule(self):
+        self.assertTrue(hasattr(continuation, 'fresh_schedule'))
+        keys = ['q'+str(i) for i in range(128)]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'fresh-schedule.json'
+            schedule = continuation.fresh_schedule(keys, seed=42, updates=10, count=128,
+                                                   manifest_sha256='a'*64)
+            atomic_json(path, schedule)
+            verified = continuation.validate_fresh_schedule(path, keys, seed=42, updates=10, count=128,
+                                                            manifest_sha256='a'*64)
+            self.assertEqual(verified['batches'], schedule['batches'])
+            schedule['batches'][0][1] = schedule['batches'][0][0]
+            path.write_text(json.dumps(schedule), encoding='utf-8')
+            with self.assertRaisesRegex(ValueError, 'frozen fresh schedule'):
+                continuation.validate_fresh_schedule(path, keys, seed=42, updates=10, count=128,
+                                                     manifest_sha256='a'*64)
 
     def test_parent_and_child_state_positions_are_distinct(self):
         validate_state_position(dict(binding='parent',iteration=0,seed=42,policy_version='p'),

@@ -4,6 +4,7 @@ import random
 
 from .audit import fingerprint, stable_seed
 from .artifacts import file_sha256
+from .dataset_bundle import is_digest
 from .state import read_json, verify_checkpoint, selected_so_far
 
 
@@ -18,6 +19,26 @@ def continuation_recipe(parent, child):
 
 def scheduled_queries(identities, seed, global_index, count):
     return random.Random(stable_seed(seed,'query_sampling',global_index)).sample(sorted(identities),count)
+
+
+def fresh_schedule(identities, *, seed, updates, count, manifest_sha256):
+    """Materialize the deterministic fresh-run query plan before training starts."""
+    identities = tuple(identities)
+    if (type(seed) is not int or not 0 <= seed < 2**63 or type(updates) is not int or updates < 1
+            or type(count) is not int or count < 1 or count > len(identities)
+            or len(identities) != len(set(identities)) or not is_digest(manifest_sha256)):
+        raise ValueError('invalid fresh schedule inputs')
+    return dict(global_start=0, root_seed=seed, train_manifest_sha256=manifest_sha256,
+                batches=[scheduled_queries(identities, seed, index, count) for index in range(updates)])
+
+
+def validate_fresh_schedule(path, identities, *, seed, updates, count, manifest_sha256):
+    """Reject a prewritten schedule unless it exactly matches the frozen seed rule."""
+    expected = fresh_schedule(identities, seed=seed, updates=updates, count=count,
+                              manifest_sha256=manifest_sha256)
+    if read_json(Path(path)) != expected:
+        raise ValueError('frozen fresh schedule differs from global seed rule or dataset')
+    return expected
 
 
 def validate_state_position(state, *, binding, iteration, seed, policy_version):

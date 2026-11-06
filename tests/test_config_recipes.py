@@ -131,3 +131,21 @@ def test_scale32_original_and_summary_configs_keep_shared_rollout_budget():
         assert plan["execution"]["enabled"] is False
     assert rice["values"]["total_branches_including_original"] == 6
     assert "total_branches_including_original" not in grpo["values"]
+
+
+def test_candidate128_configs_pre_register_common_budget_and_multisample_evaluation():
+    rice = resolve(configured("biology_candidate128_ricepo"), "train")
+    grpo = resolve(configured("biology_candidate128_grpo"), "train")
+    for plan in (rice, grpo):
+        assert plan["issues"] == ["unresolved: train_split_manifest", "unresolved: development_split_manifest"]
+        assert plan["values"]["queries_per_update"] == 128
+        assert plan["values"]["total_updates"] == 10
+        assert plan["values"]["eval_samples_per_query"] == 4
+        assert plan["values"]["development_every_updates"] == 4
+        assert plan["values"]["checkpoint_every_updates"] == 2
+        assert plan["values"]["optimizer_minibatch_size"] == 512
+        assert plan["values"]["gradient_accumulation"] == 512
+        assert plan["values"]["query_composition"] == {"mode": "original_and_summary", "separator": "\n"}
+        assert plan["execution"]["enabled"] is False
+    assert rice["values"]["total_branches_including_original"] == 6
+    assert "total_branches_including_original" not in grpo["values"]

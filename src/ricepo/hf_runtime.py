@@ -394,11 +394,25 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
     binding["behavior"]["failure_semantics"] = plan["format_failure_policy"]
     if sampling_backend!='serial_hf_v1':
         binding['behavior']['sampling_backend']=sampling_backend
-    from .continuation import parent_run, scheduled_queries, validate_state_position
+    from .continuation import (fresh_schedule, parent_run, scheduled_queries, validate_fresh_schedule,
+                               validate_state_position)
     parent = parent_run(deployment,binding,plan,train)
     global_start = parent['lineage']['global_start'] if parent else 0
     if parent:
         binding['continuation'] = parent['lineage']
+        frozen_schedule = None
+    else:
+        frozen_schedule = fresh_schedule(train, seed=seed, updates=plan['total_updates'],
+                                         count=plan['queries_per_update'],
+                                         manifest_sha256=frozen.manifest_sha256['train'])
+        schedule_path = deployment.get('frozen_schedule_path')
+        if schedule_path is not None:
+            require_cluster_storage(schedule_path)
+            frozen_schedule = validate_fresh_schedule(schedule_path, train, seed=seed,
+                                                       updates=plan['total_updates'],
+                                                       count=plan['queries_per_update'],
+                                                       manifest_sha256=frozen.manifest_sha256['train'])
+            binding['fresh_schedule_sha256'] = file_sha256(schedule_path)
     action_recovery=None
     if deployment.get('native_action_replay_sources'):
         if not parent or sampling_backend!='serial_hf_v1' or parser_mode!='two_stage_env_summary_v1':
@@ -531,9 +545,12 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
 
     def rollout_batch(i,policy_version):
         global_i = global_start+i
-        selected = scheduled_queries(train,seed,global_i,plan["queries_per_update"])
-        if parent and selected != parent['schedule'][i]:
-            raise ValueError('sampling departed from frozen continuation schedule')
+        if parent:
+            selected = scheduled_queries(train,seed,global_i,plan["queries_per_update"])
+            if selected != parent['schedule'][i]:
+                raise ValueError('sampling departed from frozen continuation schedule')
+        else:
+            selected = frozen_schedule['batches'][i]
         directory = root/f"iteration-{i:06d}"
         atomic_json(directory/"query-batch.json",selected)
         pending_by_domain={}
