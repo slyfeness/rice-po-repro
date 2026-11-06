@@ -3,7 +3,7 @@ import argparse
 import hashlib
 
 
-def verify(run_root, output, device):
+def verify(run_root, output, device, iteration=0):
     from ricepo.artifacts import require_slurm,require_cluster_storage,atomic_json
     from ricepo.state import read_json,verify_checkpoint
     from ricepo.audit import fingerprint
@@ -13,7 +13,8 @@ def verify(run_root, output, device):
     if out.exists():raise FileExistsError(out)
     if read_json(root/'sources.json')!=_source_hashes():
         raise ValueError('use the exact immutable package source recorded by this run')
-    binding=read_json(root/'binding.json');cp=root/'iteration-000000/checkpoint'
+    if type(iteration) is not int or iteration<0:raise ValueError('invalid local checkpoint iteration')
+    binding=read_json(root/'binding.json');cp=root/f'iteration-{iteration:06d}'/'checkpoint'
     receipt=verify_checkpoint(cp,fingerprint(binding),allow_missing_stage=True)
     import torch
     from transformers import AutoModelForCausalLM
@@ -26,7 +27,10 @@ def verify(run_root, output, device):
     model.to(device).eval();version,identity=identify(model,binding['behavior'])
     if version!=receipt['policy_version']:raise ValueError('restored actual policy differs')
     saved=torch.load(cp/'optimizer-and-rng.pt',map_location='cpu',weights_only=True)
-    if saved['policy_version']!=version or saved['binding']!=fingerprint(binding):
+    global_index=binding.get('continuation',{}).get('global_start',0)+iteration
+    if (saved['policy_version']!=version or saved['binding']!=fingerprint(binding)
+            or saved['iteration']!=iteration or receipt['iteration']!=iteration
+            or saved.get('global_update_index',iteration)!=global_index):
         raise ValueError('optimizer binding differs')
     recipe=read_json(root/'recipe.json')['values'];hp=recipe['optimizer_hyperparameters']
     optimizer=torch.optim.AdamW(model.parameters(),lr=recipe['actor_learning_rate'],
@@ -34,7 +38,11 @@ def verify(run_root, output, device):
     expected=state_digest(saved['optimizer']);optimizer.load_state_dict(saved['optimizer'])
     if state_digest(optimizer.state_dict())!=expected:raise ValueError('optimizer logical payload differs')
     steps=sorted({float(s['step']) for s in optimizer.state.values()})
-    if not steps or min(steps)<1:raise ValueError('no committed optimizer step')
+    mini=recipe['optimizer_minibatch_size']
+    sequences=recipe['queries_per_update']*recipe['trajectories_per_query']
+    mini=sequences if mini=='full_batch' else mini
+    expected_steps=(global_index+1)*recipe['ppo_epochs']*(sequences//mini)
+    if steps!=[float(expected_steps)]:raise ValueError('optimizer step position differs from frozen update plan')
     torch.random.set_rng_state(saved['cpu_rng']);torch.cuda.set_rng_state(saved['cuda_rng'],device)
     probes=dict(cpu_draw_sha256=hashlib.sha256(torch.rand(32).numpy().tobytes()).hexdigest(),
         cuda_draw_sha256=hashlib.sha256(torch.rand(32,device=device).cpu().numpy().tobytes()).hexdigest())
@@ -43,6 +51,7 @@ def verify(run_root, output, device):
         optimizer_steps=steps,optimizer_restored=True,optimizer_logical_sha256=expected,
         cpu_cuda_rng_restored=True,rng_draw_hashes=probes,actual_actor_reloaded=True,
         checkpoint_files_verified=True,new_optimizer_steps=0,separate_process=True,
+        local_iteration=iteration,global_completed_updates=global_index+1,
         peak_allocated=torch.cuda.max_memory_allocated(device))
     atomic_json(out,report)
     return report
@@ -53,5 +62,6 @@ if __name__=='__main__':
     parser.add_argument('--run-root',required=True)
     parser.add_argument('--output',required=True)
     parser.add_argument('--device',default='cuda:0')
+    parser.add_argument('--iteration',type=int,default=0)
     args=parser.parse_args()
-    print(verify(args.run_root,args.output,args.device),flush=True)
+    print(verify(args.run_root,args.output,args.device,args.iteration),flush=True)
