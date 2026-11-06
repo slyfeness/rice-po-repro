@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "extends": "two_stage_ricepo.json",
+  "profile": "ablation",
+  "runtime_bindings": {
+    "total_updates": 1
+  },
+  "deviations": {
+    "queries_per_update": {
+      "value": 32,
+      "reason": "Authorized independent capacity acceptance: 32 fixed Biology training queries, not a paper-performance claim."
+    },
+    "query_composition": {
+      "value": {
+        "mode": "original_and_summary",
+        "separator": "\n"
+      },
+      "reason": "Independent reading of paper Section 4.2.2: original query, one LF, then the generated Summary; prior summary_only lineage is not reused."
+    },
+    "development_every_updates": {
+      "value": 1,
+      "reason": "The one-update capacity acceptance records a complete frozen development evaluation."
+    },
+    "checkpoint_every_updates": {
+      "value": 1,
+      "reason": "The one-update capacity acceptance requires a complete recoverable checkpoint."
+    }
+  },
+  "execution": {
+    "enabled": false,
+    "runtime_validated": false,
+    "four_gpu_validated": false
+  }
+}
