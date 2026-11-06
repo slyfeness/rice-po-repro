@@ -1,3 +1,9 @@
+## 2026-11-06 两阶段受限验收
+
+新增 two_stage_env_summary_v1、actor_precision=float32、eval_layers_v1 和 local_verified_v1；仍为单进程Actor/Reference一设备+Diver另一设备。真实训练包源码对应公开等价提交98267806afc70bf73c26385460918d918b02ea49；恢复必须使用绑定的精确包源码，可配合新scripts/validation/verify_training_checkpoint.py，不能绕过source fingerprint。见[测量及限制](reviews/two-stage-native-v1/SUMMARY.md)。
+
+---
+
 # Reference runtime and recovery contract
 
 The supported deployment is an offline source checkout in a Slurm allocation. The HF training and prompting paths use one process and two explicitly named CUDA devices. D0 evaluation uses the fixed retrieval stack alone. Source review is complete for this revision. Runtime, capacity and recovery acceptance remain pending.

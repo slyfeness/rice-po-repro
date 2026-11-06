@@ -1,0 +1,152 @@
+{
+  "actual_control_sources": [
+    {
+      "alias": "control/80-storage-probe.py",
+      "bytes": 5040,
+      "sha256": "07ddc046b3d88dc634e638f02e384bbbd221fc013dffc91e559ce90ca8eedca6"
+    },
+    {
+      "alias": "control/80-storage-probe.sbatch",
+      "bytes": 457,
+      "sha256": "1652e1fd31e3e7c845540340bb97150074f1cbd0bc6712dd02b873e91f64ab8c"
+    },
+    {
+      "alias": "control/81-prepare.sbatch",
+      "bytes": 1343,
+      "sha256": "a33a5d8592c6fd82a2d35834fe56395683c199b2080c21cb00207a00bbe57dd4"
+    },
+    {
+      "alias": "control/82-prepare.sbatch",
+      "bytes": 1050,
+      "sha256": "50820359e5314f7d8b59ad25c8a8ecc14eab08682303bed8aecd971ae5e50670"
+    },
+    {
+      "alias": "control/85-probability-precision.py",
+      "bytes": 3363,
+      "sha256": "9fd34e36c8e5d96280b5d8ae1d95e58211aa2331f1c549e828ef4d143db64f9e"
+    },
+    {
+      "alias": "control/86-prepare.sbatch",
+      "bytes": 1116,
+      "sha256": "a8a5d9934d651c54467e94b35ceab7e827a70a2635ab557cd63a47bdd8f9fdde"
+    },
+    {
+      "alias": "control/86-protocol-pair.py",
+      "bytes": 10297,
+      "sha256": "07bdc76bf9b9302a75766002481ac3f2885bacbb8a8423841edff698131baef3"
+    },
+    {
+      "alias": "control/86-protocol-pair.sbatch",
+      "bytes": 755,
+      "sha256": "43aeac442157366b37bf2658ba2d9e248344c5bc64b214baa10196d0527e2c58"
+    },
+    {
+      "alias": "control/87-decode-diagnosis.py",
+      "bytes": 1473,
+      "sha256": "3d7d509b4644739b6350c43987f6e2065e64e23849079e92ba151acb5fce8c57"
+    },
+    {
+      "alias": "control/88-prepare.sbatch",
+      "bytes": 1118,
+      "sha256": "96e4cce60a3e605061415e950d847635716e2a2dc800f41f405cae3b0bd65a7d"
+    },
+    {
+      "alias": "control/89-prepare.sbatch",
+      "bytes": 1094,
+      "sha256": "09d19d048e127b9e10d00cbaa01989357cfedbf7814a17d6b43333e17d6bcb6c"
+    },
+    {
+      "alias": "control/89-real-kernels.py",
+      "bytes": 6745,
+      "sha256": "acd5c48614c51288da585b4d62a566c26f2e3258171196f207fffae720198306"
+    },
+    {
+      "alias": "control/89-real-kernels.sbatch",
+      "bytes": 749,
+      "sha256": "61bb93f31ef7ef20e8fae4527e42d5d0b83dd32c20da72afff7e08f02b9d9635"
+    },
+    {
+      "alias": "control/90-protocol-recovery.py",
+      "bytes": 13557,
+      "sha256": "0dda0c4557140637e7d55d7f0d147476217f6a23b7bee9202f012331df46e274"
+    },
+    {
+      "alias": "control/90-protocol-recovery.sbatch",
+      "bytes": 759,
+      "sha256": "1df9a1575dee2350c7183c5383d97c33c2008d0fc63aeb3d26a4907afc03f2cc"
+    },
+    {
+      "alias": "control/92-real-gradient.py",
+      "bytes": 5927,
+      "sha256": "86eca86129ddfa5b77e3f36cb7a2eecf62ec2d020f6023ac11065dfc4abf8405"
+    },
+    {
+      "alias": "control/92-real-gradient.sbatch",
+      "bytes": 750,
+      "sha256": "ac855d752379eb58d71cfe840992ed242be5c206cafd363e6faf9cc95ba7c23a"
+    },
+    {
+      "alias": "control/93-two-stage-train.py",
+      "bytes": 4172,
+      "sha256": "cfb80ffec863e2f2bc2faab88fea5ba50effdd10cd89dfb328579a4fdc1ddc2c"
+    },
+    {
+      "alias": "control/93-two-stage-train.sbatch",
+      "bytes": 833,
+      "sha256": "723c2f0c992436c84fe907095656d9d9c04d68895061f5a81b264f81d0d53b8e"
+    },
+    {
+      "alias": "control/98-initial-baseline.py",
+      "bytes": 1761,
+      "sha256": "b17897f48b19eb1ba39968972ff7d51109ee4ad1a655446c0179ac329e6b41fe"
+    },
+    {
+      "alias": "control/98-initial-baseline.sbatch",
+      "bytes": 829,
+      "sha256": "974918f720d53454e3d864952030a2ff4d22d6a68f13af8948bb3e601d1fe335"
+    },
+    {
+      "alias": "control/99-checkpoint-reload.sbatch",
+      "bytes": 830,
+      "sha256": "998baf8c1374a710ab1178eb5f7619331056aef95a1301332a3377061f6e2d71"
+    },
+    {
+      "alias": "control/100-batch-real-prefix.py",
+      "bytes": 3628,
+      "sha256": "ee84fbdc36391907c72abdd29a4f5acf1b6b8c8ebfd123a7ada56f3ee699a30f"
+    },
+    {
+      "alias": "control/100-batch-real-prefix.sbatch",
+      "bytes": 578,
+      "sha256": "b4ed0ab29d92f3904150dc225e4d31da5b61fa0825b2a6fbe083f83ae8e0fbd3"
+    },
+    {
+      "alias": "control/101-batch-real-prefix.py",
+      "bytes": 4664,
+      "sha256": "5286b15fb9a63e9902cd46c3c4e36b99800d97c83fbad506c4a8aa406052d73e"
+    },
+    {
+      "alias": "control/101-batch-real-prefix.sbatch",
+      "bytes": 578,
+      "sha256": "78d00e6d1c56432028bf43c8960295942154b3528a024ac6311de4382ae8120d"
+    },
+    {
+      "alias": "control/103-final-evidence.py",
+      "bytes": 19344,
+      "sha256": "f682aec8ecf1b7bdd83c9cde52752f50e5040fc733107e92b5625c137971fcdb"
+    },
+    {
+      "alias": "control/103-final-evidence.sbatch",
+      "bytes": 574,
+      "sha256": "6bafaff9671ced69d60e59aa9a96cbe45dba9ff8c76435cd4519f1afdaf4ade5"
+    },
+    {
+      "alias": "control/verify_training_checkpoint.py",
+      "bytes": 3496,
+      "sha256": "c2da9815b7421f32685ef1d9475b51a7676a2e38e0ff9f2816675fed762acd27"
+    }
+  ],
+  "pytest_version": "8.3.5",
+  "pytest_loader_sha256": "8e6ea1d1910225d0d7957d22e45db498ddf2a55fbe4fba2c9ad307cf3cd8f2e8",
+  "note": "Actual private control source hashes only; source contents contain internal paths and are not uploaded. Test framework is the pre-existing isolated pytest package overlay."
+}

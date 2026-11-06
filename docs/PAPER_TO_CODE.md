@@ -1,3 +1,9 @@
+## 2026-11-06 两阶段受限验收
+
+新增[原生两阶段独立协议](TWO_STAGE_PROTOCOL.md)；其环境边界与失败语义不是论文作者确认设置。compute_credit、优势替换和PPO目标保持，改动映射及真实证据见[本轮修改表](reviews/two-stage-native-v1/CHANGES.md)。
+
+---
+
 # Paper-to-code map
 
 This repository independently implements **RICE-PO** from

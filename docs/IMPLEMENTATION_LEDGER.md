@@ -1,3 +1,9 @@
+## 2026-11-06 两阶段受限验收
+
+本轮新增原生两阶段、动作mask/真实LP、同原始GRPO梯度诊断、验证式检查点、HF批量候选。9/16可估计、4个非零局部替换已真实参与更新，0个推理门控传播；开发性能未达标。类别、函数和验证状态见[修改表](reviews/two-stage-native-v1/CHANGES.md)，旧阶段资产与失败记录保留。
+
+---
+
 # Revision ledger
 
 审查基准为 `d4b490a96f8ceb31392ca55abf31325bedb7078c`。开始时本地 main、origin/main 与远端公布的 main 均指向该提交，工作区干净。所有修改发生在独立 worktree 的 `revision/auditable-reference` 分支。本次交付使用独立本地提交和源码 ZIP。

@@ -1,3 +1,9 @@
+## 2026-11-06 两阶段受限验收
+
+本阶段真实CPU、GPU、完整在线信用更新与跨进程恢复已执行，详见[本轮结果](reviews/two-stage-native-v1/SUMMARY.md)和[测试记录](reviews/two-stage-native-v1/TEST_RESULTS.md)。这些结果限定独立两阶段/失败环境，非严格论文性能或四rank验证；历史各阶段的“未运行”声明不改写。
+
+---
+
 # Verification status
 
 Latest bounded online evidence: [failure-zero results](reviews/first-ricepo-smoke/FAILURE_ZERO_RESULTS.md). GRPO completed three updates and one reward-driven weight change, with three checkpoints independently reloaded. Both initial and trained policies evaluated all 32 development queries and completed zero legal five-round episodes. RICE collected all 65 scheduled new branches but had zero estimable anchors out of 13 and no weight change; its interrupted checkpoint is invalid and unpublished. This is an independent failure-environment experiment, not paper-performance or distributed validation. The source-only statements below are historical revision-phase status.

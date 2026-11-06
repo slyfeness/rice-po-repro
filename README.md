@@ -2,7 +2,7 @@
 
 面向祝融，目标为 DeepSeek-R1-Distill-Qwen-1.5B 和 BRIGHT。最初源码审查基准为 `d4b490a96f8ceb31392ca55abf31325bedb7078c`。[论文 v3](https://arxiv.org/html/2605.26352v3) · [逐项修改表](docs/REVISION_MATRIX.csv) · [验证状态](docs/VALIDATION.md)
 
-最新授权受限试跑：[失败终态训练报告](docs/reviews/first-ricepo-smoke/FAILURE_ZERO_RESULTS.md)。GRPO 完成三次更新，第三次有真实奖励驱动梯度和权重变化；RICE 的 13 个锚点全部不可估计，已停止扩大。初始模型和训练后 GRPO 均覆盖 32/32 开发查询，但合法五轮完成均为 0/32。当前没有复现论文性能；`invalid_action_terminal_zero_v1` 是独立失败环境变体，公开模板仍默认禁执行。
+最新受限结果：[两阶段协议与真实信用更新报告](docs/reviews/two-stage-native-v1/SUMMARY.md)。RICE 完成16原轨迹、80新分支；9/16锚点可估计，4个非零局部优势实际参与PPO，模型/优化器/RNG检查点已独立恢复。三组完整32题开发分数：初始0.15929、GRPO0.04710、RICE0.02771（均为失败调整任务分数）。链路已打通，性能未达标；两阶段与失败环境是独立约定，公开模板仍禁执行。[此前失败阶段](docs/reviews/first-ricepo-smoke/FAILURE_ZERO_RESULTS.md)保留，不改写历史。
 
 ## 配置和方法
 
@@ -14,6 +14,7 @@
 | `configs/retrieval_only.json`、`prompting.json` | 固定检索器的 D0、初始策略的完整交互评估 |
 | `configs/grpo.json` | 同查询最终奖励归一化，直接进入共享 PPO 更新 |
 | `configs/failure_zero_ricepo.json`、`failure_zero_grpo.json` | 已授权受限失败环境：4 查询更新、保留全部非法终止轨迹；明确偏离论文，见最新报告 |
+| `configs/two_stage_ricepo.json`、`two_stage_grpo.json` | 两阶段环境Summary控制与显式动作mask，4查询诊断预算；数学信用/PPO保持 |
 | `configs/ablation.json`、`configs/variants/` | 五个总分支、门控规则、选锚、局部归一化、查询组合或 PPO 轮数的单因素变体 |
 
 从源码 checkout 部署，使用 `src` 作为 Python 模块根目录，保留同一 checkout 中的 `configs` 和 `prompts`。静态配置入口 `python -m ricepo.cli expand --config configs/smoke.json --for-command train` 只读配置，输出实际值、来源、偏离项、待填字段、部署字段名与指纹。本次未执行该命令。模板中训练总预算与真实数据清单路径留空，执行开关及运行验证标记为 false。[配置与选择规则](docs/REFERENCE_RUNTIME.md)

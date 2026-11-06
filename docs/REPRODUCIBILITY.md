@@ -1,3 +1,9 @@
+## 2026-11-06 两阶段受限验收
+
+本轮实际使用128/32/103冻结包中的4训练查询，所有三组完整32题开发均计入失败，正式测试未执行。非零局部信用与权重变化已核验，开发性能下降；详见[独立复现边界](reviews/two-stage-native-v1/SUMMARY.md)。上游来源核验不因本地指纹一致而升级。
+
+---
+
 # Reproducibility contract
 
 The deliverable is an independent, source-traceable implementation of
