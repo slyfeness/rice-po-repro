@@ -37,6 +37,8 @@ def _selected_state(config, deployment, checkpoint_dir, bundle):
     completed = read_json(train_root / "completed.json")
     chosen = completed["selected_checkpoint"]
     binding = read_json(train_root / "binding.json")
+    if binding.get('continuation'):
+        raise ValueError('formal holdout selection across a parent/child lineage is not implemented; development only')
     train = resolve(config, "train")
     current_sources = _source_hashes()
     _verify_binding(binding, schema_version=2, config_sha256=fingerprint(config),

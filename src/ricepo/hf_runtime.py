@@ -378,6 +378,11 @@ def _train(config,deployment,root,attempt_dir,resume):
     binding["behavior"]["prompt_sha256"] = file_sha256(prompt_path)
     binding["behavior"]["seed_schedule"] = "controlled_v2"
     binding["behavior"]["failure_semantics"] = plan["format_failure_policy"]
+    from .continuation import parent_run, scheduled_queries, validate_state_position
+    parent = parent_run(deployment,binding,plan,train)
+    global_start = parent['lineage']['global_start'] if parent else 0
+    if parent:
+        binding['continuation'] = parent['lineage']
     bound = bind_run(root,binding,resume=resume)
     fixed_files = {"config.json":config,"deployment.json":deployment,"recipe.json":resolved,
                    "effective-generation.json":effective_generation,
@@ -400,7 +405,7 @@ def _train(config,deployment,root,attempt_dir,resume):
             return finished
         actor_load = cp/"actor"
     else:
-        actor_load = actor_path
+        actor_load = parent['checkpoint']/'actor' if parent else actor_path
     def load_actor(path):
         model, info = AutoModelForCausalLM.from_pretrained(str(path),torch_dtype=torch.float32,
                                                            output_loading_info=True,**local)
@@ -421,14 +426,25 @@ def _train(config,deployment,root,attempt_dir,resume):
     opt = plan["optimizer_hyperparameters"]
     optimizer = torch.optim.AdamW(actor.parameters(),lr=plan["actor_learning_rate"],betas=tuple(opt["betas"]),
                                   eps=opt["eps"],weight_decay=opt["weight_decay"])
-    if restored:
-        state = torch.load(cp/"optimizer-and-rng.pt",map_location="cpu",weights_only=True)
-        if (state["binding"] != bound or state["iteration"] != restored["iteration"] or state["seed"] != seed
-                or state["policy_version"] != restored["policy_version"]):
-            raise ValueError("checkpoint optimizer identity disagrees with run binding")
+    loading = restored or (parent['saved'] if parent else None)
+    if loading:
+        loading_cp = cp if restored else parent['checkpoint']
+        loading_binding = bound if restored else parent['binding']
+        state = torch.load(loading_cp/"optimizer-and-rng.pt",map_location="cpu",weights_only=True)
+        validate_state_position(state,binding=loading_binding,iteration=loading['iteration'],seed=seed,
+                                policy_version=loading['policy_version'])
+        if restored and state.get('global_update_index',restored['iteration']) != global_start+restored['iteration']:
+            raise ValueError('restored global update position differs')
         optimizer.load_state_dict(state["optimizer"])
         torch.random.set_rng_state(state["cpu_rng"])
         torch.cuda.set_rng_state(state["cuda_rng"],actor_device)
+        from .checkpoint_io import rng_probe, state_digest
+        atomic_json(attempt_dir/'loaded-state.json',dict(binding=loading_binding,
+            policy_version=loading['policy_version'],local_iteration=loading['iteration'],
+            global_completed_updates=(global_start+loading['iteration']+1) if restored else global_start,
+            optimizer_sha256=state_digest(state['optimizer']),rng_probe=rng_probe(state,actor_device),
+            optimizer_steps=sorted({int(v['step'].item()) for v in state['optimizer']['state'].values() if 'step' in v})))
+        del state
     behavior = binding["behavior"]
     def register_policy():
         key,evidence = identify(actor,behavior)
@@ -440,7 +456,7 @@ def _train(config,deployment,root,attempt_dir,resume):
             atomic_json(path,evidence)
         return key
     version = {"value":register_policy()}
-    if restored and version["value"] != restored["policy_version"]:
+    if loading and version["value"] != loading["policy_version"]:
         raise ValueError("restored live policy differs from committed behavior identity")
     generator = HFNativeGenerator(model=actor,tokenizer=tokenizer,device=actor_device,
         policy_version_getter=lambda:version["value"],max_new_tokens=plan["max_new_tokens_per_step"],
@@ -480,7 +496,10 @@ def _train(config,deployment,root,attempt_dir,resume):
         entropy = ConditionalEntropy()
 
     def rollout_batch(i,policy_version):
-        selected = random.Random(stable_seed(seed,"query_sampling",i)).sample(sorted(train),plan["queries_per_update"])
+        global_i = global_start+i
+        selected = scheduled_queries(train,seed,global_i,plan["queries_per_update"])
+        if parent and selected != parent['schedule'][i]:
+            raise ValueError('sampling departed from frozen continuation schedule')
         directory = root/f"iteration-{i:06d}"
         atomic_json(directory/"query-batch.json",selected)
         for q in selected:
@@ -491,11 +510,11 @@ def _train(config,deployment,root,attempt_dir,resume):
                             {"query":q,"ranking":[asdict(d) for d in initial.documents]})
             prefix = renderer.initial(ex.query,initial.documents)
             for n in range(plan["trajectories_per_query"]):
-                identity = f"{i}-{fingerprint(q)}-{n}"
+                identity = f"{global_i}-{fingerprint(q)}-{n}"
                 yield runners[ex.domain].run(query_id=q,trajectory_id=identity,original_query=ex.query,
                     initial_prefix_token_ids=prefix,old_policy_version=policy_version,
                     initial_ndcg=reward.score(q,tuple(d.document_id for d in initial.documents)),
-                    seeds=tuple(stable_seed(seed,"original",i,ex.domain,q,n,d) for d in range(1,plan["rollout_depth"]+1)))
+                    seeds=tuple(stable_seed(seed,"original",global_i,ex.domain,q,n,d) for d in range(1,plan["rollout_depth"]+1)))
 
     def collect_branches(t,a):
         ex = train[t.query_id]
@@ -556,12 +575,14 @@ def _train(config,deployment,root,attempt_dir,resume):
         directory = root/f"iteration-{i:06d}"
         current = version["value"]
         last = i+1 == plan["total_updates"]
-        dev_due = last or (i+1) % plan["development_every_updates"] == 0
-        save_due = dev_due or (i+1) % plan["checkpoint_every_updates"] == 0
+        global_completed = global_start+i+1
+        dev_due = last or global_completed % plan["development_every_updates"] == 0
+        save_due = dev_due or global_completed % plan["checkpoint_every_updates"] == 0
         def write_payload(staging):
             from .checkpoint_io import verified_local_copy,state_digest,rng_probe
             payload=dict(optimizer=optimizer.state_dict(),iteration=i,seed=seed,policy_version=current,
-                binding=bound,cpu_rng=torch.random.get_rng_state(),cuda_rng=torch.cuda.get_rng_state(actor_device))
+                binding=bound,cpu_rng=torch.random.get_rng_state(),cuda_rng=torch.cuda.get_rng_state(actor_device),
+                global_update_index=global_start+i)
             expected_digest=state_digest(payload) if checkpoint_io=='local_verified_v1' else None
             def write_local(folder):
                 actor.save_pretrained(folder/'actor',safe_serialization=True)
@@ -636,6 +657,13 @@ def _train(config,deployment,root,attempt_dir,resume):
         raise ValueError("no eligible checkpoint with complete development results")
     result = {"completed_updates":plan["total_updates"],"last_policy_version":version["value"],
               "selected_checkpoint":best,"output_root":str(root),"checkpoint_selection":plan["checkpoint_selection"]}
+    if parent:
+        previous=parent['lineage']['parent_selected_checkpoint']
+        # Keep local selection for existing recovery; expose the full-lineage choice separately.
+        winner = best if (plan['checkpoint_selection']=='last' or
+                          best['development_macro']>previous['development_macro']) else previous
+        result.update(global_completed_updates=global_start+plan['total_updates'],
+                      lineage_selected_checkpoint=winner,continuation=parent['lineage'])
     atomic_json(attempt_dir/"cost-report.json",cost_report(root))
     atomic_json(root/"completed.json",result)
     return result
