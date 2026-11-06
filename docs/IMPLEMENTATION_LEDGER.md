@@ -1,3 +1,13 @@
+## 2026-11-06 retrieval/vLLM stage
+
+- Retained: original prompts/strict parser, native token histories/masks, fixed initial Reference, per-query entropy/advantages, population variance, thresholds, replacement/PPO and all historical artifacts.
+- Added: independent per-stage vLLM native sampler, immutable actual-weight snapshots, process/KV lifecycle, full original/branch sampled-LP gates, opt-in two-device deployment template and explicit rejection of unsupported standalone vLLM holdout.
+- Fixed during review: failed worker startup cleanup, unique RPC attempt paths and raw returned completions saved before probability conversion. No token repair, action filtering or reward change.
+- New implementation choices: named vLLM request/stage RNG streams and phase-separated CPU residency. Retrieval composition remains a reported offline candidate only.
+- Actual checks and runtime outcomes: [tests](reviews/four-gpu-deployment-review/TEST_RESULTS.md), [vLLM results](reviews/four-gpu-deployment-review/VLLM_RESULTS.md). Global validation flags are not upgraded; four-rank training, Retriever/vLLM co-residency and paper-scale performance remain unverified.
+
+---
+
 ## 2026-11-06 连续训练修订
 
 新增能力及原有缺陷逐项列于[本轮修改表](reviews/continuous-three-update/CHANGES.md)：独立检查点谱系、全局采样日程、成组原生动作恢复、真实检索退化分析与可选HF批量采样。工程修复和失效动作约定分别标明；不把源码接入等同于批量在线训练或分布式验收。原始缺失Summary证据不补写，旧失败产物保留。

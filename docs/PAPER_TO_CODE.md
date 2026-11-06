@@ -1,3 +1,9 @@
+## 2026-11-06 retrieval/backend extension
+
+[Fixed-Summary query composition](reviews/four-gpu-deployment-review/QUERY_COMPOSITION.md) records the different wording in section3, section4.2.2 and Figure5. Original+LF+Summary is an offline candidate only; existing summary-only training and branch rewards are not rewritten. [Native vLLM integration](reviews/four-gpu-deployment-review/VLLM_RESULTS.md) retains the already-authorized two-stage/failure-environment variant, native IDs, full-vocabulary entropy, conditional KL, per-query groups, six outcomes and original advantage/gate formulas. Explicit independent request/stage seeds replace the HF shared RNG implementation for this named backend; identical sampled text is not promised. It remains an independent reproduction, not author-confirmed decoding or failure semantics.
+
+---
+
 ## 2026-11-06 连续更新与批量采样
 
 新增显式父检查点续训、按全局序号冻结查询日程、现有32题逐轮退化分析，以及可选HF原生wavefront采样。信用公式、完整词表熵、总体方差、0.05/0.03门控、center_only、优势替换和PPO目标保持。新的unmapped原生ID处理归入明确的独立非法终态环境；不是论文格式修复。见[本轮映射](reviews/continuous-three-update/CHANGES.md)、[恢复证据边界](reviews/continuous-three-update/RECOVERY.md)和[实际批量验收](reviews/continuous-three-update/BATCH_ACCEPTANCE.md)。

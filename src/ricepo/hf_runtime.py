@@ -291,17 +291,18 @@ def run(config, deployment, *, resume=False):
     if int(os.environ.get("WORLD_SIZE","1")) != 1 or deployment.get("runtime") != "single_process_hf_reference":
         raise ValueError("only the one-process reference backend is supported")
     root = require_cluster_storage(deployment["output_root"])
-    with writer(root,resume=resume), attempt(root,recovery=resume) as attempt_dir:
-        return _train(config,deployment,root,attempt_dir,resume)
+    from contextlib import ExitStack
+    with writer(root,resume=resume), attempt(root,recovery=resume) as attempt_dir, ExitStack() as cleanup:
+        return _train(config,deployment,root,attempt_dir,resume,cleanup=cleanup)
 
 
-def _train(config,deployment,root,attempt_dir,resume):
+def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
     from .assessment import evaluate_queries
     resolved = resolve(config,"train")
     plan = resolved["values"]
     checkpoint_io=deployment.get('checkpoint_io','direct_shared_v1')
     sampling_backend=deployment.get('sampling_backend','serial_hf_v1')
-    if sampling_backend not in ('serial_hf_v1','hf_native_wavefront_v1'):
+    if sampling_backend not in ('serial_hf_v1','hf_native_wavefront_v1','vllm_ieee_two_stage_v1'):
         raise ValueError('unsupported sampling backend')
     if checkpoint_io not in ('direct_shared_v1','local_verified_v1'):
         raise ValueError('unsupported checkpoint IO mode')
@@ -347,6 +348,10 @@ def _train(config,deployment,root,attempt_dir,resume):
                 or max(actor_device.index,retriever_device.index) >= torch.cuda.device_count()):
             raise ValueError("two distinct visible CUDA devices required")
         precision = deployment.get('actor_precision',deployment['dtype'])
+        if sampling_backend=='vllm_ieee_two_stage_v1' and (
+                precision!='float32' or parser_mode!='two_stage_env_summary_v1'
+                or (plan['temperature'],plan['top_p'],plan['top_k'])!=(1.,1.,0)):
+            raise ValueError('vLLM candidate requires frozen IEEE FP32 two-stage T1/p1/k0')
         if precision not in {"float32","bfloat16"}:
             raise ValueError("unsupported precision")
         def autocast():
@@ -482,6 +487,15 @@ def _train(config,deployment,root,attempt_dir,resume):
     if deployment.get("native_replay_sources"):
         from .native_replay import SavedNativeCompletions
         generator.completion_replay = SavedNativeCompletions(deployment["native_replay_sources"],binding)
+    if sampling_backend=='vllm_ieee_two_stage_v1':
+        if deployment.get('native_replay_sources') or action_recovery:
+            raise ValueError('HF replay cannot be relabeled as vLLM sampling')
+        from .vllm_lifecycle import PhaseSeparatedGenerator
+        generator=PhaseSeparatedGenerator(actor=actor,reference=reference,optimizer=optimizer,tokenizer=tokenizer,
+            version=lambda:version['value'],behavior=behavior,device=actor_device,root=attempt_dir/'vllm',
+            rpc_root=require_cluster_storage(deployment['vllm_rpc_root']),
+            max_new_tokens=plan['max_new_tokens_per_step'],max_context_tokens=plan['max_context_tokens'])
+        cleanup.callback(generator.close)
     reward = PyTrecReward(qrels)
     runners = {domain:RolloutRunner(generator=generator,retriever=backend,reward_scorer=reward,
         query_composer=ExplicitQueryComposer(**plan["query_composition"]),rules=RolloutRules(
@@ -541,6 +555,7 @@ def _train(config,deployment,root,attempt_dir,resume):
                 from .batched_rollout import run_many
                 yield from run_many(runners[ex.domain],pending)
 
+    sampled_branches=[]
     def collect_branches(t,a):
         if action_recovery:action_recovery.check_anchor(a)
         ex = train[t.query_id]
@@ -548,8 +563,10 @@ def _train(config,deployment,root,attempt_dir,resume):
                     tuple(stable_seed(seed,"branch_v2",ex.domain,t.query_id,t.trajectory_id,a.depth,b,d)
                           for d in range(a.depth,plan["rollout_depth"]+1)))
                     for b in range(1,plan["total_branches_including_original"])]
-        return runners[ex.domain].branch(original_query=ex.query,original=t,anchor=a,requests=requests,
-                                        batched=sampling_backend=='hf_native_wavefront_v1')
+        result=runners[ex.domain].branch(original_query=ex.query,original=t,anchor=a,requests=requests,
+                                        batched=sampling_backend!='serial_hf_v1')
+        if sampling_backend=='vllm_ieee_two_stage_v1':sampled_branches.extend(result.trajectories)
+        return result
 
     def update(originals,batch,old_version,directory):
         if version["value"] != old_version:
@@ -572,6 +589,16 @@ def _train(config,deployment,root,attempt_dir,resume):
                         raise ValueError('sampled/teacher probability mismatch exceeds predeclared tolerance')
                 items.append(UpdateItem(t.trajectory_id,old_version,t.token_ids,mask,adv,sampled if sampled is not None else teacher))
         atomic_json(directory/"old-policy-update-items.json",items)
+        if sampling_backend=='vllm_ieee_two_stage_v1':
+            from .probability_check import compare_log_probs
+            with torch.no_grad(),autocast():
+                for t in sampled_branches:
+                    scored=sampled_old_log_probs(actor,t.token_ids,t.generated_mask,device=actor_device,
+                        logit_chunk_size=deployment['logit_chunk_size'],max_context_tokens=plan['max_context_tokens'],policy_call_kwargs={})
+                    check=compare_log_probs(trajectory_behavior_log_probs(t),scored[0].cpu().tolist(),t.generated_mask)
+                    atomic_json(directory/'branch-probability-checks'/(fingerprint(t.trajectory_id)+'.json'),check)
+                    if not check['within_bf16_tolerance']:raise ValueError('vLLM branch probability gate failed before optimizer')
+            sampled_branches.clear()
         with torch.enable_grad():
             observer=comparison=None
             if deployment.get('compare_grpo_credit_gradients'):
@@ -594,6 +621,8 @@ def _train(config,deployment,root,attempt_dir,resume):
         return {"new_policy_version":version["value"],"optimizer":diagnostics}
 
     def barrier(before,after):
+        if sampling_backend=='vllm_ieee_two_stage_v1' and after in ('entropy','update'):
+            generator.prepare_scoring()
         torch.cuda.synchronize(actor_device)
         torch.cuda.synchronize(retriever_device)
 

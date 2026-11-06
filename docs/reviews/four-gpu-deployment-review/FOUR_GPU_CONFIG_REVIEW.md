@@ -42,8 +42,8 @@
 | 单FP32模型静态权重 | 实际checkpoint339张量、1777088000元素，7108352000 B（6.62 GiB）；按文件头计数，不是独立GPU分项实测 |
 | Reference / gradients | 各约6.62 GiB静态量级；实际分项峰未隔离 |
 | Adam一二阶状态 | 约13.24 GiB静态量级，另有小状态/分配开销 |
-| vLLM FP32副本 | 已验收候选显存池比例0.80；早期worker NVML查询失败，不能将父进程0字节当峰值。新完整链路需记录实际worker/设备占用 |
-| KV / Graph | RICE两者独立峰仍待完整链路日志；SwAP65.88/.28 GiB不能套用 |
+| vLLM FP32副本 | 已验收候选显存池比例0.80；早期worker NVML查询失败，不能将父进程0字节当峰值。新完整rollout175004已记录模型加载6.71GiB，父进程PyTorch峰不含worker；同步全设备峰仍未测量 |
+| KV / Graph | 完整rollout175004的worker日志：KV54.59–54.63GiB、Graph池0.17GiB；这是池大小，不是全设备峰；SwAP65.88/.28 GiB不能套用 |
 | 长历史采样 | 固定5869–6956 token前缀、最多512新token：HF16请求155.78s，IEEE vLLM23.30s，同6734原生输出token；约6.69倍仅生成段 |
 | B64条件吞吐 | 28201 token /33.06s =853.12 token/s；不是4096动作预算的训练吞吐 |
 | 初始化 / 同步 | 前一IEEE引擎初始化86.78s；新实现完整FP32快照+新进程重载，实际传输/初始化需单独计时 |
@@ -69,3 +69,9 @@
 RICE候选：FP32、`TRITON_F32_DEFAULT=ieee`、TP1/PP1、max_model_len32768、max_num_seqs64、max_num_batched_tokens16384、memory_utilization0.8、Graph与Prefix Cache开启、TRITON_ATTN、full attention。仅在引擎独占其阶段GPU时使用0.8；共卡方案须另测。两阶段共享4096模型token，T1/p1/top-k disabled，环境token无直接损失，停止标签不改变采样logits。
 
 默认Triton TF32候选此前3/80概率门限失败；IEEE修正后80/80通过。不得恢复TF32或改BF16追求SwAP数字。更长4096动作/五轮/实际PPO后策略刷新需本轮独立通过。
+
+## 本轮完整 rollout 的实测补充
+
+175004已完成真实两阶段/4096共享预算/五轮/四原轨迹/20新分支和全部24历史概率检查；4原轨迹完整、14分支完整、6分支按既定非法终态保留。实测33417新模型token/454.77s生成调用（包含内部生命周期加载）=73.48 token/s；采样/检索/熵/信用工作量522.83s，整allocation1204s，另包括初始checkpoint校验/加载和末尾概率评分。详细误差与信用见[VLLM_RESULTS.md](VLLM_RESULTS.md)。这不是此前64并发短条件853 token/s的同一计时口径。
+
+当前Trainer每个查询批量原始4条、每个锚点批量新分支5条，远小于64并发容量。完整上下文采样通过不等于利用率已优化。两个在线更新作业中还观察到大体积checkpoint序列化、重复读取/校验和bulk staging复制的存储等待；新增GPU不能直接消除这一阶段。固定Actor/Reference/PPO及正确恢复前提下，下一步部署审核应同时考虑请求跨查询聚合与检查点/快照I/O，不能只选择最大推理并发。

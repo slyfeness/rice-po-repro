@@ -104,6 +104,8 @@ def _prompt(settings, deployment):
 
 
 def _actor_runtime(path, tokenizer_path, prompt, settings, deployment, policy_version_getter):
+    if deployment.get("sampling_backend") == "vllm_ieee_two_stage_v1":
+        raise ValueError("standalone vLLM holdout is not implemented; training development evaluation uses the bound vLLM runtime")
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 

@@ -1,3 +1,15 @@
+## 2026-11-06 vLLM integration
+
+The opt-in deployment template is `configs/deployment.vllm_two_stage.example.json`, paired with the existing two-stage RICE/GRPO recipes. Execution remains disabled in public research recipes. Set `TRITON_F32_DEFAULT=ieee` before imports, reuse local assets and use Slurm. The Trainer remains a single process with a phase-local inference subprocess on its assigned Actor GPU; the other GPU holds Diver. Two independent allocations are not four-rank training. Do not put this engine on the Retriever GPU without separate capacity validation.
+
+`vllm_two_stage.VLLMTwoStage` consumes native prefixes and a single 4096 sampled-token budget across Think and Summary. Deterministic environment Summary control has no direct policy loss. Stage seeds are explicitly derived from each request seed and backend/stage names; this is a new named RNG implementation, not HF's shared-generator bitwise replay. Temperature, top-p, top-k, penalties and full conditional probabilities stay fixed. Native IDs and scalar sampled log-probabilities are retained before parsing; no stop-string token is re-encoded or repaired.
+
+`vllm_lifecycle.PhaseSeparatedGenerator` offloads HF Actor/Reference and optimizer tensors during generation, verifies an immutable FP32 snapshot against live weights, starts a fresh engine and destroys it before scoring. New-policy snapshots reload into new processes with empty KV caches. Original and counterfactual sampled probabilities must pass full-history HF scoring before PPO. The optimizer, reference, advantage rules and reductions are unchanged. Temporary snapshots/RPC/cache/checkpoint paths must reside on bulk storage. The RPC root must be short enough for UNIX-domain sockets; each worker gets an atomic unique subdirectory.
+
+Internal development evaluation uses the bound sampler. Standalone `holdout` explicitly rejects this backend until its independent sampler lifecycle is implemented; it must not silently use HF. Measured acceptance and limitations are reported in [the current review](reviews/four-gpu-deployment-review/VLLM_RESULTS.md). The named engine currently fixes TP1, FP32, TRITON_ATTN, sequences64, batched tokens16384, max context32768 and pool0.8; these are implementation choices, not recovered author hyperparameters.
+
+---
+
 ## 2026-11-06 显式续训与加速入口
 
 新增独立child-run，从完整第一更新检查点加载Actor、优化器、CPU/CUDA RNG，固定Reference仍从初始模型加载。父配置不原地延长；全局更新序号与本地目录序号分别保存。串行续训与可选hf_native_wavefront_v1资格分开；本轮未接通vLLM训练或四rank。精确使用运行绑定源码恢复，不能仅改policy_version字符串。[入口与限制](reviews/continuous-three-update/RUNTIME.md) · [实际batch验收](reviews/continuous-three-update/BATCH_ACCEPTANCE.md) · [vLLM现状](reviews/continuous-three-update/VLLM_STATUS.md)。
