@@ -723,7 +723,8 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                     phase="development",method=plan["method"],root_seed=seed,policy_version=current,
                     rollout_depth=plan["rollout_depth"],retrievers=retrievers,runners=runners,renderer=renderer,
                     reward=reward,output=out,scope="complete", manifest_sha256=frozen.manifest_sha256["development"],
-                    backend_fingerprints={d:fingerprint(sources[d]) for d in retrievers})
+                    backend_fingerprints={d:fingerprint(sources[d]) for d in retrievers},
+                    samples_per_query=plan["eval_samples_per_query"])
         finish_development(directory,current,due=dev_due,output=directory/"development-attempts"/attempt_dir.name,
                            evaluate=evaluate)
         best = selected_so_far(root,plan["checkpoint_selection"])

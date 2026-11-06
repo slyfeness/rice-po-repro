@@ -112,6 +112,13 @@ def test_holdout_and_corpus_encoding_do_not_require_a_training_budget():
     assert encode["issues"] == []
 
 
+def test_generated_evaluation_plan_declares_its_fixed_samples_per_query():
+    plan = resolve(configured("grpo"), "train")
+    assert plan["values"]["eval_samples_per_query"] == 1
+    assert plan["sources"]["eval_samples_per_query"]["status"] == "implementation_choice"
+    assert "eval_samples_per_query" not in resolve(configured("retrieval_only"), "baseline")["values"]
+
+
 def test_scale32_original_and_summary_configs_keep_shared_rollout_budget():
     rice = resolve(configured("biology_scale32_ricepo"), "train")
     grpo = resolve(configured("biology_scale32_grpo"), "train")

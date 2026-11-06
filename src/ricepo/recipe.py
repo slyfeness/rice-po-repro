@@ -33,7 +33,9 @@ REFERENCE_PLAN = {
     "max_grad_norm": (1.0, "Explicit gradient norm clipping convention for the independent optimizer."),
     "development_every_updates": (1, "Evaluate after each rollout update, and always after the final update."),
     "checkpoint_every_updates": (1, "Save each update, including the final update."),
+    "eval_samples_per_query": (1, "One fixed development rollout per query in the reference runtime."),
 }
+EVALUATE = ("eval_samples_per_query",)
 ENCODE = ("document_encoding_profile",)
 RETRIEVE = ENCODE + ("metric", "reward_scale", "hybrid_normalization", "excluded_before_normalization")
 GENERATE = ("temperature", "top_p", "top_k", "max_new_tokens_per_step", "max_context_tokens",
@@ -91,6 +93,7 @@ def _scope(method, command):
     deployment = DEPLOYMENT_BASE + DEPLOYMENT_RETRIEVAL
     if method != "retrieval_only":
         fields += GENERATE
+        fields += EVALUATE
         deployment += DEPLOYMENT_GENERATION
         deployment += ("actor_model_path",)
     if command == "train":
@@ -177,7 +180,7 @@ def _validate_values(values, issues):
     for key in ("queries_per_update", "ppo_epochs", "optimizer_minibatch_size", "microbatch_size",
                 "gradient_accumulation", "development_every_updates", "checkpoint_every_updates",
                 "total_updates", "max_new_tokens_per_step", "max_context_tokens", "observation_top_k",
-                "observation_token_limit", "rollout_depth"):
+                "observation_token_limit", "rollout_depth", "eval_samples_per_query"):
         if values.get(key) is not None and not _positive_int(values[key]):
             issues.append(f"{key} must be a positive integer")
     for key in ("trajectories_per_query", "total_branches_including_original"):

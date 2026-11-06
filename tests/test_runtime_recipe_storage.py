@@ -22,5 +22,6 @@ class RuntimeRecipeStorage(TestCase):
         with patch.object(hf_runtime, "resolve", return_value=recipe), patch.object(
                 hf_runtime, "verify_bundle", side_effect=AssetGate):
             with self.assertRaises(AssetGate):
-                hf_runtime._train(config, deployment, Path("unused"), Path("unused-attempt"), False)
+                hf_runtime._train(config, deployment, Path("unused"), Path("unused-attempt"), False,
+                                  cleanup=None)
         self.assertEqual(recipe, expected)
