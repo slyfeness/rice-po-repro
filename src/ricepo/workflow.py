@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Callable, Sequence
 
 from .artifacts import atomic_json, stage_receipt
-from .contracts import AdvantageBatch, Anchor, EntropyProvider, Span, Trajectory
+from .contracts import AdvantageBatch, Anchor, EntropyProvider, Span, Trajectory,generation_action_mask
 from .credit import build_advantages, select_anchors, trajectory_advantages
 from .audit import operation, saved_item, stable_seed
 from .diagnostics import credit_report
@@ -47,7 +47,7 @@ def _validate_branch_trace(trace: Trajectory, source: Trajectory, anchor: Anchor
         if step.retrieval.backend_version != source_step.retrieval.backend_version:
             raise ValueError("counterfactual retrieval backend changed from the fixed source backend")
         history += generation.token_ids + step.retrieval.observation_token_ids
-        mask += (True,) * len(generation.token_ids) + (False,) * len(step.retrieval.observation_token_ids)
+        mask += generation_action_mask(generation) + (False,) * len(step.retrieval.observation_token_ids)
     if history != trace.token_ids or mask != trace.generated_mask:
         raise ValueError("counterfactual trace IDs or mask do not reproduce its saved steps")
     if any(type(token) is not int or token < 0 for token in history):

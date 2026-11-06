@@ -1,5 +1,5 @@
 """Explicit independently authorized zero-utility failure environment."""
-from .contracts import Span
+from .contracts import Span,generation_action_mask,trajectory_behavior_log_probs
 
 MODE = "invalid_action_terminal_zero_v1"
 
@@ -24,7 +24,7 @@ def validate_trajectory(trace, depth):
             if absolute != Span(len(history)+relative.start,len(history)+relative.end):
                 raise ValueError("native body offsets changed")
         history += gen.token_ids + step.retrieval.observation_token_ids
-        mask += (True,)*len(gen.token_ids)+(False,)*len(step.retrieval.observation_token_ids)
+        mask += generation_action_mask(gen)+(False,)*len(step.retrieval.observation_token_ids)
     if trace.failure:
         failure = trace.failure
         if (trace.termination != MODE or failure.depth != len(trace.steps)+1 or failure.depth>depth
@@ -34,7 +34,7 @@ def validate_trajectory(trace, depth):
         if not failure.generation.token_ids or failure.seed < 0:
             raise ValueError("missing failure generation identity")
         history += failure.generation.token_ids
-        mask += (True,)*len(failure.generation.token_ids)
+        mask += generation_action_mask(failure.generation)
         last = trace.steps[-1].local_reward if trace.steps else trace.initial_ndcg
         if last is None or trace.last_valid_ndcg != last or not 0 <= last <= 1:
             raise ValueError("last measured NDCG differs")
@@ -44,6 +44,7 @@ def validate_trajectory(trace, depth):
         raise ValueError("terminal native IDs or direct-loss mask changed")
     if any(type(x) is not int or x<0 for x in history) or any(type(x) is not bool for x in mask):
         raise ValueError("invalid native token or mask")
+    trajectory_behavior_log_probs(trace)
 
 
 def validate_collections(collections, anchors, originals, count, depth):

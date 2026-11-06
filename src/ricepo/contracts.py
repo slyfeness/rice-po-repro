@@ -1,6 +1,7 @@
 """Shared immutable records. All spans are half-open native token offsets."""
 
 from dataclasses import dataclass
+import math
 from typing import Literal, Protocol, Sequence
 
 
@@ -34,12 +35,25 @@ class RetrievalResult:
 
 
 @dataclass(frozen=True)
+class GenerationStage:
+    name: str
+    token_span: Span
+    finish_reason: str
+    rng_before_sha256: str | None = None
+    rng_after_sha256: str | None = None
+
+
+@dataclass(frozen=True)
 class Generation:
     token_ids: tuple[int, ...]
     reasoning_span: Span
     summary_span: Span
     summary_text: str
     finish_reason: str
+    action_mask: tuple[bool, ...] | None = None
+    protocol: str = "legacy_single_stage_v1"
+    sampled_log_probs: tuple[float | None, ...] | None = None
+    stages: tuple[GenerationStage, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -48,6 +62,68 @@ class InvalidGeneration:
     finish_reason: str
     category: str
     reason: str
+    action_mask: tuple[bool, ...] | None = None
+    protocol: str = "legacy_single_stage_v1"
+    sampled_log_probs: tuple[float | None, ...] | None = None
+    stages: tuple[GenerationStage, ...] = ()
+
+
+def generation_action_mask(generation):
+    """Legacy means sampled IDs only. Mixed histories require an explicit protocol."""
+    size=len(generation.token_ids)
+    mask=generation.action_mask
+    if generation.protocol == "legacy_single_stage_v1":
+        if generation.stages or mask is not None and mask != (True,)*size:
+            raise ValueError("legacy generation cannot hide environment tokens")
+        mask=(True,)*size
+    elif generation.protocol == "two_stage_env_summary_v1":
+        if mask is None or generation.sampled_log_probs is None or not generation.stages:
+            raise ValueError("two-stage generation needs explicit mask, probabilities and stages")
+        stages=generation.stages
+        if len(stages)>2 or stages[0].name!='think' or stages[0].token_span.start!=0:
+            raise ValueError("invalid two-stage identity")
+        if len(stages)==2 and (stages[1].name!='summary' or stages[1].token_span.start<=stages[0].token_span.end):
+            raise ValueError("Summary requires a separate environment control interval")
+        expected=[False]*size
+        for stage in stages:
+            a,b=stage.token_span.start,stage.token_span.end
+            if not 0<=a<b<=size:raise ValueError("invalid stage native span")
+            expected[a:b]=[True]*(b-a)
+        if stages[-1].token_span.end!=size or tuple(expected)!=mask:
+            raise ValueError("stage native intervals disagree with action mask")
+    else:
+        raise ValueError("unknown generation protocol")
+    if len(mask)!=size or any(type(m) is not bool for m in mask):
+        raise ValueError("action mask must align with every native token")
+    probs=generation.sampled_log_probs
+    if probs is not None:
+        if len(probs)!=size:raise ValueError("behavior probability length differs")
+        for action,lp in zip(mask,probs,strict=True):
+            if action and (type(lp) not in (float,int) or not math.isfinite(lp) or lp>1e-5):
+                raise ValueError("sampled action needs a finite conditional log probability")
+            if not action and lp is not None:raise ValueError("environment token has no behavior action probability")
+    if isinstance(generation,Generation):
+        for span in (generation.reasoning_span,generation.summary_span):
+            if not 0<=span.start<=span.end<=size or not all(mask[span.start:span.end]):
+                raise ValueError("body span cannot contain environment control tokens")
+    return mask
+
+
+def trajectory_behavior_log_probs(trajectory):
+    """Reconstruct aligned scalar evidence, never reconstruct native token IDs."""
+    records=[(len(s.prefix_token_ids),s.generation) for s in trajectory.steps]
+    if trajectory.failure:records.append((len(trajectory.failure.prefix_token_ids),trajectory.failure.generation))
+    protocols={g.protocol for _,g in records}
+    if len(protocols)>1:raise ValueError("mixed generation protocols within trajectory")
+    if not records or protocols=={'legacy_single_stage_v1'}:return None
+    result=[None]*len(trajectory.token_ids)
+    for start,g in records:
+        generation_action_mask(g)
+        if trajectory.token_ids[start:start+len(g.token_ids)]!=g.token_ids:raise ValueError("behavior evidence native history differs")
+        result[start:start+len(g.token_ids)]=g.sampled_log_probs
+    if any(m!=(p is not None) for m,p in zip(trajectory.generated_mask,result,strict=True)):
+        raise ValueError("trajectory behavior probabilities disagree with action mask")
+    return tuple(0.0 if p is None else p for p in result)
 
 
 @dataclass(frozen=True)
@@ -134,7 +210,7 @@ class AdvantageBatch:
 class Generator(Protocol):
     policy_version: str
 
-    def generate(self, prefix_token_ids: Sequence[int], *, seed: int) -> Generation: ...
+    def generate(self, prefix_token_ids: Sequence[int], *, seed: int) -> Generation | InvalidGeneration: ...
 
 
 class Retriever(Protocol):

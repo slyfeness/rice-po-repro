@@ -150,6 +150,8 @@ def _evaluate(config, deployment, *, command, output_root, checkpoint_dir=None, 
         raise ValueError("offline evaluation requires the single-process reference deployment")
     report = resolve(config, command)
     settings, method = report["values"], report["method"]
+    if (deployment['output_parser_mode']=='two_stage_env_summary_v1') != (settings.get('native_span_parser')=='two_stage_env_summary_v1'):
+        raise ValueError('two-stage evaluation recipe differs from its generation protocol')
     if parser_options(deployment).get("boundary_rule") == "native_body_coverage_v1" and settings.get("native_span_parser") != "configured_native_body_coverage_v1":
         raise ValueError("resolved recipe differs from deployed native body coverage")
     output = require_cluster_storage(output_root)

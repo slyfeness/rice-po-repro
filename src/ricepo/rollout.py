@@ -38,6 +38,7 @@ from .contracts import (
     Trajectory,
     InvalidGeneration,
     FailureAction,
+    generation_action_mask,
 )
 
 
@@ -168,7 +169,7 @@ class RolloutRunner:
         ids = _tokens(generation.token_ids, label="generation")
         if not ids:
             raise MalformedGenerationError("empty generation")
-        if len(ids) > self.rules.max_new_tokens:
+        if sum(generation_action_mask(generation)) > self.rules.max_new_tokens:
             raise RolloutLengthError("generation exceeds max_new_tokens")
         if generation.finish_reason not in self.rules.accepted_finish_reasons:
             raise MalformedGenerationError(
@@ -217,7 +218,7 @@ class RolloutRunner:
                 raise ValueError("original absolute spans do not match native generation offsets")
             observation = _tokens(step.retrieval.observation_token_ids, label="saved observation")
             history += generated + observation
-            mask += (True,) * len(generated) + (False,) * len(observation)
+            mask += generation_action_mask(step.generation) + (False,) * len(observation)
         if history != original.token_ids or mask != original.generated_mask:
             raise ValueError("original trajectory IDs or mask do not match its saved steps")
         if any(type(value) is not bool for value in original.generated_mask):
@@ -262,14 +263,14 @@ class RolloutRunner:
                 if self.failure_semantics != "invalid_action_terminal_zero_v1":
                     raise MalformedGenerationError("unexpected invalid-action result")
                 ids = _tokens(generation.token_ids,label="failed native generation")
-                if not ids or len(ids)>self.rules.max_new_tokens:
+                if not ids or sum(generation_action_mask(generation))>self.rules.max_new_tokens:
                     raise MalformedGenerationError("invalid failure evidence size")
                 self._check_length(prefix+ids)
                 last = steps[-1].local_reward if steps else initial_ndcg
                 _finite_reward(last,label="last valid retrieval NDCG")
                 failure = FailureAction(depth,prefix,generation,seed,policy_version)
                 return Trajectory(query_id,trajectory_id,policy_version,prefix+ids,
-                    mask+(True,)*len(ids),tuple(steps),0.0,"invalid_action_terminal_zero_v1",
+                    mask+generation_action_mask(generation),tuple(steps),0.0,"invalid_action_terminal_zero_v1",
                     failure,initial_ndcg,last,0.0)
             generated_ids = self._validate_generation(generation)
             self._check_length(prefix + generated_ids)
@@ -315,7 +316,7 @@ class RolloutRunner:
             )
             steps.append(step)
             history = prefix + generated_ids + observation
-            mask += (True,) * len(generated_ids) + (False,) * len(observation)
+            mask += generation_action_mask(generation) + (False,) * len(observation)
             self._check_length(history)
             if honor_stop:
                 stop = self.should_stop(tuple(steps))

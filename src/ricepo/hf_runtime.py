@@ -28,7 +28,7 @@ from .preparation import load_vector_bundle
 from .policy_identity import identify
 from .state import (writer, bind_run, recovery_checkpoint, publish_checkpoint, verify_checkpoint,
                     read_json, complete_stage, selected_so_far, finish_development)
-from .contracts import Generation, InvalidGeneration
+from .contracts import Generation, InvalidGeneration,trajectory_behavior_log_probs
 from .data import QueryExample
 from .formats import CHAT_TURN, NativeTagParser, PromptRenderer, action_closed, native_summary_mode, turn_protocol, parser_options
 from .modeling import sampled_old_log_probs, make_forward
@@ -66,8 +66,17 @@ class HFNativeGenerator:
         if failure_semantics not in ("raise","invalid_action_terminal_zero_v1"):
             raise ValueError("unsupported failure semantics")
         self.failure_semantics = failure_semantics
-        self.parser = NativeTagParser(tokenizer, prefilled_think=prefilled_think, malformed_policy="raise",
-                                      summary_mode=summary_mode, **(parser_settings or {}))
+        self.generation_protocol='legacy_single_stage_v1'
+        if summary_mode=='two_stage_env_summary_v1':
+            if not prefilled_think or parser_settings:
+                raise ValueError('two-stage protocol has a fixed prefilled, ByteLevel structure; legacy parser settings do not apply')
+            from .two_stage import TwoStageFormat
+            self.generation_protocol=summary_mode
+            self.two_stage_format=TwoStageFormat(tokenizer)
+            self.parser=None
+        else:
+            self.parser = NativeTagParser(tokenizer, prefilled_think=prefilled_think, malformed_policy="raise",
+                                          summary_mode=summary_mode, **(parser_settings or {}))
         # A supplied GenerationConfig is authoritative for the explicit fields
         # below.  Transformers 5.5.1 has no literal use_model_defaults
         # parameter and validates arbitrary kwargs as model inputs, so passing
@@ -81,6 +90,21 @@ class HFNativeGenerator:
     def policy_version(self) -> str:
         return self._policy_version_getter()
 
+    def _generation_recipe(self,limit):
+        from transformers import GenerationConfig
+        tokenizer=self.tokenizer
+        return GenerationConfig(
+            do_sample=True,num_beams=1,num_return_sequences=1,max_new_tokens=limit,min_length=0,min_new_tokens=0,
+            temperature=1.0,top_p=1.0,top_k=0,typical_p=1.0,min_p=None,epsilon_cutoff=0.0,eta_cutoff=0.0,
+            repetition_penalty=1.0,encoder_repetition_penalty=1.0,no_repeat_ngram_size=0,encoder_no_repeat_ngram_size=0,
+            bad_words_ids=None,force_words_ids=None,forced_bos_token_id=None,forced_eos_token_id=None,
+            forced_decoder_ids=None,suppress_tokens=None,begin_suppress_tokens=None,sequence_bias=None,
+            exponential_decay_length_penalty=None,renormalize_logits=False,remove_invalid_values=False,
+            guidance_scale=None,watermarking_config=None,token_healing=False,use_cache=True,
+            bos_token_id=tokenizer.bos_token_id,eos_token_id=tokenizer.eos_token_id,
+            pad_token_id=tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id,
+            return_dict_in_generate=False,output_scores=False,output_logits=False)
+
     def generate(self, prefix_token_ids: Sequence[int], *, seed: int) -> Generation:
         import torch
         from transformers import GenerationConfig, LogitsProcessorList, StoppingCriteria, StoppingCriteriaList
@@ -92,6 +116,9 @@ class HFNativeGenerator:
             raise ValueError("generation seed must lie in [0, 2**63)")
         if self.model.training:
             raise ValueError("reference runtime requires eval mode, including during PPO")
+        if self.generation_protocol=='two_stage_env_summary_v1':
+            from .two_stage import generate_two_stage
+            return generate_two_stage(self,prefix,seed)
         remaining = self.max_context_tokens - len(prefix)
         if remaining <= 0:
             raise ValueError("generation cannot truncate or exceed the native context")
@@ -106,23 +133,7 @@ class HFNativeGenerator:
                                         clean_up_tokenization_spaces=False)
                 return torch.tensor([closed_action(text)], device=input_ids.device, dtype=torch.bool)
 
-        recipe = GenerationConfig(
-            do_sample=True, num_beams=1, num_return_sequences=1,
-            max_new_tokens=limit, min_length=0, min_new_tokens=0,
-            temperature=1.0, top_p=1.0, top_k=0, typical_p=1.0, min_p=None,
-            epsilon_cutoff=0.0, eta_cutoff=0.0,
-            repetition_penalty=1.0, encoder_repetition_penalty=1.0,
-            no_repeat_ngram_size=0, encoder_no_repeat_ngram_size=0,
-            bad_words_ids=None, force_words_ids=None, forced_bos_token_id=None,
-            forced_eos_token_id=None, forced_decoder_ids=None, suppress_tokens=None,
-            begin_suppress_tokens=None, sequence_bias=None,
-            exponential_decay_length_penalty=None, renormalize_logits=False,
-            remove_invalid_values=False, guidance_scale=None, watermarking_config=None,
-            token_healing=False, use_cache=True,
-            bos_token_id=tokenizer.bos_token_id, eos_token_id=tokenizer.eos_token_id,
-            pad_token_id=(tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id),
-            return_dict_in_generate=False, output_scores=False, output_logits=False,
-        )
+        recipe = self._generation_recipe(limit)
         inputs = torch.tensor([prefix], dtype=torch.long, device=self.device)
         device = torch.device(self.device)
         cuda_indices = [device.index] if device.type == "cuda" else []
@@ -286,6 +297,8 @@ def _train(config,deployment,root,attempt_dir,resume):
     resolved = resolve(config,"train")
     plan = resolved["values"]
     parser_mode = native_summary_mode(deployment["output_parser_mode"])
+    if (parser_mode=='two_stage_env_summary_v1') != (plan['native_span_parser']=='two_stage_env_summary_v1'):
+        raise ValueError('two-stage generation must match its explicit research recipe')
     effective_parser = parser_options(deployment)
     if effective_parser.get("boundary_rule") == "native_body_coverage_v1" and plan["native_span_parser"] != "configured_native_body_coverage_v1":
         raise ValueError("resolved recipe differs from deployed native body coverage")
@@ -494,7 +507,15 @@ def _train(config,deployment,root,attempt_dir,resume):
                     logps = sampled_old_log_probs(actor,t.token_ids,mask,device=actor_device,
                         logit_chunk_size=deployment["logit_chunk_size"],max_context_tokens=plan["max_context_tokens"],
                         policy_call_kwargs={})
-                items.append(UpdateItem(t.trajectory_id,old_version,t.token_ids,mask,adv,tuple(logps[0].cpu().tolist())))
+                teacher=tuple(logps[0].cpu().tolist())
+                sampled=trajectory_behavior_log_probs(t)
+                if sampled is not None:
+                    from .probability_check import compare_log_probs
+                    check=compare_log_probs(sampled,teacher,mask)
+                    atomic_json(directory/'behavior-probability-checks'/(fingerprint(t.trajectory_id)+'.json'),check)
+                    if not check['within_bf16_tolerance']:
+                        raise ValueError('sampled/teacher probability mismatch exceeds predeclared tolerance')
+                items.append(UpdateItem(t.trajectory_id,old_version,t.token_ids,mask,adv,sampled if sampled is not None else teacher))
         atomic_json(directory/"old-policy-update-items.json",items)
         with torch.enable_grad():
             diagnostics = ppo_plan_update(actor,optimizer,items,policy_version=old_version,forward=forward,

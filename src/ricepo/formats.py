@@ -284,6 +284,7 @@ def native_summary_mode(deployment_value: str) -> str:
     is deliberately verbose so an ablation cannot be mistaken for it.
     """
     modes = {
+        "two_stage_env_summary_v1": "two_stage_env_summary_v1",
         "strict_native_tags": NativeTagParser.STRICT_TAGGED,
         "prefilled_think_unwrapped_summary_ablation_v1": NativeTagParser.PREFILLED_UNWRAPPED_SUMMARY,
         "summary_end_overlap_inclusive_v1": NativeTagParser.SUMMARY_END_OVERLAP_INCLUSIVE_V1,
