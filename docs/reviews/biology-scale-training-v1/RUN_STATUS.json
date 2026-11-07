@@ -1,5 +1,5 @@
 {
-  "observed_at_utc": "2026-11-07T21:12:22.374888+00:00",
+  "observed_at_utc": "2026-11-07T23:34:00+00:00",
   "sampling_plan_source_commit": "b0ee0bb0f789f803770566572ef8fd1499f14550",
   "runs": {
     "capacity_ricepo": {
@@ -649,14 +649,13 @@
       "method": "ricepo",
       "computed_updates": 0,
       "persisted_updates": 0,
-      "status": "IN_PROGRESS",
+      "status": "RUNNING",
       "execution_source_commits": [
         "d36f2467bc82eebaadaf71b224b08eb7b56c2d8e"
       ],
       "active": {
-        "phase": "behavior_weight_identity",
-        "utc": "2026-11-07T21:12:50.831197+00:00",
-        "iteration": null
+        "phase": "counterfactual_generation",
+        "job_id": "176713"
       },
       "phase_seconds": {
         "initialization": {
@@ -669,16 +668,19 @@
       "method": "grpo",
       "computed_updates": 0,
       "persisted_updates": 0,
-      "status": "IN_PROGRESS",
+      "status": "FAILED",
       "execution_source_commits": [
         "d36f2467bc82eebaadaf71b224b08eb7b56c2d8e"
       ],
-      "active": {
-        "phase": "asset_binding",
-        "utc": "2026-11-07T21:12:16.767243+00:00",
-        "iteration": null
-      },
-      "phase_seconds": {}
+      "active": null,
+      "phase_seconds": {},
+      "failed_job": "176714",
+      "failure_categories": [
+        "CUDA_OUT_OF_MEMORY_BEFORE_OPTIMIZER_STEP"
+      ],
+      "paid_originals": 512,
+      "paid_action_probability_tokens": 950088,
+      "pending_recovery_source_commit": "6c70342902c5b9aa0109523e465511510e55aea1"
     }
   },
   "raw_assets_public": false,
@@ -761,5 +763,7 @@
   ],
   "measured_GPU_hours_at_snapshot": 5.471111111111111,
   "sampling_note": "training generation tokens exclude reused branch history and environment markers; submitted input counts include full repeated native context, not measured uncached prefill FLOPs",
-  "timing_note": "main-process exclusive spans only; evaluation includes its nested generation/tools. Uninstrumented verification/serialization remains unattributed. In-flight spans excluded from completed-phase totals."
+  "timing_note": "main-process exclusive spans only; evaluation includes its nested generation/tools. Uninstrumented verification/serialization remains unattributed. In-flight spans excluded from completed-phase totals.",
+  "snapshot_note": "Run-stage status refreshed from Slurm/complete receipts at stated UTC. Older allocation/timing arrays retain their original capacity-milestone measurement; full CPU export pending.",
+  "allocation_measurement_observed_at_utc": "2026-11-07T21:12:22+00:00"
 }

@@ -96,6 +96,11 @@ def update_stats(directory,cache):
                 branch_ids.add(t['trajectory_id']);g,i,n=generation_work(t,depth)
                 counts['generated_tokens']+=g;counts['input_tokens_submitted']+=i;counts['followup_calls']+=n
     counts['new_branches']=len(branch_ids);counts['retrieval_calls']=len(grouped)+counts['followup_calls']
+    recovery=directory/'completed-credit-recovery.json'
+    if recovery.exists():
+        counts['reused_generation_tokens']=counts['generated_tokens']
+        counts['new_generation_tokens_in_this_attempt']=0
+    else:counts['new_generation_tokens_in_this_attempt']=counts['generated_tokens']
     report=read(credit) if credit.exists() else {};anchors=report.get('anchors',[])
     signal=sum(x!=math.fsum(v)/4 for v in grouped.values() for x in v)
     risk_path=directory/'pilot-probability-risk.json';risk=read(risk_path)['originals'] if risk_path.exists() else None
@@ -174,13 +179,21 @@ def main(args):
     R=Path(os.environ['RICE_PROJECT_ROOT']);args.output.mkdir(parents=True,exist_ok=False);cache=R/'reports/biology-scale-v1-export-cache';cache.mkdir(exist_ok=True)
     public=args.output/'public';public.mkdir();curves=[];status=dict(observed_at_utc=datetime.now(timezone.utc).isoformat(),sampling_plan_source_commit='b0ee0bb0f789f803770566572ef8fd1499f14550',runs={},raw_assets_public=False)
     evals=evaluations(R/'runs/biology-scale-v1-initial','Initial')
+    registry=R/'reports/biology-scale-active-training.json'
+    active_runs=read(registry) if registry.exists() else {}
     for stage in ('capacity','training'):
         for method in ('ricepo','grpo'):
-            root=R/'runs'/f'biology-scale-v1-{stage}-{method}';info=dict(stage=stage,method=method,computed_updates=0,persisted_updates=0,status='NOT_STARTED')
+            alias=active_runs.get(method,f'biology-scale-v1-training-{method}') if stage=='training' else f'biology-scale-v1-capacity-{method}'
+            if not re.fullmatch(r'biology-scale-v[1-9][0-9]*-'+stage+'-'+method,alias):raise ValueError('invalid active run alias')
+            root=R/'runs'/alias;info=dict(stage=stage,method=method,computed_updates=0,persisted_updates=0,status='NOT_STARTED')
             status['runs'][stage+'_'+method]=info
             if not root.exists():continue
             launches=[read(p) for p in (R/'reports').glob(root.name+'-launch-*.json')]
             info['execution_source_commits']=sorted({r['source_commit'] for r in launches})
+            info['actual_run_alias']=alias
+            info['job_ids']=sorted({r['slurm_job_id'] for r in launches})
+            recovery=root/'iteration-000000/completed-credit-recovery.json'
+            if recovery.exists():info['completed_credit_recovery']=read(recovery)
             if (root/'capacity-complete.json').exists():
                 recovery=read(root/'capacity-complete.json').get('recovery')
                 if recovery:info['capacity_recovery']={k:v for k,v in recovery.items() if k not in ('evidence',)}
@@ -230,6 +243,13 @@ def main(args):
         gpu=re.search(r'(?:^|,)gres/gpu=(\d+)(?:,|$)',fields[6])
         allocations.append(dict(job_id=fields[0],state=fields[1],allocated_gpus=int(gpu[1]) if gpu else 0,
             elapsed_seconds=int(fields[2]),GPU_hours=int(fields[2])*(int(gpu[1]) if gpu else 0)/3600))
+    states={r['job_id']:r['state'] for r in allocations}
+    for info in status['runs'].values():
+        if info['status'] not in ('IN_PROGRESS','RESTORE_COMPLETE'):continue
+        observed=[states[j] for j in info.get('job_ids',[]) if j in states]
+        if any(s=='RUNNING' for s in observed):info['status']='RUNNING'
+        elif any(s=='PENDING' for s in observed):info['status']='PENDING'
+        elif observed:info['status']='FAILED' if any(s.startswith(('FAILED','OUT_OF_MEMORY','TIMEOUT')) for s in observed) else 'STOPPED'
     status['GPU_allocations']=allocations;status['measured_GPU_hours_at_snapshot']=math.fsum(r['GPU_hours'] for r in allocations)
     status['sampling_note']='training generation tokens exclude reused branch history and environment markers; submitted input counts include full repeated native context, not measured uncached prefill FLOPs'
     status['timing_note']='main-process exclusive spans only; evaluation includes its nested generation/tools. Uninstrumented verification/serialization remains unattributed. In-flight spans excluded from completed-phase totals.'
