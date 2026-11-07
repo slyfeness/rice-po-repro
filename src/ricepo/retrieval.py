@@ -179,6 +179,9 @@ class FixedHybridRetriever:
                        exclude_before_normalization=self.exclude_before_normalization, top_k=self.top_k)
 
     def retrieve(self, query: str, *, excluded_ids: frozenset[str]) -> RetrievalResult:
+        if (self.ranking_impl == 'array_minmax_v1' and hasattr(self.dense_score,'score_many')
+                and hasattr(self.sparse_score,'score_array')):
+            return self.retrieve_many([dict(query=query,excluded_ids=excluded_ids)])[0]
         if self.ranking_impl == "array_minmax_v1":
             if not isinstance(query, str) or not query:
                 raise ValueError("retrieval query must be a nonempty string")
@@ -200,7 +203,8 @@ class FixedHybridRetriever:
         retains its own fixed exclusions; observations are rendered separately.
         """
         requests=tuple(requests)
-        if self.ranking_impl != 'array_minmax_v1' or not hasattr(self.dense_score,'score_many'):
+        if (self.ranking_impl != 'array_minmax_v1' or not hasattr(self.dense_score,'score_many')
+                or not hasattr(self.sparse_score,'score_array')):
             return tuple(self.retrieve(r['query'],excluded_ids=r['excluded_ids']) for r in requests)
         import numpy as np
         if self._dense_order is None:
