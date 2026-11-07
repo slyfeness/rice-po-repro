@@ -1,0 +1,39 @@
+{
+  "kind": "rice_native_inference_benchmark_v1",
+  "execution": {
+    "enabled": false,
+    "scope": "inference_only_no_retrieval_credit_ppo_or_evaluation"
+  },
+  "request_pool": {
+    "count": 128,
+    "source": "immutable_saved_native_prefixes",
+    "required_stages": ["think", "summary"],
+    "required_source_kinds": ["original", "branch"],
+    "required_context_bins": ["short", "medium", "long"],
+    "max_context_tokens": 32768,
+    "max_remaining_action_tokens": 4096
+  },
+  "frozen_sampling": {
+    "dtype": "float32_ieee",
+    "triton_f32_default": "ieee",
+    "tensor_parallel_size": 1,
+    "temperature": 1.0,
+    "top_p": 1.0,
+    "top_k": 0,
+    "attention_backend": "TRITON_ATTN",
+    "cuda_graphs": true,
+    "prefix_cache": true,
+    "gpu_memory_utilization": 0.8
+  },
+  "candidates": {
+    "S0": {"max_num_seqs": 64, "max_num_batched_tokens": 16384},
+    "S1": {"max_num_seqs": 128, "max_num_batched_tokens": 16384},
+    "S2": {"max_num_seqs": 128, "max_num_batched_tokens": 32768}
+  },
+  "acceptance": {
+    "probability_check": "existing_native_history_tolerances",
+    "same_request_manifest_for_all_candidates": true,
+    "retries": false,
+    "winner_rule": "lowest_whole_batch_wall_time_after_two_repeats; tie_prefers_stability_then_memory_headroom"
+  }
+}
