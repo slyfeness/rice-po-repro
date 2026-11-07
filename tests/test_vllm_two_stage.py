@@ -10,6 +10,7 @@ def test_runtime_options_only_expose_scheduler_controls_and_keep_ieee_protocol()
     resolved=vllm_runtime_options({'max_num_seqs':128,'max_num_batched_tokens':32768,
                                    'gpu_memory_utilization':.9})
     assert resolved['max_num_seqs']==128 and resolved['enable_prefix_caching'] is True
+    assert resolved['enable_chunked_prefill'] is True
     with pytest.raises(ValueError,match='unsupported'):
         vllm_runtime_options({'dtype':'bfloat16'})
     with pytest.raises(ValueError,match='CUDA Graphs'):

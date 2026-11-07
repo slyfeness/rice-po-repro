@@ -24,6 +24,7 @@ DEFAULT_RUNTIME = {
     'gpu_memory_utilization': .80,
     'enforce_eager': False,
     'enable_prefix_caching': True,
+    'enable_chunked_prefill': True,
     'attention_backend': 'TRITON_ATTN',
 }
 
@@ -66,8 +67,9 @@ def vllm_runtime_options(options=None, *, numeric_mode='ieee_fp32'):
     memory = resolved['gpu_memory_utilization']
     if isinstance(memory, bool) or not isinstance(memory, (int, float)) or not .5 <= float(memory) <= .95:
         raise ValueError('gpu_memory_utilization must be within [0.5, 0.95]')
-    if resolved['enforce_eager'] is not False or resolved['enable_prefix_caching'] is not True:
-        raise ValueError('RICE benchmark requires CUDA Graphs and prefix caching')
+    if (resolved['enforce_eager'] is not False or resolved['enable_prefix_caching'] is not True
+            or resolved['enable_chunked_prefill'] is not True):
+        raise ValueError('RICE benchmark requires CUDA Graphs, prefix caching and chunked prefill')
     numeric=vllm_numeric_options(numeric_mode)
     required_attention='TRITON_ATTN' if numeric['requires_triton_ieee'] else 'FLASH_ATTN'
     if resolved['attention_backend'] != required_attention:
@@ -151,7 +153,8 @@ class VLLMEngine:
             max_num_batched_tokens=self.runtime_options['max_num_batched_tokens'],
             gpu_memory_utilization=self.runtime_options['gpu_memory_utilization'],
             enforce_eager=self.runtime_options['enforce_eager'],
-            enable_prefix_caching=self.runtime_options['enable_prefix_caching'],hf_overrides={'sliding_window':None},
+            enable_prefix_caching=self.runtime_options['enable_prefix_caching'],
+            enable_chunked_prefill=self.runtime_options['enable_chunked_prefill'],hf_overrides={'sliding_window':None},
             generation_config='vllm',trust_remote_code=False,
             attention_config={'backend':self.runtime_options['attention_backend']})
         size=self.llm.llm_engine.model_config.hf_config.vocab_size
