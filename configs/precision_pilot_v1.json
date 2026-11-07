@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "extends": "two_stage_ricepo.json",
+  "execution": {"enabled": false},
+  "runtime_bindings": {
+    "total_updates": 2,
+    "train_split_manifest": null,
+    "development_split_manifest": null
+  },
+  "deviations": {
+    "queries_per_update": {"value": 2, "reason": "Restricted mixed-backend pilot, not paper batch128. Second fixed batch only without reward signal."},
+    "training_seeds": {"value": [20261107], "reason": "Frozen precision-pilot-v1 schedule; no outcome-based reseeding."},
+    "query_composition": {"value": {"mode": "original_and_summary", "separator": "\n"}, "reason": "Retain current independent original-plus-LF-plus-Summary recipe."},
+    "development_every_updates": {"value": 4, "reason": "Retained cadence; development is not run in this diagnostic."},
+    "checkpoint_every_updates": {"value": 2, "reason": "Retained cadence; actual final diagnostic update always saves."},
+    "checkpoint_selection": {"value": "last", "reason": "Diagnostic checkpoint only, no development selection."},
+    "eval_samples_per_query": {"value": 4, "reason": "Retained evaluation setting, not executed by this pilot."}
+  }
+}

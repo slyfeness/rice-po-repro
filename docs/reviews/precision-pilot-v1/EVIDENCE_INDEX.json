@@ -1,0 +1,147 @@
+[
+  {
+    "alias": "historical-token-diagnostics",
+    "bytes": 113925,
+    "sha256": "cae72ca3c42df6cf90067f2d075aa1e26d84570b5907e55ac3b969c959dc673e"
+  },
+  {
+    "alias": "T-independent-condition-result",
+    "bytes": 21747,
+    "sha256": "35f55de557cc2139da2091e5af3415ca522f4d5dff7c14bb5356c58a75355de3"
+  },
+  {
+    "alias": "T-independent-condition-generation",
+    "bytes": 1819,
+    "sha256": "c840ee4338d001e56cf385a3c676c73921bf9d431b4a999e415376c06e9a2d5e"
+  },
+  {
+    "alias": "frozen-private-plan",
+    "bytes": 874809,
+    "sha256": "956146f3493f5173bb16d4e193d98b324462e92bc41d60ebc39ae8e55bdaae30"
+  },
+  {
+    "alias": "online/iteration-000000/rollout_complete-receipt",
+    "bytes": 317,
+    "sha256": "c82119ef71cd0d3a85d0deafaa70aadbce222e2229c502f7e3f72c4680dd2630"
+  },
+  {
+    "alias": "online/iteration-000000/branches_complete-receipt",
+    "bytes": 333,
+    "sha256": "7558c1153dd711e3b20bae6096d3290f5f441da5c24856fc87ac87fb9287bbdd"
+  },
+  {
+    "alias": "online/iteration-000000/credit_complete-receipt",
+    "bytes": 314,
+    "sha256": "202b2a07bdb4134467f10e8b7fc8f1d0cd6d23e5aae9c75314160134bda62e09"
+  },
+  {
+    "alias": "online/iteration-000000/optimizer_step_committed-receipt",
+    "bytes": 319,
+    "sha256": "abfe99a3d2026de1c67fff676c1344d04916af2e714cf98284054d35d0da7b96"
+  },
+  {
+    "alias": "online/iteration-000000/checkpoint_complete-receipt",
+    "bytes": 327,
+    "sha256": "c94d28ba530d432c540b0451fd643d770c88e099934cadb1f179df6ad74a1499"
+  },
+  {
+    "alias": "online/iteration-000000/credit-diagnostics.json",
+    "bytes": 15909,
+    "sha256": "40518022c3de2926ad99b04aa604e7922e4e29e58ef5005e2dce161479c19f69"
+  },
+  {
+    "alias": "online/iteration-000000/update.json",
+    "bytes": 2920,
+    "sha256": "066d7aa0a3fef98552c030d90d19fcd3f4c9a5862297cc760980e0fdb3035773"
+  },
+  {
+    "alias": "online/iteration-000000/pilot-probability-risk.json",
+    "bytes": 2174,
+    "sha256": "9b3c0a2da08137569b303c99fc97c92adbfed39040c64dabe481f45402bea4e3"
+  },
+  {
+    "alias": "online/iteration-000000/pilot-post-update-risk.json",
+    "bytes": 1184,
+    "sha256": "d4663fd625afd4d790bba60cd2ff966b7d7e9c0e1fb68f9c98ea3eb2cc3becd0"
+  },
+  {
+    "alias": "online/iteration-000000/reload-verification.json",
+    "bytes": 119,
+    "sha256": "f1d8ff352a1f5a485fcb2a10283082c4a8483762f7a1781a0b43f675ae28340e"
+  },
+  {
+    "alias": "online/iteration-000000/private-complete-branch-groups",
+    "bytes": 36493323,
+    "sha256": "0025df1bfde34b6f150b94a8ec503fd10325653357a98e6db532ee68b0c8ee5f"
+  },
+  {
+    "alias": "online/iteration-000000/private-original-trajectories",
+    "bytes": 3554118,
+    "sha256": "e1533c6324a0fdffc6a10e1b7bc5d60eaed972d871ea7210243738a25259a7f2"
+  },
+  {
+    "alias": "online/iteration-000000/private-assigned-advantages",
+    "bytes": 1058548,
+    "sha256": "2d61103c8b6ff10f9d2355ebe7e88fd7c5de9d9baf15a5480b9bcb5ccddcbd25"
+  },
+  {
+    "alias": "worker/worker-1-ready.json",
+    "bytes": 2471,
+    "sha256": "8f09aac1c19e6b7d44d2e26cdbe42ebca01672473cc3d7b76934b300a105f878"
+  },
+  {
+    "alias": "worker/worker-2-ready.json",
+    "bytes": 2470,
+    "sha256": "3b3a7949e6fa8e3a3eb9d6fb75e56cf534c02bf340791a1d3858b5ac14482f8e"
+  },
+  {
+    "alias": "worker/worker-3-ready.json",
+    "bytes": 2471,
+    "sha256": "00e401c7357fa818dfae9bb56cf2955b4a39b9fa28f64c0f1cfe7d2463bacb2e"
+  },
+  {
+    "alias": "independent-restore",
+    "bytes": 805,
+    "sha256": "f5147d3051bf540276b4f1b921f348b4eb22c8328f0914437f5556e5c9c9a6a5"
+  },
+  {
+    "alias": "run-binding",
+    "bytes": 2294,
+    "sha256": "7c09f4486358db434da661b907191fb26b090d936bf19f27f0daef3458eedd69"
+  },
+  {
+    "alias": "resolved-recipe",
+    "bytes": 16336,
+    "sha256": "185a14e0ab49fa7bdef5033be26d26c4e6a95745117b9e44f564f851421f5a1c"
+  },
+  {
+    "alias": "executed-sources",
+    "bytes": 4402,
+    "sha256": "b8cd708e3f33b7aac162d7e077f82056400e812a436fbe32fa38d2879574b184"
+  },
+  {
+    "alias": "executed-source/hf_runtime.py",
+    "bytes": 61865,
+    "sha256": "bd727796b7dfa7eedf6744b2e0b2cc5675168e19f4b78fb09e8f4a61e2e201a6"
+  },
+  {
+    "alias": "executed-source/pilot_gradient.py",
+    "bytes": 4486,
+    "sha256": "0ad533b3c41e339be55575a1ec7765edec1c944ef5216d1ddff11583ffea65fc"
+  },
+  {
+    "alias": "executed-source/precision_pilot.py",
+    "bytes": 4986,
+    "sha256": "35f9cb48323d00ea6e6fe44b592c8a0ebc6dc92d821d80ac50c7653cfb9469f6"
+  },
+  {
+    "alias": "executed-source/vllm_lifecycle.py",
+    "bytes": 9939,
+    "sha256": "0c1c291d059020e53ca003628bb29b052df165c6875039d6ad7ce3c0cebc2ba7"
+  },
+  {
+    "alias": "executed-source/vllm_two_stage.py",
+    "bytes": 12080,
+    "sha256": "b8dcb6ba9ff6edba81f029d2397a6a28e7b8d6f7fa09af4613b9dd6683419603"
+  }
+]

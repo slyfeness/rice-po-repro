@@ -34,6 +34,7 @@ DEFAULT_RUNTIME = {
 NUMERIC_MODES = {
     'ieee_fp32': {'dtype': 'float32', 'requires_triton_ieee': True, 'ppo_compatible': True},
     'bf16_fast': {'dtype': 'bfloat16', 'requires_triton_ieee': False, 'ppo_compatible': False},
+    'tf32_pilot': {'dtype': 'float32', 'requires_triton_ieee': False, 'ppo_compatible': False},
 }
 
 
@@ -71,15 +72,16 @@ def vllm_runtime_options(options=None, *, numeric_mode='ieee_fp32'):
             or resolved['enable_chunked_prefill'] is not True):
         raise ValueError('RICE benchmark requires CUDA Graphs, prefix caching and chunked prefill')
     numeric=vllm_numeric_options(numeric_mode)
-    required_attention='TRITON_ATTN' if numeric['requires_triton_ieee'] else 'FLASH_ATTN'
+    required_attention='TRITON_ATTN' if numeric['dtype']=='float32' else 'FLASH_ATTN'
     if resolved['attention_backend'] != required_attention:
         raise ValueError('numeric mode requires '+required_attention)
     resolved['gpu_memory_utilization'] = float(memory)
     return resolved
 
 class VLLMTwoStage:
-    def __init__(self,engine,tokenizer,policy_version_getter,max_new_tokens=4096,max_context_tokens=32768):
+    def __init__(self,engine,tokenizer,policy_version_getter,max_new_tokens=4096,max_context_tokens=32768,backend=BACKEND):
         self.engine=engine;self.format=TwoStageFormat(tokenizer);self.version=policy_version_getter
+        self.backend=backend
         self.max_new_tokens=max_new_tokens;self.max_context_tokens=max_context_tokens
         if type(max_new_tokens) is not int or max_new_tokens<=0:raise ValueError('positive action budget required')
     @property
@@ -96,7 +98,7 @@ class VLLMTwoStage:
             for i,p,b in zip(indices,histories,budgets,strict=True):
                 available=self.max_context_tokens-len(p)
                 if available<=0:raise RolloutLengthError('vLLM context exhausted before '+name)
-                requests.append(dict(prefix=p,budget=min(b,available),seed=stable_seed(seeds[i],BACKEND,name),request_slot=i))
+                requests.append(dict(prefix=p,budget=min(b,available),seed=stable_seed(seeds[i],self.backend,name),request_slot=i))
             outputs=self.engine.sample(requests,name,version)
             if len(outputs)!=len(requests):raise ValueError('engine omitted scheduled response')
             results=[]
@@ -106,7 +108,7 @@ class VLLMTwoStage:
                 raw_completion(ids,o['finish_reason'],r['prefix'],r['seed'],version)
                 event('vllm_stage_raw',stage_name=name,policy_version=version,root_seed=seeds[r['request_slot']],
                       actual_stage_seed=r['seed'],prefix_sha256=fingerprint(r['prefix']),token_ids=ids,sampled_log_probs=lp,
-                      engine_finish_reason=o['finish_reason'],sampling_backend=BACKEND)
+                      engine_finish_reason=o['finish_reason'],sampling_backend=self.backend)
                 if not ids or len(ids)>r['budget'] or len(lp)!=len(ids) or any(not math.isfinite(x) for x in lp):raise ValueError('incomplete native probability record')
                 try:raw=self.format.bytes.join(ids)
                 except UnrepresentableNativeToken:reason='native_token_unmapped'
@@ -129,7 +131,7 @@ class VLLMTwoStage:
         for i,(a,ap,ar) in enumerate(first):
             b,bp,br=second.get(i,((),(),'not_started'))
             result=self.format.record(a,b,ap,bp,ar,br)
-            event('two_stage_action_record',generation=result,sampling_backend=BACKEND)
+            event('two_stage_action_record',generation=result,sampling_backend=self.backend)
             results.append(result)
         return tuple(results)
 
@@ -145,6 +147,8 @@ class VLLMEngine:
         self.numeric=vllm_numeric_options(numeric_mode)
         if self.numeric['requires_triton_ieee'] and os.environ.get('TRITON_F32_DEFAULT')!='ieee':
             raise ValueError('IEEE Triton must be set before engine import')
+        if numeric_mode=='tf32_pilot' and os.environ.get('TRITON_F32_DEFAULT')!='tf32':
+            raise ValueError('TF32 pilot requires explicit pre-import Triton precision')
         from vllm import LLM
         self.version=policy_version
         self.runtime_options=vllm_runtime_options(runtime_options,numeric_mode=numeric_mode)

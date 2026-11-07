@@ -308,7 +308,8 @@ def checkpoint_diagnostic_mode(deployment, plan, *, parent, resume):
     enabled=deployment.get('stop_after_checkpoint_diagnostic',False)
     if type(enabled) is not bool:
         raise ValueError('checkpoint diagnostic flag must be a boolean')
-    if enabled and (parent is not None or resume or plan['total_updates']!=1
+    pilot=deployment.get('precision_pilot') is not None
+    if enabled and (parent is not None or resume or (plan['total_updates']!=1 and not (pilot and plan['total_updates']==2))
                     or plan['checkpoint_selection']!='last'):
         raise ValueError('checkpoint diagnostic requires fresh one-update last-checkpoint selection')
     return enabled
@@ -338,12 +339,17 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
     from .assessment import evaluate_queries
     resolved = resolve(config,"train")
     plan = resolved["values"]
+    from .precision_pilot import pilot_settings
+    pilot=pilot_settings(deployment,plan)
     checkpoint_diagnostic_mode(deployment,plan,parent=deployment.get('parent_run_root'),resume=resume)
     require_qualified_retrieval_batch(deployment)
     checkpoint_io=deployment.get('checkpoint_io','direct_shared_v1')
     sampling_backend=deployment.get('sampling_backend','serial_hf_v1')
-    if sampling_backend not in ('serial_hf_v1','hf_native_wavefront_v1','vllm_ieee_two_stage_v1'):
+    if sampling_backend not in ('serial_hf_v1','hf_native_wavefront_v1','vllm_ieee_two_stage_v1','vllm_mixed_precision_pilot_v1'):
         raise ValueError('unsupported sampling backend')
+    if sampling_backend=='vllm_mixed_precision_pilot_v1' and pilot is None:
+        raise ValueError('mixed backend requires an independently screened pilot plan')
+    is_vllm=sampling_backend in ('vllm_ieee_two_stage_v1','vllm_mixed_precision_pilot_v1')
     if checkpoint_io not in ('direct_shared_v1','local_verified_v1'):
         raise ValueError('unsupported checkpoint IO mode')
     parser_mode = native_summary_mode(deployment["output_parser_mode"])
@@ -355,9 +361,12 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
     effective_generation = dict(parser=effective_parser, output_parser_mode=deployment["output_parser_mode"],
         turn_protocol=turn_protocol(deployment), prompt=plan["prompt_artifact"], seed_schedule="controlled_v2",
         failure_semantics=plan["format_failure_policy"])
-    if sampling_backend=='vllm_ieee_two_stage_v1':
+    if is_vllm:
         from .vllm_two_stage import vllm_runtime_options
-        effective_generation['vllm_runtime']=vllm_runtime_options(deployment.get('vllm_runtime'))
+        effective_generation['vllm_runtime']=vllm_runtime_options(deployment.get('vllm_runtime'),
+            numeric_mode=pilot['numeric_mode'] if pilot else 'ieee_fp32')
+        if pilot:effective_generation['precision_pilot']=dict(candidate=pilot['candidate'],
+            validation_plan_sha256=pilot['validation_plan_sha256'],historical_failures_preserved=True)
     with operation("asset_binding"):
         frozen = verify_bundle(deployment)
         domain_specs = deployment["domains"]
@@ -395,6 +404,9 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                 precision!='float32' or parser_mode!='two_stage_env_summary_v1'
                 or (plan['temperature'],plan['top_p'],plan['top_k'])!=(1.,1.,0)):
             raise ValueError('vLLM candidate requires frozen IEEE FP32 two-stage T1/p1/k0')
+        if pilot and (precision!=('float32' if pilot['candidate']=='T' else 'bfloat16')
+                      or parser_mode!='two_stage_env_summary_v1' or (plan['temperature'],plan['top_p'],plan['top_k'])!=(1.,1.,0)):
+            raise ValueError('pilot actor precision or frozen sampling law differs')
         if precision not in {"float32","bfloat16"}:
             raise ValueError("unsupported precision")
         def autocast():
@@ -434,6 +446,9 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
     binding["behavior"]["failure_semantics"] = plan["format_failure_policy"]
     if sampling_backend!='serial_hf_v1':
         binding['behavior']['sampling_backend']=sampling_backend
+    if pilot:
+        binding['behavior']['precision_pilot']=dict(candidate=pilot['candidate'],rollout_numeric=pilot['numeric_mode'],
+            teacher_compute=precision,parameter_storage='float32',validation_plan_sha256=pilot['validation_plan_sha256'])
     from .continuation import (fresh_schedule, parent_run, scheduled_queries, validate_fresh_schedule,
                                validate_state_position)
     parent = parent_run(deployment,binding,plan,train)
@@ -445,6 +460,11 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         frozen_schedule = fresh_schedule(train, seed=seed, updates=plan['total_updates'],
                                          count=plan['queries_per_update'],
                                          manifest_sha256=frozen.manifest_sha256['train'])
+        if pilot:
+            if frozen.manifest_sha256['train']!=pilot['train_manifest_sha256'] or any(q not in train for b in pilot['query_batches'] for q in b):
+                raise ValueError('pilot training schedule/manifest differs')
+            frozen_schedule['batches']=pilot['query_batches']
+            binding['pilot_frozen_schedule_sha256']=fingerprint(frozen_schedule)
         schedule_path = deployment.get('frozen_schedule_path')
         if schedule_path is not None:
             require_cluster_storage(schedule_path)
@@ -544,7 +564,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
     if deployment.get("native_replay_sources"):
         from .native_replay import SavedNativeCompletions
         generator.completion_replay = SavedNativeCompletions(deployment["native_replay_sources"],binding)
-    if sampling_backend=='vllm_ieee_two_stage_v1':
+    if is_vllm:
         if deployment.get('native_replay_sources') or action_recovery:
             raise ValueError('HF replay cannot be relabeled as vLLM sampling')
         from .vllm_lifecycle import PhaseSeparatedGenerator
@@ -552,7 +572,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             version=lambda:version['value'],behavior=behavior,device=actor_device,root=attempt_dir/'vllm',
             rpc_root=require_cluster_storage(deployment['vllm_rpc_root']),
             max_new_tokens=plan['max_new_tokens_per_step'],max_context_tokens=plan['max_context_tokens'],
-            vllm_runtime=effective_generation['vllm_runtime'])
+            vllm_runtime=effective_generation['vllm_runtime'],numeric_mode=pilot['numeric_mode'] if pilot else 'ieee_fp32')
         cleanup.callback(generator.close)
     reward = PyTrecReward(qrels)
     runners = {domain:RolloutRunner(generator=generator,retriever=backend,reward_scorer=reward,
@@ -653,7 +673,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         domain,job=branch_job(t,a)
         result=runners[domain].branch(**job,
                                         batched=sampling_backend!='serial_hf_v1')
-        if sampling_backend=='vllm_ieee_two_stage_v1':sampled_branches.extend(result.trajectories)
+        if is_vllm:sampled_branches.extend(result.trajectories)
         return result
 
     def collect_branches_batch(items):
@@ -679,6 +699,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         if version["value"] != old_version:
             raise ValueError("behavior policy changed before old log probabilities were cached")
         items = []
+        pilot_q=[];pilot_p=[];pilot_adv=[]
         with operation("old_log_probs"), torch.no_grad(), autocast():
             for t,adv,mask in zip(originals,batch.advantages,batch.generated_masks,strict=True):
                 length = max(i for i,flag in enumerate(mask) if flag)
@@ -692,11 +713,34 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                     from .probability_check import compare_log_probs
                     check=compare_log_probs(sampled,teacher,mask)
                     atomic_json(directory/'behavior-probability-checks'/(fingerprint(t.trajectory_id)+'.json'),check)
-                    if not check['within_bf16_tolerance']:
+                    if not check['within_bf16_tolerance'] and pilot is None:
                         raise ValueError('sampled/teacher probability mismatch exceeds predeclared tolerance')
+                    if pilot:
+                        pilot_q.extend(v for v,m in zip(sampled,mask,strict=True) if m)
+                        pilot_p.extend(v for v,m in zip(teacher,mask,strict=True) if m)
+                        pilot_adv.extend(v for v,m in zip(adv,mask,strict=True) if m)
                 items.append(UpdateItem(t.trajectory_id,old_version,t.token_ids,mask,adv,sampled if sampled is not None else teacher))
         atomic_json(directory/"old-policy-update-items.json",items)
-        if sampling_backend=='vllm_ieee_two_stage_v1':
+        if pilot:
+            from .precision_pilot import mismatch_statistics,risk_screen
+            original_pilot=mismatch_statistics(pilot_q,pilot_p,pilot_adv)
+            with torch.no_grad(),autocast():
+                for t in sampled_branches:
+                    scored=sampled_old_log_probs(actor,t.token_ids,t.generated_mask,device=actor_device,
+                        logit_chunk_size=deployment['logit_chunk_size'],max_context_tokens=plan['max_context_tokens'],policy_call_kwargs={})[0].cpu().tolist()
+                    q=trajectory_behavior_log_probs(t)
+                    qr=[v for v,m in zip(q,t.generated_mask,strict=True) if m]
+                    pr=[v for v,m in zip(scored,t.generated_mask,strict=True) if m]
+                    check=mismatch_statistics(qr,pr)
+                    atomic_json(directory/'pilot-branch-probability-checks'/(fingerprint(t.trajectory_id)+'.json'),check)
+                    pilot_q.extend(qr);pilot_p.extend(pr)
+            combined=mismatch_statistics(pilot_q,pilot_p)
+            passed=risk_screen(combined,outside_max=.01 if directory.name=='iteration-000000' else .02)
+            atomic_json(directory/'pilot-probability-risk.json',dict(originals=original_pilot,all_actual_tokens=combined,
+                branch_count=len(sampled_branches),risk_screen_pass=passed,legacy_thresholds_not_rewritten=True))
+            sampled_branches.clear()
+            if not passed:raise ValueError('pilot online probability risk screen failed before optimizer step')
+        elif is_vllm:
             from .probability_check import compare_log_probs
             from .branch_audit import branch_check_plan,execute_branch_checks,select_branch_checks
             audit_options=dict(update_index=global_start+int(directory.name.split('-')[-1]),
@@ -719,13 +763,24 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             sampled_branches.clear()
         with torch.enable_grad():
             observer=comparison=None
-            if deployment.get('compare_grpo_credit_gradients'):
+            pilot_gradient=None
+            if pilot:
+                from .pilot_gradient import prepare
+                def ieee_forward(model,item):
+                    with torch.autocast('cuda',enabled=False):return scoring(model,item)
+                observer,pilot_gradient=prepare(actor,optimizer,items,candidate_forward=forward,
+                    ieee_forward=ieee_forward,device=actor_device,recipe=plan,pilot=pilot)
+            elif deployment.get('compare_grpo_credit_gradients'):
                 if plan['method']!='ricepo':raise ValueError('RICE/GRPO gradient comparison belongs to RICE update only')
                 from .credit_gradient import prepare_comparison
                 observer,comparison=prepare_comparison(actor,optimizer,originals,items,
                     forward=forward,device=actor_device,recipe=plan)
             diagnostics = ppo_plan_update(actor,optimizer,items,policy_version=old_version,forward=forward,
                                           device=actor_device,recipe=plan,step_observer=observer)
+            if pilot_gradient is not None:
+                pilot_gradient['reference_has_gradients']=any(p.grad is not None for p in reference.parameters())
+                atomic_json(directory/'pilot-gradient-comparison.json',pilot_gradient)
+                diagnostics['pilot_gradient']=pilot_gradient
             if comparison is not None:
                 comparison['reference_has_gradients']=any(p.grad is not None for p in reference.parameters())
                 atomic_json(directory/'credit-vs-grpo-gradient.json',comparison)
@@ -739,17 +794,22 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         return {"new_policy_version":version["value"],"optimizer":diagnostics}
 
     def barrier(before,after):
-        if sampling_backend=='vllm_ieee_two_stage_v1' and after in ('entropy','update'):
+        if is_vllm and after in ('entropy','update'):
             generator.prepare_scoring()
         torch.cuda.synchronize(actor_device)
         torch.cuda.synchronize(retriever_device)
 
     components = IterationComponents(rollout_batch,entropy,collect_branches if entropy else None,update,barrier,
-        collect_branches_batch=collect_branches_batch if sampling_backend=='vllm_ieee_two_stage_v1' and entropy else None)
+        collect_branches_batch=collect_branches_batch if is_vllm and entropy else None)
     def finish(i, *, recovered=False):
         directory = root/f"iteration-{i:06d}"
         current = version["value"]
         last = i+1 == plan["total_updates"]
+        pilot_stop=False
+        if pilot:
+            update_record=read_json(directory/'update.json')
+            pilot_stop=last or update_record['optimizer']['pilot_gradient']['reward_gradient_nonzero']
+            last=pilot_stop
         global_completed = global_start+i+1
         dev_due = last or global_completed % plan["development_every_updates"] == 0
         save_due = dev_due or global_completed % plan["checkpoint_every_updates"] == 0
@@ -801,6 +861,10 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         else:
             complete_stage(directory,"checkpoint_complete",current,{"skipped":"cadence"})
         if checkpoint_diagnostic_mode(deployment,plan,parent=parent,resume=resume):
+            if pilot and not pilot_stop:
+                complete_stage(directory,'development_complete',current,{'skipped':'bounded pilot; no development evaluation'})
+                complete_stage(directory,'iteration_complete',current,{'selected_checkpoint_so_far':None})
+                return None
             # Check the real post-update engine snapshot on one fixed native
             # condition. This is a sampling probe, without retrieval or PPO.
             saved=read_json(directory/'trajectories.json')
@@ -816,8 +880,22 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             if generator.policy_version!=current:
                 raise ValueError('post-update probe used a stale policy')
             atomic_json(directory/'post-update-sampling-probe.json',dict(policy_version=current,generation=generated))
+            if pilot:
+                from .precision_pilot import mismatch_statistics,risk_screen
+                generator.prepare_scoring()
+                ids=tuple(prefix)+generated.token_ids
+                mask=(False,)*len(prefix)+generated.action_mask
+                with torch.no_grad(),autocast():
+                    teacher=sampled_old_log_probs(actor,ids,mask,device=actor_device,logit_chunk_size=deployment['logit_chunk_size'],
+                        max_context_tokens=plan['max_context_tokens'],policy_call_kwargs={})[0].cpu().tolist()
+                q=[v for v,m in zip(generated.sampled_log_probs,generated.action_mask,strict=True) if m]
+                p=[v for v,m in zip(teacher,mask,strict=True) if m]
+                stats=mismatch_statistics(q,p)
+                atomic_json(directory/'pilot-post-update-risk.json',dict(policy_version=current,statistics=stats,
+                    fresh_worker_snapshot=True,pass_risk_screen=risk_screen(stats)))
+                if not risk_screen(stats):raise ValueError('updated pilot sampler/teacher risk screen failed')
             result=dict(status='diagnostic_update_checkpoint_and_sampling_complete',
-                completed_updates=1,policy_version=current,checkpoint='iteration-000000/checkpoint',
+                completed_updates=i+1,policy_version=current,checkpoint=str(directory.relative_to(root)/'checkpoint'),
                 development='not_run_diagnostic_scope',checkpoint_selection='not_performed',
                 optimizer_step_replayed=False)
             atomic_json(root/'diagnostic-complete.json',result)
@@ -845,7 +923,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         if diagnostic is not None:
             atomic_json(attempt_dir/'cost-report.json',cost_report(root))
             return diagnostic
-        if plan["method"] == "ricepo" and plan["format_failure_policy"] == "invalid_action_terminal_zero_v1":
+        if not pilot and plan["method"] == "ricepo" and plan["format_failure_policy"] == "invalid_action_terminal_zero_v1":
             evidence = read_json(root/f"iteration-{i:06d}"/"credit-diagnostics.json")
             if evidence["estimable_anchor_count"] == 0:
                 result = dict(status="paused_no_estimable_rice_credit",completed_updates=i+1,
