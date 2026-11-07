@@ -63,5 +63,6 @@
   "execution_permission": "explicit new user authorization, not global validation flags",
   "execution_source_commit": "b0ee0bb0f789f803770566572ef8fd1499f14550",
   "final_execution_preflight_job": 176698,
-  "note": "Slurm RUNNING means allocation/batch started, not inference ready; formal jobs still gated by both capacities/restores and shared Initial."
+  "note": "Slurm RUNNING means allocation/batch started, not inference ready; formal jobs still gated by both capacities/restores and shared Initial.",
+  "snapshot_note": "Launch snapshot, not a live dashboard; later capacity/first128/final snapshots replace it. See private actual Slurm phase until milestone export."
 }
