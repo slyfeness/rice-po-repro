@@ -34,6 +34,19 @@ def req(n,seeds=(1,2,3,4,5)):
 
 
 class BatchedRolloutTests(unittest.TestCase):
+    def test_ready_retrieval_wave_keeps_failed_rows_out_of_tool_batch(self):
+        class BatchRetriever(Retriever):
+            def __init__(self):self.waves=[]
+            def retrieve_many(self,requests):
+                self.waves.append(requests)
+                return tuple(self.retrieve(r['query'],excluded_ids=r['excluded_ids']) for r in requests)
+        requests=[req(1,(1,99,3,4,5)),req(2,(6,7,8,9,10))]
+        expected=tuple(runner().run(**r.serial_kwargs()) for r in requests)
+        r=runner();r.retriever=BatchRetriever()
+        self.assertEqual(run_many(r,requests),expected)
+        self.assertEqual([len(w) for w in r.retriever.waves],[2,1,1,1,1])
+        self.assertEqual(r.retriever.waves[1][0]['query'],'question 7')
+
     def test_same_transition_and_native_history_as_serial(self):
         requests=[req(1),req(2,(6,7,8,9,10))]
         serial=runner();batch=runner()
