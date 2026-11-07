@@ -15,6 +15,7 @@ class GemmInspection:
             matmul_allow_tf32=torch.backends.cuda.matmul.allow_tf32,
             cudnn_allow_tf32=torch.backends.cudnn.allow_tf32,
             triton_f32_default=os.environ.get('TRITON_F32_DEFAULT'),
+              allocator_expandable_segments=torch.cuda.memory._snapshot().get('allocator_settings',{}).get('expandable_segments'),
             linear_dispatch=dispatch.__module__+'.'+dispatch.__qualname__,linear_methods=dict(methods),
             parameter_dtypes=dict(Counter(str(p.dtype) for p in model.parameters())),
             gpu_name=torch.cuda.get_device_name(),cuda_build=torch.version.cuda,

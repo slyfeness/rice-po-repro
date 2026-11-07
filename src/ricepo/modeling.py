@@ -247,6 +247,7 @@ def make_forward(
     reference_call_kwargs: Mapping[str, Any],
     projection_mode: str = 'full_sequence',
     measure: Any = None,
+    saved_tensor_policy: str = 'device',
 ) -> Callable[[Any, UpdateItem], tuple[Tensor, Tensor]]:
     """Build training.ppo_update's forward(model, UpdateItem) callback.
 
@@ -255,18 +256,29 @@ def make_forward(
     optional-framework import, model mutation, or allocation occurs here.
     """
     _validate_projection(projection_mode)
+    if saved_tensor_policy not in ('device','cpu_exact_v1'):
+        raise ValueError('unknown saved tensor residency policy')
     policy_kwargs = _validate_kwargs(policy_call_kwargs, "policy_call_kwargs")
     reference_kwargs = _validate_kwargs(reference_call_kwargs, "reference_call_kwargs")
     if reference_model is None:
         raise ValueError("PPO scoring requires a separate frozen reference")
 
     def forward(model: Any, item: UpdateItem) -> tuple[Tensor, Tensor]:
-        return _native_scores(
-            model, reference_model, item.token_ids, item.generated_mask,
-            device=device, logit_chunk_size=logit_chunk_size,
-            max_context_tokens=max_context_tokens,
-            policy_call_kwargs=policy_kwargs, reference_call_kwargs=reference_kwargs, compact=True,
-            projection_mode=projection_mode, measure=measure,
-        )
+        # Official autograd saved-tensor hooks preserve the graph and tensor
+        # values; only residency changes. This is neither a detached context
+        # nor a sampled/partial-vocabulary objective. Unpacking happens during
+        # backward after this scope exits. Existing decoder recomputation stays.
+        scope=nullcontext()
+        if saved_tensor_policy=='cpu_exact_v1':
+            import torch
+            scope=torch.autograd.graph.save_on_cpu(pin_memory=False)
+        with scope:
+            return _native_scores(
+                model, reference_model, item.token_ids, item.generated_mask,
+                device=device, logit_chunk_size=logit_chunk_size,
+                max_context_tokens=max_context_tokens,
+                policy_call_kwargs=policy_kwargs, reference_call_kwargs=reference_kwargs, compact=True,
+                projection_mode=projection_mode, measure=measure,
+            )
 
     return forward

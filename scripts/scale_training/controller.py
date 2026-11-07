@@ -11,6 +11,7 @@ from pathlib import Path
 def main(args):
     if not os.environ.get('SLURM_JOB_ID'):raise RuntimeError('Slurm allocation required')
     from ricepo.artifacts import atomic_json,file_sha256
+    from ricepo.scale_training import run_tag
     R=Path(os.environ['RICE_PROJECT_ROOT']);source=Path(os.environ['RICE_SOURCE_ROOT'])
     plan=Path(os.environ['RICE_SCALE_PLAN']);frozen=json.loads(plan.read_text())
     child=[None]
@@ -21,7 +22,7 @@ def main(args):
         child[0]=subprocess.Popen([sys.executable,'-u',str(source/'scripts/scale_training'/script),*arguments],env=env)
         code=child[0].wait();child[0]=None;return code
     def restore(stage):
-        tag=f'biology-scale-v1-{stage}-{args.method}'
+        tag=run_tag(stage,args.method)
         env={**os.environ,'RICE_RESTORE_RUN':str(R/'runs'/tag),'RICE_RESTORE_ITERATION':'0' if stage=='capacity' else '9'}
         code=execute('restore.py',env=env)
         if code:raise RuntimeError('independent restore failed; phase remains blocked')

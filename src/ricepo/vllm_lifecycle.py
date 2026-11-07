@@ -30,9 +30,16 @@ def release_residency_cache(device):
     return dict(allocated_bytes=torch.cuda.memory_allocated(device),reserved_bytes=torch.cuda.memory_reserved(device),
                 free_device_bytes=free,total_device_bytes=total)
 
+def isolate_hf_allocator(enabled):
+    if enabled:
+        for key in ('PYTORCH_ALLOC_CONF','PYTORCH_CUDA_ALLOC_CONF'):os.environ.pop(key,None)
+
+
 def _worker(connection,spec):
     # Spawn a fresh interpreter; establish device and IEEE mode before imports.
     os.setsid()  # Dedicated group: recovery can reap only this worker and its children.
+    # The HF capacity repair must not change the frozen sampling allocator.
+    isolate_hf_allocator(spec.get('isolate_training_allocator'))
     os.environ['CUDA_VISIBLE_DEVICES']=spec['cuda_mask']
     numeric_mode=spec.get('numeric_mode','ieee_fp32')
     os.environ['TRITON_F32_DEFAULT']='tf32' if numeric_mode in ('tf32_pilot','tf32_gemm_pilot','tf32_gemm_control') else 'ieee'
@@ -62,6 +69,8 @@ def _worker(connection,spec):
             expected='high' if numeric_mode=='tf32_gemm_pilot' else 'highest'
             if inspection and not all(s['matmul_allow_tf32']==(expected=='high') and s['torch_float32_matmul_precision']==expected for s in gemm_state):
                 raise ValueError('actual GEMM worker precision differs from frozen candidate')
+            if spec.get('isolate_training_allocator') and (not gemm_state or any(s.get('allocator_expandable_segments') is not False for s in gemm_state)):
+                raise ValueError('HF allocator repair leaked into the sampling worker')
             if model_identity(spec['model'])!=identity:raise ValueError('sampling snapshot changed during engine load')
             connection.send(('ready',dict(policy=spec['policy'],assets=identity,pid=os.getpid(),
                 runtime_options=engine.runtime_options,numeric_mode=numeric_mode,
@@ -142,7 +151,10 @@ class PhaseSeparatedGenerator:
     """HF model/optimizer residency changes only; objective and histories stay fixed."""
     def __init__(self,*,actor,reference,optimizer,tokenizer,version,behavior,device,root,rpc_root,
                  max_new_tokens=4096,max_context_tokens=32768,vllm_runtime=None,numeric_mode='ieee_fp32',
-                 reuse_verified_assets=False,validated_policy_getter=None,response_timeout_seconds=1800):
+                 reuse_verified_assets=False,validated_policy_getter=None,response_timeout_seconds=1800,
+                 defer_optimizer_residency=False,isolate_training_allocator=False):
+        if type(defer_optimizer_residency) is not bool or type(isolate_training_allocator) is not bool:
+            raise ValueError('residency controls must be explicit booleans')
         self.actor,self.reference,self.optimizer=actor,reference,optimizer
         self.tokenizer,self.version,self.behavior=tokenizer,version,behavior
         self.device=device;self.root=Path(root);self.rpc_root=Path(rpc_root)
@@ -153,13 +165,16 @@ class PhaseSeparatedGenerator:
         self.numeric_mode=numeric_mode
         self.reuse_verified_assets=reuse_verified_assets;self.validated_policy_getter=validated_policy_getter
         self.response_timeout_seconds=response_timeout_seconds
+        self.defer_optimizer_residency=defer_optimizer_residency
+        self.isolate_training_allocator=isolate_training_allocator
         self.vllm_runtime=vllm_runtime_options(vllm_runtime,numeric_mode=numeric_mode)
     @property
     def policy_version(self):return self.version()
     def _offload(self):
         import torch
         # Keep exact tensor values and original per-state devices (Adam step can be CPU).
-        self.actor.to('cpu');self.reference.to('cpu');self.moves=[]
+        self.actor.to('cpu');self.reference.to('cpu')
+        if not getattr(self,'defer_optimizer_residency',False):self.moves=[]
         for state in self.optimizer.state.values():
             for key,tensor in state.items():
                 if isinstance(tensor,torch.Tensor) and tensor.device.type=='cuda':
@@ -201,6 +216,7 @@ class PhaseSeparatedGenerator:
             self.snapshots[version]=(folder/'actor',assets)
         model,assets=self.snapshots[version];self.serial+=1
         spec=dict(model=str(model),assets=assets,policy=version,cuda_mask=self.cuda_mask,context=self.max_context_tokens,
+            isolate_training_allocator=self.isolate_training_allocator,
             runtime_options=self.vllm_runtime,numeric_mode=self.numeric_mode,reuse_verified_assets=self.reuse_verified_assets,
             response_timeout_seconds=self.response_timeout_seconds,
             rpc_path=str(fresh_rpc_path(self.rpc_root)),evidence=str(self.root/('worker-'+str(self.serial))))
@@ -219,6 +235,11 @@ class PhaseSeparatedGenerator:
         if self.worker is not None:
             self.worker.close();self.worker=None;self.sampler=None
         self.actor.to(self.device);self.reference.to(self.device)
+        if getattr(self,'defer_optimizer_residency',False):return
+        self.prepare_optimizer_step()
+    def prepare_optimizer_step(self):
+        """Moments are unused by forward/backward; restore exact values for Adam."""
+        if self.worker is not None:raise RuntimeError('cannot restore optimizer while sampling is active')
         for state,key,device in self.moves:state[key]=state[key].to(device)
         self.moves=[]
     def generate_many(self,prefixes,seeds):

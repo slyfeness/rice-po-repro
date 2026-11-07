@@ -8,6 +8,16 @@ KIND='biology_scale_training_v1'
 _stop=False
 
 
+def run_tag(stage,method):
+    import os,re
+    tag=os.environ.get('RICE_SCALE_RUN_TAG')
+    if tag is not None:
+        if stage!='training' or re.fullmatch(r'biology-scale-v[2-9][0-9]*-training-'+re.escape(method),tag) is None:
+            raise ValueError('explicit recovery run tag differs from stage/method or escapes the run namespace')
+        return tag
+    return 'biology-scale-v1-initial' if stage=='initial' else f'biology-scale-v1-{stage}-{method}'
+
+
 def request_stop():
     global _stop
     _stop=True

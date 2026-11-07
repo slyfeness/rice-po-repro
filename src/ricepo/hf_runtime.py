@@ -354,6 +354,11 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
     pilot=pilot_settings(deployment,plan)
     validation=bool(pilot and pilot.get('kind')=='tf32_gemm_training_validation_v1')
     scale=bool(pilot and pilot.get('kind')=='biology_scale_training_v1')
+    memory_repair=deployment.get('hf_memory_repair')
+    if memory_repair is not None:
+        if not scale or pilot['stage']!='training':raise ValueError('memory repair is an explicit scale-training choice only')
+        from .scale_memory import validate_memory_repair
+        validate_memory_repair(memory_repair,pilot['validation_plan_sha256'])
     checkpoint_diagnostic_mode(deployment,plan,parent=deployment.get('parent_run_root'),resume=resume)
     require_qualified_retrieval_batch(deployment)
     checkpoint_io=deployment.get('checkpoint_io','direct_shared_v1')
@@ -506,6 +511,12 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         from .action_recovery import VerifiedActionRecovery
         action_recovery=VerifiedActionRecovery(deployment['native_action_replay_sources'],binding,plan)
         binding['native_action_recovery']=action_recovery.provenance
+    completed_credit_recovery=None
+    if deployment.get('completed_credit_recovery'):
+        if not memory_repair or pilot['stage']!='training':raise ValueError('credit recovery requires qualified memory repair')
+        from .completed_credit_recovery import CompletedCreditRecovery
+        completed_credit_recovery=CompletedCreditRecovery(deployment['completed_credit_recovery'],binding,plan,pilot['query_batches'][0])
+        binding['completed_credit_recovery']=completed_credit_recovery.provenance
     bound = bind_run(root,binding,resume=resume)
     fixed_files = {"config.json":config,"deployment.json":deployment,"recipe.json":resolved,
                    "effective-generation.json":effective_generation,
@@ -591,9 +602,17 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             live_validation.update(policy=key,evidence=evidence,tensor_versions=tensor_versions(actor))
         return key
     version = {"value":register_policy()}
+    if memory_repair:
+        allocator=torch.cuda.memory._snapshot().get('allocator_settings',{})
+        if allocator.get('expandable_segments') is not True:raise ValueError('HF expandable allocator did not actually activate')
+        target=root/('memory-residency-runtime-'+attempt_dir.name+'.json')
+        atomic_json(target,dict(mode=memory_repair['mode'],allocator_settings=allocator,
+            hf_precision='IEEE FP32',projection_mode='full_sequence',optimizer_moments='CPU until before_clip',
+            qualification_sha256=memory_repair['qualification_result_sha256']))
     if loading and version["value"] != loading["policy_version"]:
         raise ValueError("restored live policy differs from committed behavior identity")
     if scale and not resume and pilot['stage']!='initial':
+        if completed_credit_recovery:completed_credit_recovery.restore_initial(optimizer,version['value'])
         from .scale_training import publish_initial_state
         publish_initial_state(root,dict(optimizer=optimizer.state_dict(),iteration=-1,seed=seed,binding=bound,
             policy_version=version['value'],cpu_rng=torch.random.get_rng_state(),cuda_rng=torch.cuda.get_rng_state(actor_device),
@@ -618,7 +637,8 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             max_new_tokens=plan['max_new_tokens_per_step'],max_context_tokens=plan['max_context_tokens'],
             vllm_runtime=effective_generation['vllm_runtime'],numeric_mode=pilot['numeric_mode'] if pilot else 'ieee_fp32',
             reuse_verified_assets=scale,validated_policy_getter=(lambda:live_validation) if scale else None,
-            response_timeout_seconds=43200 if scale else 1800)
+            response_timeout_seconds=43200 if scale else 1800,
+            defer_optimizer_residency=bool(memory_repair),isolate_training_allocator=bool(memory_repair))
         cleanup.callback(generator.close)
     reward = PyTrecReward(qrels)
     runners = {domain:RolloutRunner(generator=generator,retriever=backend,reward_scorer=reward,
@@ -651,7 +671,8 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         bind_initial(root,baseline,binding,initial_policy,actor_path)
     scoring = make_forward(reference_model=reference,device=actor_device,logit_chunk_size=deployment["logit_chunk_size"],
                            max_context_tokens=plan["max_context_tokens"],policy_call_kwargs={},reference_call_kwargs={},
-                           projection_mode=deployment.get("hf_projection_mode","full_sequence"))
+                           projection_mode=deployment.get("hf_projection_mode","full_sequence"),
+                           saved_tensor_policy='cpu_exact_v1' if memory_repair else 'device')
     def forward(model,item):
         length = max(i for i,masked in enumerate(item.generated_mask) if masked)
         with operation("update_forward",input_tokens=length,model_passes=2,scored_tokens=sum(item.generated_mask)), autocast():
@@ -855,6 +876,12 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                 from .credit_gradient import prepare_comparison
                 observer,comparison=prepare_comparison(actor,optimizer,originals,items,
                     forward=forward,device=actor_device,recipe=plan)
+            if memory_repair:
+                previous_observer=observer
+                def residency_observer(stage):
+                    if stage=='before_clip':generator.prepare_optimizer_step()
+                    if previous_observer:previous_observer(stage)
+                observer=residency_observer
             diagnostics = ppo_plan_update(actor,optimizer,items,policy_version=old_version,forward=forward,
                                           device=actor_device,recipe=plan,step_observer=observer)
             if validation or scale:
@@ -1060,7 +1087,11 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         import time
         iteration_started=time.monotonic()
         with operation("training_iteration",iteration=i,recovery_generation=recomputations.get(i,0)):
-            run_iteration(components,iteration=i,policy_version=version["value"],output_root=root,recipe=plan,root_seed=seed)
+            if completed_credit_recovery and i==0:
+                completed_credit_recovery.run(components,iteration=i,policy_version=version['value'],output_root=root,
+                    recipe=plan,branch_sink=sampled_branches)
+            else:
+                run_iteration(components,iteration=i,policy_version=version["value"],output_root=root,recipe=plan,root_seed=seed)
             diagnostic=finish(i)
         if scale:
             persisted=max((int(p.parent.parent.name[10:])+1 for p in root.glob('iteration-*/checkpoint/complete.json')),default=0)
