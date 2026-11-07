@@ -69,12 +69,17 @@ def _worker(connection,spec):
 
 class WorkerTransport:
     def __init__(self,spec):
+        response_timeout_seconds=spec.get('response_timeout_seconds',1800)
+        if type(response_timeout_seconds) is not int or not 0<response_timeout_seconds<=172800:
+            raise ValueError('invalid bounded worker response wait')
+        self.response_timeout_seconds=1800  # initialization still has the existing short failure bound
         ctx=multiprocessing.get_context('spawn');self.connection,child=ctx.Pipe()
         self.process=ctx.Process(target=_worker,args=(child,spec));self.closed=False
         self.process.start();child.close()
         try:
             kind,self.ready=self.receive()
             if kind!='ready':raise RuntimeError('worker did not acknowledge immutable policy')
+            self.response_timeout_seconds=response_timeout_seconds
         except BaseException:
             self._abort()
             raise
@@ -98,7 +103,7 @@ class WorkerTransport:
         finally:
             self.closed=True;self.connection.close()
     def receive(self):
-        if not self.connection.poll(1800):raise TimeoutError('vLLM worker response missing; no request retry')
+        if not self.connection.poll(getattr(self,'response_timeout_seconds',1800)):raise TimeoutError('vLLM worker response missing; no request retry')
         kind,value=self.connection.recv()
         if kind=='error':raise RuntimeError('vLLM worker failure: '+str(value))
         return kind,value
@@ -124,7 +129,7 @@ class PhaseSeparatedGenerator:
     """HF model/optimizer residency changes only; objective and histories stay fixed."""
     def __init__(self,*,actor,reference,optimizer,tokenizer,version,behavior,device,root,rpc_root,
                  max_new_tokens=4096,max_context_tokens=32768,vllm_runtime=None,numeric_mode='ieee_fp32',
-                 reuse_verified_assets=False,validated_policy_getter=None):
+                 reuse_verified_assets=False,validated_policy_getter=None,response_timeout_seconds=1800):
         self.actor,self.reference,self.optimizer=actor,reference,optimizer
         self.tokenizer,self.version,self.behavior=tokenizer,version,behavior
         self.device=device;self.root=Path(root);self.rpc_root=Path(rpc_root)
@@ -134,6 +139,7 @@ class PhaseSeparatedGenerator:
         self.max_new_tokens=max_new_tokens;self.max_context_tokens=max_context_tokens
         self.numeric_mode=numeric_mode
         self.reuse_verified_assets=reuse_verified_assets;self.validated_policy_getter=validated_policy_getter
+        self.response_timeout_seconds=response_timeout_seconds
         self.vllm_runtime=vllm_runtime_options(vllm_runtime,numeric_mode=numeric_mode)
     @property
     def policy_version(self):return self.version()
@@ -181,6 +187,7 @@ class PhaseSeparatedGenerator:
         model,assets=self.snapshots[version];self.serial+=1
         spec=dict(model=str(model),assets=assets,policy=version,cuda_mask=self.cuda_mask,context=self.max_context_tokens,
             runtime_options=self.vllm_runtime,numeric_mode=self.numeric_mode,reuse_verified_assets=self.reuse_verified_assets,
+            response_timeout_seconds=self.response_timeout_seconds,
             rpc_path=str(fresh_rpc_path(self.rpc_root)),evidence=str(self.root/('worker-'+str(self.serial))))
         self.worker=WorkerTransport(spec)
         self.sampler=VLLMTwoStage(self.worker,self.tokenizer,self.version,self.max_new_tokens,self.max_context_tokens,

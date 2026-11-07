@@ -23,6 +23,20 @@ def recipe(stage='training', method='ricepo'):
 
 
 class ScaleContracts(unittest.TestCase):
+    def test_worker_response_budget_changes_wait_only_and_legacy_default_remains(self):
+        from types import SimpleNamespace
+        from ricepo.vllm_lifecycle import WorkerTransport
+        calls=[];value={'native':'unchanged'};g=object.__new__(WorkerTransport)
+        g.connection=SimpleNamespace(poll=lambda t:calls.append(t) or True,recv=lambda:('ready',value))
+        self.assertEqual(g.receive(),('ready',value));g.response_timeout_seconds=43200
+        self.assertEqual(g.receive(),('ready',value));self.assertEqual(calls,[1800,43200])
+        calls.clear()
+        parent=SimpleNamespace(poll=lambda t:calls.append(t) or True,recv=lambda:('ready',value))
+        child=SimpleNamespace(close=lambda:None);process=SimpleNamespace(start=lambda:None)
+        ctx=SimpleNamespace(Pipe=lambda:(parent,child),Process=lambda **kwargs:process)
+        with patch('ricepo.vllm_lifecycle.multiprocessing.get_context',return_value=ctx):
+            initialized=WorkerTransport({'response_timeout_seconds':43200})
+        self.assertEqual(calls,[1800]);self.assertEqual(initialized.response_timeout_seconds,43200)
     def test_recover_before_first_checkpoint_from_verified_initial(self):
         from ricepo.scale_training import publish_initial_state,verify_initial_state,recomputation_generations
         with tempfile.TemporaryDirectory() as d:

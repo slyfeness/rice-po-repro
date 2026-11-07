@@ -617,7 +617,8 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             rpc_root=require_cluster_storage(deployment['vllm_rpc_root']),
             max_new_tokens=plan['max_new_tokens_per_step'],max_context_tokens=plan['max_context_tokens'],
             vllm_runtime=effective_generation['vllm_runtime'],numeric_mode=pilot['numeric_mode'] if pilot else 'ieee_fp32',
-            reuse_verified_assets=scale,validated_policy_getter=(lambda:live_validation) if scale else None)
+            reuse_verified_assets=scale,validated_policy_getter=(lambda:live_validation) if scale else None,
+            response_timeout_seconds=43200 if scale else 1800)
         cleanup.callback(generator.close)
     reward = PyTrecReward(qrels)
     runners = {domain:RolloutRunner(generator=generator,retriever=backend,reward_scorer=reward,

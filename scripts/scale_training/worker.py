@@ -53,6 +53,8 @@ def main(args):
     torch.manual_seed(frozen['training_seed']);torch.cuda.manual_seed_all(frozen['training_seed'])
     evidence=R/'reports'/f'{tag}-launch-{os.environ["SLURM_JOB_ID"]}.json'
     atomic_json(evidence,dict(config=config,deployment=dep,resolved=resolved,source_commit=os.environ['RICE_SOURCE_COMMIT'],
+        frozen_sampling_plan_source_commit=frozen['execution_source_commit'],
+        scale_sampling_response_timeout_seconds=43200,initialization_response_timeout_seconds=1800,
         plan_sha256=file_sha256(plan_path),resume=args.resume,slurm_job_id=os.environ['SLURM_JOB_ID']))
     stop=threading.Event();memory=[0,0]
     try:
