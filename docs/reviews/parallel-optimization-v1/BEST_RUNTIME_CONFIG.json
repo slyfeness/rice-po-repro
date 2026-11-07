@@ -1,6 +1,9 @@
 {
   "execution": {"enabled": false},
   "selection": "S0; fastest measured qualified IEEE FP32 candidate",
+  "research_recipes": ["configs/biology_readiness_ricepo.json", "configs/biology_readiness_grpo.json"],
+  "model_id": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+  "model_revision": "ad9f0ae0864d7fbcd1cd905e3c6c5b069cc8b562",
   "actor_master_dtype": "float32",
   "actor_compute_dtype": "float32",
   "sampling_backend": "vllm_ieee_two_stage_v1",
@@ -8,6 +11,8 @@
   "TRITON_F32_DEFAULT": "ieee",
   "tensor_parallel_size": 1,
   "max_model_len": 32768,
+  "max_new_tokens_per_step": 4096,
+  "rollout_depth": 5,
   "temperature": 1.0,
   "top_p": 1.0,
   "top_k": 0,
@@ -28,6 +33,8 @@
   "checkpoint_every_updates": 2,
   "development_every_updates": 4,
   "eval_samples_per_query": 4,
+  "checkpoint_selection": "best_development_macro",
+  "checkpoint_selection_ties": "earliest complete checkpoint",
   "final_and_development_checkpoint_save": true,
   "weight_sync": "every policy update, new immutable snapshot and fresh vLLM process/KV cache",
   "measurements": {
