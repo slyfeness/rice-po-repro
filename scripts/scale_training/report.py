@@ -219,7 +219,18 @@ def main(args):
             evals.extend(evaluations(root,method) if stage=='training' else [])
     jobs=[s for s in args.jobs.split(',') if s]
     for p in (R/'reports').glob('biology-scale-handoff-*.json'):jobs.append(read(p)['successor_job'])
-    jobs=sorted(set(jobs));status['slurm_records']=subprocess.check_output(['sacct','-j',','.join(jobs),'--parsable2','--noheader','--format=JobID,State,ElapsedRaw,Submit,Start,End,AllocTRES'],text=True).strip().splitlines()
+    jobs=sorted(set(jobs));records=subprocess.check_output(['sacct','-j',','.join(jobs),'--parsable2','--noheader','--format=JobID,State,ElapsedRaw,Submit,Start,End,AllocTRES'],text=True).strip().splitlines()
+    # Slurm appends the cancelling operator's UID to State. Publish the state
+    # itself only; the operator/account identifier is not audit evidence.
+    status['slurm_records']=[];allocations=[]
+    for line in records:
+        fields=line.split('|');fields[1]=fields[1].split(' by ',1)[0]
+        status['slurm_records'].append('|'.join(fields))
+        if not fields[0].isdigit():continue  # .batch/srun are not extra allocations
+        gpu=re.search(r'(?:^|,)gres/gpu=(\d+)(?:,|$)',fields[6])
+        allocations.append(dict(job_id=fields[0],state=fields[1],allocated_gpus=int(gpu[1]) if gpu else 0,
+            elapsed_seconds=int(fields[2]),GPU_hours=int(fields[2])*(int(gpu[1]) if gpu else 0)/3600))
+    status['GPU_allocations']=allocations;status['measured_GPU_hours_at_snapshot']=math.fsum(r['GPU_hours'] for r in allocations)
     status['sampling_note']='training generation tokens exclude reused branch history and environment markers; submitted input counts include full repeated native context, not measured uncached prefill FLOPs'
     status['timing_note']='main-process exclusive spans only; evaluation includes its nested generation/tools. Uninstrumented verification/serialization remains unattributed. In-flight spans excluded from completed-phase totals.'
     write(public/'RUN_STATUS.json',status);write(public/'EVALUATION.json',dict(expected_queries=32,samples_per_query=4,evaluations=evals))
