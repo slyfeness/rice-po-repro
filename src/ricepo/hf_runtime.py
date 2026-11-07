@@ -674,20 +674,25 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         atomic_json(directory/"old-policy-update-items.json",items)
         if sampling_backend=='vllm_ieee_two_stage_v1':
             from .probability_check import compare_log_probs
-            from .branch_audit import select_branch_checks
-            checked_branches=select_branch_checks(sampled_branches,update_index=global_start+int(directory.name.split('-')[-1]),
+            from .branch_audit import branch_check_plan,select_branch_checks
+            audit_options=dict(update_index=global_start+int(directory.name.split('-')[-1]),
                 policy=deployment.get('branch_probability_audit','all'))
-            atomic_json(directory/'branch-probability-plan.json',dict(
-                policy=deployment.get('branch_probability_audit','all'),total=len(sampled_branches),
-                selected=[t.trajectory_id for t in checked_branches],
-                failure_action='abort before optimizer; preserve evidence and require expanded audit'))
+            checked_branches=select_branch_checks(sampled_branches,**audit_options)
+            audit_plan=branch_check_plan(sampled_branches,**audit_options)
+            atomic_json(directory/'branch-probability-plan.json',audit_plan)
             with torch.no_grad(),autocast():
                 for t in checked_branches:
                     scored=sampled_old_log_probs(actor,t.token_ids,t.generated_mask,device=actor_device,
                         logit_chunk_size=deployment['logit_chunk_size'],max_context_tokens=plan['max_context_tokens'],policy_call_kwargs={})
                     check=compare_log_probs(trajectory_behavior_log_probs(t),scored[0].cpu().tolist(),t.generated_mask)
                     atomic_json(directory/'branch-probability-checks'/(fingerprint(t.trajectory_id)+'.json'),check)
-                    if not check['within_bf16_tolerance']:raise ValueError('vLLM branch probability gate failed before optimizer')
+                    if not check['within_bf16_tolerance']:
+                        atomic_json(directory/'branch-probability-expansion-required.json',dict(
+                            failed_trajectory=t.trajectory_id,failed_check=check,
+                            next_audit_policy='all',optimizer_update_permitted=False,
+                            full_branch_ids=[b.trajectory_id for b in sampled_branches],
+                            selected_plan=audit_plan))
+                        raise ValueError('vLLM branch probability gate failed before optimizer; expand to full audit')
             sampled_branches.clear()
         with torch.enable_grad():
             observer=comparison=None

@@ -13,6 +13,18 @@ from .evaluation import summarize
 METHODS = ("retrieval_only", "prompting", "grpo", "ricepo")
 
 
+def _conditional_final_ndcg(rows):
+    """Average legal samples within query, then within domain, then across domains."""
+    grouped = {}
+    for row in rows:
+        if not row["failed"]:
+            grouped.setdefault((row["domain"], row["query_id"]), []).append(row["ndcg_at_10"])
+    domains = {}
+    for (domain, _), values in grouped.items():
+        domains.setdefault(domain, []).append(math.fsum(values) / len(values))
+    return (math.fsum(math.fsum(v) / len(v) for v in domains.values()) / len(domains)) if domains else None
+
+
 def _check_scope(split, scope, manifest_sha256):
     if split not in ("development", "test") or scope not in ("complete", "partial_diagnostic"):
         raise ValueError("unknown evaluation split or scope")
@@ -189,6 +201,10 @@ def evaluate_queries(*, examples, expected_ids, split, phase, method, root_seed,
             legitimate_complete_queries=sum(all(not r["failed"] for r in rows if (r["domain"], r["query_id"]) == identity) for identity in expected),
             legitimate_complete_fraction=sum(all(not r["failed"] for r in rows if (r["domain"], r["query_id"]) == identity) for identity in expected)/len(expected),
             legitimate_final_ndcg=[r["ndcg_at_10"] for r in rows if not r["failed"]],
+            last_valid_ndcg=[r["last_valid_ndcg"] for r in rows],
+            last_valid_ndcg_macro=math.fsum(math.fsum(r["last_valid_ndcg"] for r in rows if r["domain"]==d)/
+                sum(r["domain"]==d for r in rows) for d in {r["domain"] for r in rows})/len({r["domain"] for r in rows}),
+            conditional_final_ndcg=_conditional_final_ndcg(rows),
             d0_macro=sum(sum(r["initial_ndcg_at_10"] for r in rows if r["domain"]==d)/
                 sum(r["domain"]==d for r in rows) for d in {r["domain"] for r in rows})/
                 len({r["domain"] for r in rows}))

@@ -123,6 +123,8 @@ class FailureZeroTests(unittest.TestCase):
             self.assertEqual((summary["legitimate_complete_fraction"],summary["d0_macro"]),(0,0.8))
             self.assertIsNone(rows[0]["ndcg_at_10"])
             self.assertEqual((rows[0]["last_valid_ndcg"],rows[0]["failure_adjusted_task_score"]),(0.8,0))
+            self.assertEqual(summary["last_valid_ndcg_macro"],0.8)
+            self.assertIsNone(summary["conditional_final_ndcg"])
 
 
 if __name__=="__main__": unittest.main()

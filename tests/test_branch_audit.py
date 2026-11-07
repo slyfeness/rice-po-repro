@@ -1,6 +1,6 @@
 import unittest
 from types import SimpleNamespace
-from ricepo.branch_audit import select_branch_checks
+from ricepo.branch_audit import branch_check_plan, select_branch_checks
 
 
 class BranchAuditTests(unittest.TestCase):
@@ -12,6 +12,9 @@ class BranchAuditTests(unittest.TestCase):
         b = select_branch_checks(rows[::-1], update_index=1, policy="stratified_five_percent_v1")
         self.assertEqual([t.trajectory_id for t in a], [t.trajectory_id for t in b])
         self.assertEqual(len(a), 5)
+        plan = branch_check_plan(rows, update_index=1, policy="stratified_five_percent_v1")
+        self.assertEqual((plan['total'],plan['checked']), (100,5))
+        self.assertEqual(plan['strata'], [dict(length='short',stage='summary_present',failure_category='valid',total=100,selected=5)])
 
     def test_failed_long_branch_stratum_is_retained(self):
         a = SimpleNamespace(trajectory_id="valid", token_ids=(1,), steps=(1,), failure=None)
