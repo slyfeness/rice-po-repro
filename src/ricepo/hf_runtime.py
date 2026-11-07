@@ -303,6 +303,17 @@ def initial_evaluation_mode(deployment, *, parent, resume):
     return enabled
 
 
+def checkpoint_diagnostic_mode(deployment, plan, *, parent, resume):
+    """Explicit fresh one-update timing mode; never publishes development success."""
+    enabled=deployment.get('stop_after_checkpoint_diagnostic',False)
+    if type(enabled) is not bool:
+        raise ValueError('checkpoint diagnostic flag must be a boolean')
+    if enabled and (parent is not None or resume or plan['total_updates']!=1
+                    or plan['checkpoint_selection']!='last'):
+        raise ValueError('checkpoint diagnostic requires fresh one-update last-checkpoint selection')
+    return enabled
+
+
 def run(config, deployment, *, resume=False):
     require_execution(config, command="train")
     require_slurm()
@@ -318,6 +329,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
     from .assessment import evaluate_queries
     resolved = resolve(config,"train")
     plan = resolved["values"]
+    checkpoint_diagnostic_mode(deployment,plan,parent=deployment.get('parent_run_root'),resume=resume)
     checkpoint_io=deployment.get('checkpoint_io','direct_shared_v1')
     sampling_backend=deployment.get('sampling_backend','serial_hf_v1')
     if sampling_backend not in ('serial_hf_v1','hf_native_wavefront_v1','vllm_ieee_two_stage_v1'):
@@ -779,6 +791,28 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             complete_stage(directory,"checkpoint_complete",current,{"checkpoint/complete.json":file_sha256(cp_path/"complete.json")})
         else:
             complete_stage(directory,"checkpoint_complete",current,{"skipped":"cadence"})
+        if checkpoint_diagnostic_mode(deployment,plan,parent=parent,resume=resume):
+            # Check the real post-update engine snapshot on one fixed native
+            # condition. This is a sampling probe, without retrieval or PPO.
+            saved=read_json(directory/'trajectories.json')
+            original=saved[0]
+            if original['steps']:
+                prefix=original['steps'][0]['prefix_token_ids']
+            elif original.get('failure'):
+                prefix=original['failure']['prefix_token_ids']
+            else:
+                raise ValueError('diagnostic original has no saved native action condition')
+            with operation('post_update_sampling_probe',policy_version=current):
+                generated=generator.generate(tuple(prefix),seed=stable_seed(seed,'post_update_probe',0))
+            if generator.policy_version!=current:
+                raise ValueError('post-update probe used a stale policy')
+            atomic_json(directory/'post-update-sampling-probe.json',dict(policy_version=current,generation=generated))
+            result=dict(status='diagnostic_update_checkpoint_and_sampling_complete',
+                completed_updates=1,policy_version=current,checkpoint='iteration-000000/checkpoint',
+                development='not_run_diagnostic_scope',checkpoint_selection='not_performed',
+                optimizer_step_replayed=False)
+            atomic_json(root/'diagnostic-complete.json',result)
+            return result
         def evaluate(out):
             with operation("development_evaluation",iteration=i):
                 evaluate_queries(examples=dev,expected_ids=frozen.identities["development"],split="development",
@@ -798,7 +832,10 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         start = i+1
     for i in range(start,plan["total_updates"]):
         run_iteration(components,iteration=i,policy_version=version["value"],output_root=root,recipe=plan,root_seed=seed)
-        finish(i)
+        diagnostic=finish(i)
+        if diagnostic is not None:
+            atomic_json(attempt_dir/'cost-report.json',cost_report(root))
+            return diagnostic
         if plan["method"] == "ricepo" and plan["format_failure_policy"] == "invalid_action_terminal_zero_v1":
             evidence = read_json(root/f"iteration-{i:06d}"/"credit-diagnostics.json")
             if evidence["estimable_anchor_count"] == 0:
