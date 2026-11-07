@@ -332,6 +332,10 @@ def require_qualified_retrieval_batch(deployment):
 def run(config, deployment, *, resume=False):
     require_execution(config, command="train")
     require_slurm()
+    from .modeling import _validate_projection
+    _validate_projection(deployment.get('hf_projection_mode','full_sequence'))
+    if 'hf_matmul_precision' in deployment:
+        raise ValueError('HF precision is benchmark-only; HF TF32 failed numerical acceptance. Keep the existing IEEE training path.')
     if int(os.environ.get("WORLD_SIZE","1")) != 1 or deployment.get("runtime") != "single_process_hf_reference":
         raise ValueError("only the one-process reference backend is supported")
     root = require_cluster_storage(deployment["output_root"])
@@ -608,7 +612,8 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         atomic_json(root / "initial-evaluation-complete.json", result)
         return result
     scoring = make_forward(reference_model=reference,device=actor_device,logit_chunk_size=deployment["logit_chunk_size"],
-                           max_context_tokens=plan["max_context_tokens"],policy_call_kwargs={},reference_call_kwargs={})
+                           max_context_tokens=plan["max_context_tokens"],policy_call_kwargs={},reference_call_kwargs={},
+                           projection_mode=deployment.get("hf_projection_mode","full_sequence"))
     def forward(model,item):
         length = max(i for i,masked in enumerate(item.generated_mask) if masked)
         with operation("update_forward",input_tokens=length,model_passes=2,scored_tokens=sum(item.generated_mask)), autocast():
@@ -715,7 +720,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                 with operation("old_probability_forward",input_tokens=length,model_passes=1,scored_tokens=sum(mask)):
                     logps = sampled_old_log_probs(actor,t.token_ids,mask,device=actor_device,
                         logit_chunk_size=deployment["logit_chunk_size"],max_context_tokens=plan["max_context_tokens"],
-                        policy_call_kwargs={})
+                        policy_call_kwargs={},projection_mode=deployment.get("hf_projection_mode","full_sequence"))
                 teacher=tuple(logps[0].cpu().tolist())
                 sampled=trajectory_behavior_log_probs(t)
                 if sampled is not None:
@@ -739,7 +744,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             with torch.no_grad(),autocast():
                 def pilot_branch_score(t):
                     scored=sampled_old_log_probs(actor,t.token_ids,t.generated_mask,device=actor_device,
-                        logit_chunk_size=deployment['logit_chunk_size'],max_context_tokens=plan['max_context_tokens'],policy_call_kwargs={})[0].cpu().tolist()
+                        logit_chunk_size=deployment['logit_chunk_size'],max_context_tokens=plan['max_context_tokens'],policy_call_kwargs={},projection_mode=deployment.get("hf_projection_mode","full_sequence"))[0].cpu().tolist()
                     q=trajectory_behavior_log_probs(t)
                     qr=[v for v,m in zip(q,t.generated_mask,strict=True) if m]
                     pr=[v for v,m in zip(scored,t.generated_mask,strict=True) if m]
@@ -782,7 +787,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             with torch.no_grad(),autocast():
                 def score_branch(t):
                     scored=sampled_old_log_probs(actor,t.token_ids,t.generated_mask,device=actor_device,
-                        logit_chunk_size=deployment['logit_chunk_size'],max_context_tokens=plan['max_context_tokens'],policy_call_kwargs={})
+                        logit_chunk_size=deployment['logit_chunk_size'],max_context_tokens=plan['max_context_tokens'],policy_call_kwargs={},projection_mode=deployment.get("hf_projection_mode","full_sequence"))
                     return compare_log_probs(trajectory_behavior_log_probs(t),scored[0].cpu().tolist(),t.generated_mask)
                 def save_branch_check(t,check,expanded):
                     folder='branch-probability-expanded-checks' if expanded else 'branch-probability-checks'
@@ -929,7 +934,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                 mask=(False,)*len(prefix)+generated.action_mask
                 with torch.no_grad(),autocast():
                     teacher=sampled_old_log_probs(actor,ids,mask,device=actor_device,logit_chunk_size=deployment['logit_chunk_size'],
-                        max_context_tokens=plan['max_context_tokens'],policy_call_kwargs={})[0].cpu().tolist()
+                        max_context_tokens=plan['max_context_tokens'],policy_call_kwargs={},projection_mode=deployment.get("hf_projection_mode","full_sequence"))[0].cpu().tolist()
                 q=[v for v,m in zip(generated.sampled_log_probs,generated.action_mask,strict=True) if m]
                 p=[v for v,m in zip(teacher,mask,strict=True) if m]
                 stats=mismatch_statistics(q,p)

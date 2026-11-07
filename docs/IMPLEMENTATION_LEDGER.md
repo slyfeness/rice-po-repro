@@ -1,3 +1,7 @@
+## 2026-11-07 HF compute optimization
+
+Added opt-in bare-Qwen2 action_positions_v1 full-vocabulary LM-head projection, native causal-index selection and disjoint optional scoring timers; default wrapper path and full-sequence comparator remain. Added isolated HF precision scope/benchmark only; HF TF32 rejected by measured gradients, no production adoption. Optional runtime projection wiring is statically reviewed, not newly online-qualified. Exact KL/objective/training math, entropy provider, reward and retrieval unchanged. [Measurements, preregistered gates and limits](reviews/hf-compute-optimization-v1/SUMMARY.md).
+
 ## 2026-11-07 TF32 GEMM training validation
 
 Added isolated G_A/G_B four-query contract, frozen three-batch budget, exactly-one-update checkpoint handoffs and receipt-verified same-run resume. Legacy pilot budgets/defaults remain. Branch audit adds an optional acceptance callback while retaining its original default; the new path uses registered risk gates and existing stratification/expansion. Added explicit highest GEMM control and blocking engine-generation timing. No credit/objective/reward/parser/seed formula changes. [Measured speed, numerical trends, restore and limitations](reviews/tf32-gemm-training-validation-v1/SUMMARY.md); no32/128 launch or global validation upgrade.
