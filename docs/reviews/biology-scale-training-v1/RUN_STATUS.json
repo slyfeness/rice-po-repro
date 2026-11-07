@@ -1,34 +1,401 @@
 {
-  "observed_at_utc": "2026-11-07T20:32:43.314423+00:00",
+  "observed_at_utc": "2026-11-07T21:12:22.374888+00:00",
   "sampling_plan_source_commit": "b0ee0bb0f789f803770566572ef8fd1499f14550",
   "runs": {
     "capacity_ricepo": {
       "stage": "capacity",
       "method": "ricepo",
-      "computed_updates": 0,
-      "persisted_updates": 0,
-      "status": "IN_PROGRESS",
+      "computed_updates": 1,
+      "persisted_updates": 1,
+      "status": "COMPLETE",
       "execution_source_commits": [
         "b0ee0bb0f789f803770566572ef8fd1499f14550"
       ],
-      "active": {
-        "phase": "update",
-        "utc": "2026-11-07T20:18:27.686070+00:00",
-        "iteration": 0
-      },
+      "active": null,
       "phase_seconds": {
         "0": {
           "retrieval": 159.04313654266298,
-          "generation": 882.6299410909414,
+          "generation": 886.5465687513351,
           "entropy_credit": 755.2149721346796,
-          "model_lifecycle": 285.45804813690484,
-          "unattributed": 57.774359326809645,
-          "HF_scoring_PPO": 193.99625585228205
+          "model_lifecycle": 441.4943440873176,
+          "unattributed": 93.05341522023082,
+          "HF_scoring_PPO": 2202.79556049034,
+          "checkpoint": 184.43577330373228
         },
         "initialization": {
           "unattributed": 83.68602753058076,
           "model_lifecycle": 7.103442901745439
         }
+      },
+      "latest_committed_update": {
+        "new_policy_version": "2f65a80cfc08e56bdfdfb8b2f451162f2dc0b9c42545c8c7ddee124d33d5a0e0",
+        "optimizer": {
+          "activation_checkpointing": {
+            "actual_recomputation_observed": true,
+            "checkpoint_forwards": 3584,
+            "layer_executions": 7168,
+            "mode": "eval_layers_v1",
+            "model_training_mode": false
+          },
+          "actual_state_dict_changed": true,
+          "effective_clip_fraction": 0.0,
+          "global_generated_tokens": 224568,
+          "global_sequences": 128,
+          "grad_norm_before_clip": 481.0931701660156,
+          "hf_precision": {
+            "cudnn_allow_tf32": false,
+            "matmul_allow_tf32": false,
+            "matmul_precision": "highest"
+          },
+          "negative_advantages": 86548,
+          "negative_advantages_fraction": 0.38539774144134514,
+          "normalized_loss": -196.46605658065528,
+          "optimizer_steps": 1,
+          "outside_clip_fraction": 0.0,
+          "parameter_probe_changed": true,
+          "parameter_probe_coordinates": "first, per-axis midpoint, last of every trainable tensor",
+          "parameter_probe_max_abs_delta": 1.9073486328125e-06,
+          "policy_loss": -196.46605658065528,
+          "positive_advantages": 94262,
+          "positive_advantages_fraction": 0.4197481386484272,
+          "ratio_max": 1.1302236318588257,
+          "ratio_mean": 0.9999839768672579,
+          "ratio_min": 0.8679018020629883,
+          "reference_kl": 0.0,
+          "steps": [
+            {
+              "effective_clip_count": 0,
+              "effective_clip_fraction": 0.0,
+              "epoch": 0,
+              "generated_tokens": 224568,
+              "grad_norm_before_clip": 481.0931701660156,
+              "loss_denominator": 128,
+              "minibatch_start": 0,
+              "negative_advantages": 86548,
+              "normalized_loss": -196.46605658065528,
+              "outside_clip_count": 0,
+              "outside_clip_fraction": 0.0,
+              "policy_loss": -196.46605658065528,
+              "positive_advantages": 94262,
+              "ratio_max": 1.1302236318588257,
+              "ratio_mean": 0.9999839768672579,
+              "ratio_min": 0.8679018020629883,
+              "reference_kl": 0.0,
+              "reference_kl_token_mean": 0.0,
+              "sequences": 128,
+              "zero_advantages": 43758
+            }
+          ],
+          "zero_advantages": 43758,
+          "zero_advantages_fraction": 0.19485411991022764,
+          "zero_gradient_all_steps": false
+        }
+      },
+      "capacity_result": {
+        "update_sha256": "2eaba8d585b249d871cb1604b36a143aff699e3bed80c742c8f8b65c5dc2cd80",
+        "optimizer": {
+          "activation_checkpointing": {
+            "actual_recomputation_observed": true,
+            "checkpoint_forwards": 3584,
+            "layer_executions": 7168,
+            "mode": "eval_layers_v1",
+            "model_training_mode": false
+          },
+          "actual_state_dict_changed": true,
+          "effective_clip_fraction": 0.0,
+          "global_generated_tokens": 224568,
+          "global_sequences": 128,
+          "grad_norm_before_clip": 481.0931701660156,
+          "hf_precision": {
+            "cudnn_allow_tf32": false,
+            "matmul_allow_tf32": false,
+            "matmul_precision": "highest"
+          },
+          "negative_advantages": 86548,
+          "negative_advantages_fraction": 0.38539774144134514,
+          "normalized_loss": -196.46605658065528,
+          "optimizer_steps": 1,
+          "outside_clip_fraction": 0.0,
+          "parameter_probe_changed": true,
+          "parameter_probe_coordinates": "first, per-axis midpoint, last of every trainable tensor",
+          "parameter_probe_max_abs_delta": 1.9073486328125e-06,
+          "policy_loss": -196.46605658065528,
+          "positive_advantages": 94262,
+          "positive_advantages_fraction": 0.4197481386484272,
+          "ratio_max": 1.1302236318588257,
+          "ratio_mean": 0.9999839768672579,
+          "ratio_min": 0.8679018020629883,
+          "reference_kl": 0.0,
+          "steps": [
+            {
+              "effective_clip_count": 0,
+              "effective_clip_fraction": 0.0,
+              "epoch": 0,
+              "generated_tokens": 224568,
+              "grad_norm_before_clip": 481.0931701660156,
+              "loss_denominator": 128,
+              "minibatch_start": 0,
+              "negative_advantages": 86548,
+              "normalized_loss": -196.46605658065528,
+              "outside_clip_count": 0,
+              "outside_clip_fraction": 0.0,
+              "policy_loss": -196.46605658065528,
+              "positive_advantages": 94262,
+              "ratio_max": 1.1302236318588257,
+              "ratio_mean": 0.9999839768672579,
+              "ratio_min": 0.8679018020629883,
+              "reference_kl": 0.0,
+              "reference_kl_token_mean": 0.0,
+              "sequences": 128,
+              "zero_advantages": 43758
+            }
+          ],
+          "zero_advantages": 43758,
+          "zero_advantages_fraction": 0.19485411991022764,
+          "zero_gradient_all_steps": false
+        },
+        "old_policy": "c618b7c8386adb7e35a54a325a025b6e15e5cf6b6311210cba67ec280363d4ff",
+        "new_policy": "2f65a80cfc08e56bdfdfb8b2f451162f2dc0b9c42545c8c7ddee124d33d5a0e0",
+        "originals": 128,
+        "legal_originals": 67,
+        "generated_tokens": 997663,
+        "input_tokens_submitted": 18459763,
+        "followup_calls": 2035,
+        "new_branches": 635,
+        "retrieval_calls": 2067,
+        "task_reward_mean": 0.3171657406529187,
+        "trajectory_nonzero_advantage_fraction": 0.8046875,
+        "last_valid_mean": 0.6273070783812293,
+        "normal_final_ndcg_mean": 0.6059285791578148,
+        "selected_anchors": 127,
+        "estimable_anchors": 80,
+        "nonzero_local_anchors": 59,
+        "summary_replaced_tokens": 8168,
+        "summary_changed_tokens": 7855,
+        "think_terminal": 1,
+        "think_nonterminal": 1,
+        "influence_variances": [
+          0.015382927343663448,
+          0.0005998290863904835,
+          0.034722222222222224,
+          0.034722222222222224,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0021011705026099518,
+          0.00047178855261324114,
+          0.0010198542633944492,
+          0.018918450944281257,
+          0.0,
+          0.0,
+          0.0,
+          0.02859405383197786,
+          0.0007767789458172172,
+          0.024879522121358758,
+          0.013821956734088198,
+          0.023507673123857598,
+          0.0,
+          0.0,
+          0.0,
+          0.13730343725380667,
+          0.0,
+          0.018918450944281257,
+          0.038019580052883285,
+          0.018918450944281257,
+          0.06091877131266587,
+          0.013821956734088198,
+          0.0734874730376022,
+          0.0,
+          0.0,
+          0.05856174619203063,
+          0.0006674638334099506,
+          0.0,
+          0.030269521510850012,
+          0.034053211699706265,
+          0.0676004531714944,
+          0.034722222222222224,
+          0.06143415598987664,
+          0.08391171757990713,
+          0.05517220953973135,
+          0.05528782693635279,
+          0.0055696308759980604,
+          0.0,
+          0.034722222222222224,
+          0.0,
+          0.013821956734088198,
+          0.000983108881368449,
+          0.0,
+          0.0,
+          0.018918450944281257,
+          0.03428863836838652,
+          0.03325668765894343,
+          0.02480072847943719,
+          0.076316657313875,
+          0.030269521510850012,
+          0.030269521510850012,
+          0.04448784115370877,
+          0.025761430232492322,
+          0.024995264632883245,
+          0.030752604791209965,
+          0.020785429786839647,
+          0.0,
+          0.05555555555555555,
+          0.002380916718094805,
+          0.026020704513018914,
+          0.0154320987654321,
+          0.01432384242431338,
+          0.014115572231422789,
+          0.034053211699706265,
+          0.044817271907678626,
+          0.030269521510850012,
+          0.02859405383197786,
+          0.023983938574345293,
+          0.0,
+          0.12815060524101196,
+          0.05194075861079995
+        ],
+        "residual_variances": [
+          0.1288182886731934,
+          0.023722658868881835,
+          0.08333333333333333,
+          0.0,
+          0.14695293949123434,
+          0.0,
+          0.22222222222222224,
+          0.0,
+          0.0,
+          0.033365319868133625,
+          0.043625629198994244,
+          0.039254561871844805,
+          0.22222222222222224,
+          0.0,
+          0.0,
+          0.0,
+          0.09942275334299618,
+          0.027660684153106272,
+          0.0,
+          0.030493400309251382,
+          0.045475541291870446,
+          0.13730343725380667,
+          0.1388888888888889,
+          0.1388888888888889,
+          0.4924583961823829,
+          0.1388888888888889,
+          0.061269755678983094,
+          0.0,
+          0.2676265044884973,
+          0.0909928455558426,
+          0.026272146577543978,
+          0.21124843678584126,
+          0.20138888888888892,
+          0.13730343725380667,
+          0.1585351528376109,
+          0.008473819754666604,
+          0.03335734009411279,
+          0.22150713711045836,
+          0.12815060524101196,
+          0.20761428750837518,
+          0.15866539029530227,
+          0.14343836949088845,
+          0.13583853991445757,
+          0.0,
+          0.02039087197109399,
+          0.07621173987013903,
+          0.12254362625919724,
+          0.20138888888888887,
+          0.1388888888888889,
+          0.0,
+          0.0187687557671193,
+          0.1388888888888889,
+          0.0,
+          0.19123761559960836,
+          0.04839251619998824,
+          0.0,
+          0.04880794322694829,
+          0.09641460225176461,
+          0.12978760999628505,
+          0.08846052309816448,
+          0.17632732494119296,
+          0.0,
+          0.08690183902181155,
+          0.08835820820588625,
+          0.05580288421382098,
+          0.0,
+          0.0625,
+          0.05528782693635279,
+          0.04671633397799072,
+          0.023124586299949335,
+          0.0,
+          0.05387352911774914,
+          0.0947617335801884,
+          0.08904753345676086,
+          0.14460308901231642,
+          0.11571514949345518,
+          0.13325201844574766,
+          0.0,
+          0.12996342422833268,
+          0.13643530182546024
+        ],
+        "original_probability": {
+          "absolute_error": {
+            "max": 0.14167672395706177,
+            "mean": 0.0022217986398899614,
+            "min": 0.0,
+            "p50": 0.0010094642639160156,
+            "p90": 0.005860686302185059,
+            "p99": 0.015069961547851562
+          },
+          "effective_clip_fraction": 0.0,
+          "ess_fraction": 0.999983069422875,
+          "extreme_tail_fraction": 0.0,
+          "historical_consistency_pass": false,
+          "matched_consistency_pass": true,
+          "outside_clip_fraction": 0.0,
+          "ratio": {
+            "max": 1.1302236602940283,
+            "mean": 0.9999839672465657,
+            "min": 0.8679017829937865,
+            "p50": 1.0000049881761506,
+            "p90": 1.003504382246158,
+            "p99": 1.0115156138541161
+          },
+          "ratio_mean_in_diagnostic_band": true,
+          "signed_delta": {
+            "max": 0.12241554260253906,
+            "mean": -2.4510994135515002e-05,
+            "min": -0.14167672395706177,
+            "p50": 4.988163709640503e-06,
+            "p90": 0.003498256206512451,
+            "p99": 0.011449813842773438
+          },
+          "tokens": 224568,
+          "zero_advantage_fraction": 0.19485411991022764
+        }
+      },
+      "independent_restore": {
+        "actor_state_dict_sha256": "3aaae89a18ff3c632399f52eb1593dbfc7ce92b050d9888a862912c0b293e75d",
+        "binding_sha256": "759415940d7274453f30df218cc8d42429688a0fe4f11867b99f39656965dcff",
+        "checkpoint_complete_sha256": "c8c6fd2bd3d40023aaab06a6f849d627b1a686a672d9dab3594232ea86f56763",
+        "checkpoint_modified": false,
+        "completed_updates": 1,
+        "elapsed_seconds": 328.85957549884915,
+        "hf_matmul_allow_tf32": false,
+        "hf_precision": "highest",
+        "newly_executed_optimizer_steps": 0,
+        "optimizer_state_sha256": "eefc4bba386ce723b1eedf49a4d2251f1a28bb51a86c0734d7cc12f665b688a7",
+        "policy_version": "2f65a80cfc08e56bdfdfb8b2f451162f2dc0b9c42545c8c7ddee124d33d5a0e0",
+        "restored_optimizer_steps": [
+          1
+        ],
+        "rng_probe": {
+          "cpu_draw_sha256": "5ace6e2e6249a96968ffb222e9e22d947bf0ca99a7d1b7f7c2f38045e6e65d60",
+          "cuda_draw_sha256": "0cf9be4288d5f1a7559df89c3e6d0d57abf3434542ec64d3dbdb8cc08541e6a7"
+        },
+        "scope": "independent read-only checkpoint restore; zero optimizer steps",
+        "status": "PASS",
+        "training_run_alias": "biology-scale-v1-capacity-ricepo"
       }
     },
     "capacity_grpo": {
@@ -36,10 +403,19 @@
       "method": "grpo",
       "computed_updates": 1,
       "persisted_updates": 1,
-      "status": "COMMITTED_CHECKPOINT_RECOVERY_IN_PROGRESS",
+      "status": "COMPLETE",
       "execution_source_commits": [
         "b0ee0bb0f789f803770566572ef8fd1499f14550"
       ],
+      "capacity_recovery": {
+        "checkpoint_complete_sha256": "03e4b94b0c91154055e3300b8d9f7a37d6523cfde498897f400aa4e9232f0caa",
+        "elapsed_seconds": 191.47654097527266,
+        "independent_restore_sha256": "229cfba5432e69c6cbc59f574eb866e045eb247e5c3fdc4c83f1586087a80164",
+        "new_optimizer_steps": 0,
+        "original_binding_sha256": "bebe2df19ab798f6e392523665abb1a8880f29c7ada172a4f86a7ed65e688cf0",
+        "scope": "post-checkpoint sampling gate only; original failed attempt preserved",
+        "source_commit": "d36f2467bc82eebaadaf71b224b08eb7b56c2d8e"
+      },
       "active": null,
       "phase_seconds": {
         "0": {
@@ -53,7 +429,7 @@
         },
         "initialization": {
           "unattributed": 53.14527721516788,
-          "model_lifecycle": 7.195797376334667
+          "model_lifecycle": 182.24350633472204
         }
       },
       "latest_committed_update": {
@@ -120,6 +496,150 @@
           "zero_gradient_all_steps": false
         }
       },
+      "capacity_result": {
+        "update_sha256": "1f3997e4510db87fa1aca706f06496b01d6b0095e48da6016e711153d798969a",
+        "optimizer": {
+          "activation_checkpointing": {
+            "actual_recomputation_observed": true,
+            "checkpoint_forwards": 3584,
+            "layer_executions": 7168,
+            "mode": "eval_layers_v1",
+            "model_training_mode": false
+          },
+          "actual_state_dict_changed": true,
+          "effective_clip_fraction": 0.0,
+          "global_generated_tokens": 215821,
+          "global_sequences": 128,
+          "grad_norm_before_clip": 534.6090087890625,
+          "hf_precision": {
+            "cudnn_allow_tf32": false,
+            "matmul_allow_tf32": false,
+            "matmul_precision": "highest"
+          },
+          "negative_advantages": 86568,
+          "negative_advantages_fraction": 0.4011101792689312,
+          "normalized_loss": -281.2482330799103,
+          "optimizer_steps": 1,
+          "outside_clip_fraction": 0.0,
+          "parameter_probe_changed": true,
+          "parameter_probe_coordinates": "first, per-axis midpoint, last of every trainable tensor",
+          "parameter_probe_max_abs_delta": 1.9073486328125e-06,
+          "policy_loss": -281.2482330799103,
+          "positive_advantages": 108093,
+          "positive_advantages_fraction": 0.5008456081660265,
+          "ratio_max": 1.1298929452896118,
+          "ratio_mean": 0.9999985020603585,
+          "ratio_min": 0.8083212971687317,
+          "reference_kl": 0.0,
+          "steps": [
+            {
+              "effective_clip_count": 0,
+              "effective_clip_fraction": 0.0,
+              "epoch": 0,
+              "generated_tokens": 215821,
+              "grad_norm_before_clip": 534.6090087890625,
+              "loss_denominator": 128,
+              "minibatch_start": 0,
+              "negative_advantages": 86568,
+              "normalized_loss": -281.2482330799103,
+              "outside_clip_count": 0,
+              "outside_clip_fraction": 0.0,
+              "policy_loss": -281.2482330799103,
+              "positive_advantages": 108093,
+              "ratio_max": 1.1298929452896118,
+              "ratio_mean": 0.9999985020603585,
+              "ratio_min": 0.8083212971687317,
+              "reference_kl": 0.0,
+              "reference_kl_token_mean": 0.0,
+              "sequences": 128,
+              "zero_advantages": 21160
+            }
+          ],
+          "zero_advantages": 21160,
+          "zero_advantages_fraction": 0.09804421256504232,
+          "zero_gradient_all_steps": false
+        },
+        "old_policy": "c618b7c8386adb7e35a54a325a025b6e15e5cf6b6311210cba67ec280363d4ff",
+        "new_policy": "4887a54f03958698664f620777d457b7280dca66618ca190fb266ba5fa1ae25b",
+        "originals": 128,
+        "legal_originals": 73,
+        "generated_tokens": 215821,
+        "input_tokens_submitted": 3389274,
+        "followup_calls": 448,
+        "new_branches": 0,
+        "retrieval_calls": 480,
+        "task_reward_mean": 0.33610830192016194,
+        "trajectory_nonzero_advantage_fraction": 0.90625,
+        "last_valid_mean": 0.6278854526243023,
+        "normal_final_ndcg_mean": 0.5893405841887771,
+        "selected_anchors": 0,
+        "estimable_anchors": 0,
+        "nonzero_local_anchors": 0,
+        "summary_replaced_tokens": 0,
+        "summary_changed_tokens": 0,
+        "think_terminal": 0,
+        "think_nonterminal": 0,
+        "influence_variances": [],
+        "residual_variances": [],
+        "original_probability": {
+          "absolute_error": {
+            "max": 0.21279573440551758,
+            "mean": 0.0021559614492458645,
+            "min": 0.0,
+            "p50": 0.0009553432464599609,
+            "p90": 0.0057277679443359375,
+            "p99": 0.014914155006408691
+          },
+          "effective_clip_fraction": 0.0,
+          "ess_fraction": 0.9999834462288066,
+          "extreme_tail_fraction": 0.0,
+          "historical_consistency_pass": false,
+          "matched_consistency_pass": true,
+          "outside_clip_fraction": 0.0,
+          "ratio": {
+            "max": 1.1298930061307773,
+            "mean": 0.9999984925727138,
+            "min": 0.8083212325713679,
+            "p50": 1.0000034244789704,
+            "p90": 1.0034226204922645,
+            "p99": 1.0112846050143598
+          },
+          "ratio_mean_in_diagnostic_band": true,
+          "signed_delta": {
+            "max": 0.12212294340133667,
+            "mean": -9.813148964122352e-06,
+            "min": -0.21279573440551758,
+            "p50": 3.4244731068611145e-06,
+            "p90": 0.003416776657104492,
+            "p99": 0.01122140884399414
+          },
+          "tokens": 215821,
+          "zero_advantage_fraction": 0.09804421256504232
+        }
+      },
+      "independent_restore": {
+        "actor_state_dict_sha256": "d907004f7ac1b9e92b644936ec3c02243f7a4e228b4daea9a65dcfa6e987e252",
+        "binding_sha256": "bebe2df19ab798f6e392523665abb1a8880f29c7ada172a4f86a7ed65e688cf0",
+        "checkpoint_complete_sha256": "03e4b94b0c91154055e3300b8d9f7a37d6523cfde498897f400aa4e9232f0caa",
+        "checkpoint_modified": false,
+        "completed_updates": 1,
+        "elapsed_seconds": 394.93952498584986,
+        "hf_matmul_allow_tf32": false,
+        "hf_precision": "highest",
+        "newly_executed_optimizer_steps": 0,
+        "optimizer_state_sha256": "2793e7778037ca82333b7e495869a9e478146ad1f4c1fb8a02fc2a8dd51c32d7",
+        "policy_version": "4887a54f03958698664f620777d457b7280dca66618ca190fb266ba5fa1ae25b",
+        "restored_optimizer_steps": [
+          1
+        ],
+        "rng_probe": {
+          "cpu_draw_sha256": "5ace6e2e6249a96968ffb222e9e22d947bf0ca99a7d1b7f7c2f38045e6e65d60",
+          "cuda_draw_sha256": "0cf9be4288d5f1a7559df89c3e6d0d57abf3434542ec64d3dbdb8cc08541e6a7"
+        },
+        "scope": "independent read-only checkpoint restore; zero optimizer steps",
+        "status": "PASS",
+        "training_run_alias": "biology-scale-v1-capacity-grpo"
+      },
       "failure_categories": [
         "stage_failure"
       ]
@@ -129,36 +649,117 @@
       "method": "ricepo",
       "computed_updates": 0,
       "persisted_updates": 0,
-      "status": "NOT_STARTED"
+      "status": "IN_PROGRESS",
+      "execution_source_commits": [
+        "d36f2467bc82eebaadaf71b224b08eb7b56c2d8e"
+      ],
+      "active": {
+        "phase": "behavior_weight_identity",
+        "utc": "2026-11-07T21:12:50.831197+00:00",
+        "iteration": null
+      },
+      "phase_seconds": {
+        "initialization": {
+          "unattributed": 40.15164911001921
+        }
+      }
     },
     "training_grpo": {
       "stage": "training",
       "method": "grpo",
       "computed_updates": 0,
       "persisted_updates": 0,
-      "status": "NOT_STARTED"
+      "status": "IN_PROGRESS",
+      "execution_source_commits": [
+        "d36f2467bc82eebaadaf71b224b08eb7b56c2d8e"
+      ],
+      "active": {
+        "phase": "asset_binding",
+        "utc": "2026-11-07T21:12:16.767243+00:00",
+        "iteration": null
+      },
+      "phase_seconds": {}
     }
   },
   "raw_assets_public": false,
   "slurm_records": [
-    "176699|RUNNING|3299|2026-11-07T19:40:52|2026-11-07T19:40:53|Unknown|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
-    "176699.batch|RUNNING|3299|2026-11-07T19:40:53|2026-11-07T19:40:53|Unknown|cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176699|COMPLETED|5407|2026-11-07T19:40:52|2026-11-07T19:40:53|2026-11-07T21:11:00|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176699.batch|COMPLETED|5407|2026-11-07T19:40:53|2026-11-07T19:40:53|2026-11-07T21:11:00|cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176699.0|COMPLETED|0|2026-11-07T20:45:16|2026-11-07T20:45:16|2026-11-07T20:45:16|cpu=1,gres/gpu=2,mem=192G,node=1",
     "176700|FAILED|1956|2026-11-07T19:40:52|2026-11-07T19:40:53|2026-11-07T20:13:29|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
     "176700.batch|FAILED|1956|2026-11-07T19:40:53|2026-11-07T19:40:53|2026-11-07T20:13:29|cpu=16,gres/gpu=2,mem=192G,node=1",
     "176700.0|COMPLETED|3|2026-11-07T19:53:59|2026-11-07T19:53:59|2026-11-07T19:54:02|cpu=1,gres/gpu=2,mem=192G,node=1",
     "176700.1|COMPLETED|1|2026-11-07T19:54:37|2026-11-07T19:54:37|2026-11-07T19:54:38|cpu=1,gres/gpu=2,mem=192G,node=1",
     "176701|CANCELLED|0|2026-11-07T19:40:53|None|2026-11-07T20:26:26|",
     "176702|CANCELLED|0|2026-11-07T19:40:53|None|2026-11-07T20:26:26|",
-    "176710|RUNNING|213|2026-11-07T20:32:17|2026-11-07T20:32:19|Unknown|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
-    "176710.batch|RUNNING|213|2026-11-07T20:32:19|2026-11-07T20:32:19|Unknown|cpu=16,gres/gpu=2,mem=192G,node=1"
+    "176710|COMPLETED|2382|2026-11-07T20:32:17|2026-11-07T20:32:19|2026-11-07T21:12:01|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176710.batch|COMPLETED|2382|2026-11-07T20:32:19|2026-11-07T20:32:19|2026-11-07T21:12:01|cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176712|COMPLETED|1|2026-11-07T20:35:29|2026-11-07T21:11:00|2026-11-07T21:11:01|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176712.batch|COMPLETED|1|2026-11-07T21:11:00|2026-11-07T21:11:00|2026-11-07T21:11:01|cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176713|RUNNING|51|2026-11-07T20:35:41|2026-11-07T21:12:01|Unknown|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176713.batch|RUNNING|51|2026-11-07T21:12:01|2026-11-07T21:12:01|Unknown|cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176714|RUNNING|51|2026-11-07T20:35:41|2026-11-07T21:12:01|Unknown|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176714.batch|RUNNING|51|2026-11-07T21:12:01|2026-11-07T21:12:01|Unknown|cpu=16,gres/gpu=2,mem=192G,node=1"
   ],
+  "GPU_allocations": [
+    {
+      "job_id": "176699",
+      "state": "COMPLETED",
+      "allocated_gpus": 2,
+      "elapsed_seconds": 5407,
+      "GPU_hours": 3.003888888888889
+    },
+    {
+      "job_id": "176700",
+      "state": "FAILED",
+      "allocated_gpus": 2,
+      "elapsed_seconds": 1956,
+      "GPU_hours": 1.0866666666666667
+    },
+    {
+      "job_id": "176701",
+      "state": "CANCELLED",
+      "allocated_gpus": 0,
+      "elapsed_seconds": 0,
+      "GPU_hours": 0.0
+    },
+    {
+      "job_id": "176702",
+      "state": "CANCELLED",
+      "allocated_gpus": 0,
+      "elapsed_seconds": 0,
+      "GPU_hours": 0.0
+    },
+    {
+      "job_id": "176710",
+      "state": "COMPLETED",
+      "allocated_gpus": 2,
+      "elapsed_seconds": 2382,
+      "GPU_hours": 1.3233333333333333
+    },
+    {
+      "job_id": "176712",
+      "state": "COMPLETED",
+      "allocated_gpus": 2,
+      "elapsed_seconds": 1,
+      "GPU_hours": 0.0005555555555555556
+    },
+    {
+      "job_id": "176713",
+      "state": "RUNNING",
+      "allocated_gpus": 2,
+      "elapsed_seconds": 51,
+      "GPU_hours": 0.028333333333333332
+    },
+    {
+      "job_id": "176714",
+      "state": "RUNNING",
+      "allocated_gpus": 2,
+      "elapsed_seconds": 51,
+      "GPU_hours": 0.028333333333333332
+    }
+  ],
+  "measured_GPU_hours_at_snapshot": 5.471111111111111,
   "sampling_note": "training generation tokens exclude reused branch history and environment markers; submitted input counts include full repeated native context, not measured uncached prefill FLOPs",
-  "timing_note": "main-process exclusive spans only; evaluation includes its nested generation/tools. Uninstrumented verification/serialization remains unattributed. In-flight spans excluded from completed-phase totals.",
-  "queued_successors": {
-    "capacity_completion_only": 176712,
-    "capacity_GRPO_restore_then_Initial": 176710,
-    "formal_RICE_10x128": 176713,
-    "formal_GRPO_10x128": 176714,
-    "gate": "afterok completion jobs plus runtime capacity/restore/Initial receipts; no training bypass"
-  }
+  "timing_note": "main-process exclusive spans only; evaluation includes its nested generation/tools. Uninstrumented verification/serialization remains unattributed. In-flight spans excluded from completed-phase totals."
 }
