@@ -272,12 +272,14 @@ def _domain_retriever(domain, spec, deployment, settings, model_spec, encoder, r
                 raise ValueError("positive document missing from frozen corpus")
         if deployment["retrieval_top_k"] < max(10, settings.get("observation_top_k",0)):
             raise ValueError("retrieval depth must cover the metric and the model observation")
-        dense = DenseVectorScorer(ids, vectors, encoder.query, chunk_size=deployment["dense_chunk_size"])
+        dense = DenseVectorScorer(ids, vectors, encoder.query, chunk_size=deployment["dense_chunk_size"],
+                                  encode_queries=lambda queries:encoder.encode(queries,is_query=True))
         sparse = LuceneBM25Scorer(corpus)
         backend = FixedHybridRetriever(dense_score=dense, sparse_score=sparse, corpus=corpus,
             normalization=minmax, exclude_before_normalization=settings["excluded_before_normalization"],
             top_k=deployment["retrieval_top_k"], render_observation=renderer.observation if renderer else lambda docs: (),
-            backend_version=spec["backend_version"],ranking_impl=deployment.get('retrieval_ranking_impl','reference'))
+            backend_version=spec["backend_version"],ranking_impl=deployment.get('retrieval_ranking_impl','reference'),
+            query_batch_size=deployment.get('retrieval_query_batch_size',1))
         audit.update(backend_version=spec["backend_version"], ranking=backend.recipe(),
                      query_composition=settings.get("query_composition", {"mode":"original_query_D0"}),
                      observation_top_k=settings.get("observation_top_k",0),
