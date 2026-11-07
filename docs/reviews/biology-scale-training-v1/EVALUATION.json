@@ -1,0 +1,13 @@
+{
+  "status": "NOT_RUN",
+  "expected_queries": 32,
+  "samples_per_query": 4,
+  "evaluation_updates": [
+    0,
+    4,
+    8,
+    10
+  ],
+  "selection": "complete failure-adjusted task score; earliest tie including Initial",
+  "evaluations": []
+}

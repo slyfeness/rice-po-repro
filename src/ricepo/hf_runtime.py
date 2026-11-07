@@ -308,6 +308,8 @@ def checkpoint_diagnostic_mode(deployment, plan, *, parent, resume):
     enabled=deployment.get('stop_after_checkpoint_diagnostic',False)
     if type(enabled) is not bool:
         raise ValueError('checkpoint diagnostic flag must be a boolean')
+    spec=deployment.get('precision_pilot',{})
+    if spec.get('candidate')=='SCALE':return spec.get('stage')=='capacity'
     pilot=deployment.get('precision_pilot') is not None
     validation=deployment.get('precision_pilot',{}).get('candidate') in ('G_A','G_B')
     if validation:
@@ -351,6 +353,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
     from .precision_pilot import pilot_settings
     pilot=pilot_settings(deployment,plan)
     validation=bool(pilot and pilot.get('kind')=='tf32_gemm_training_validation_v1')
+    scale=bool(pilot and pilot.get('kind')=='biology_scale_training_v1')
     checkpoint_diagnostic_mode(deployment,plan,parent=deployment.get('parent_run_root'),resume=resume)
     require_qualified_retrieval_batch(deployment)
     checkpoint_io=deployment.get('checkpoint_io','direct_shared_v1')
@@ -378,6 +381,10 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         if pilot:effective_generation['precision_pilot']=dict(candidate=pilot['candidate'],
             validation_plan_sha256=pilot['validation_plan_sha256'],historical_failures_preserved=True)
     with operation("asset_binding"):
+        if scale:
+            from .asset_identity import VerifiedModelIdentity
+            asset_identities=VerifiedModelIdentity();actor_identity=asset_identities.get
+        else:actor_identity=local_model_identity
         frozen = verify_bundle(deployment)
         domain_specs = deployment["domains"]
         domains = set(domain_specs)
@@ -409,7 +416,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                 or retriever_device.index is None or actor_device == retriever_device
                 or max(actor_device.index,retriever_device.index) >= torch.cuda.device_count()):
             raise ValueError("two distinct visible CUDA devices required")
-        if validation and (torch.get_float32_matmul_precision()!='highest' or torch.backends.cuda.matmul.allow_tf32
+        if (validation or scale) and (torch.get_float32_matmul_precision()!='highest' or torch.backends.cuda.matmul.allow_tf32
                 or torch.backends.cudnn.allow_tf32 or os.environ.get('TORCH_ALLOW_TF32_CUBLAS_OVERRIDE')=='1'):
             raise ValueError('paired validation HF process must remain IEEE FP32')
         precision = deployment.get('actor_precision',deployment['dtype'])
@@ -417,7 +424,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                 precision!='float32' or parser_mode!='two_stage_env_summary_v1'
                 or (plan['temperature'],plan['top_p'],plan['top_k'])!=(1.,1.,0)):
             raise ValueError('vLLM candidate requires frozen IEEE FP32 two-stage T1/p1/k0')
-        if pilot and (precision!=('float32' if pilot['candidate'] in ('T','B','G_A','G_B') else 'bfloat16')
+        if pilot and (precision!=('float32' if pilot['candidate'] in ('T','B','G_A','G_B','SCALE') else 'bfloat16')
                       or parser_mode!='two_stage_env_summary_v1' or (plan['temperature'],plan['top_p'],plan['top_k'])!=(1.,1.,0)):
             raise ValueError('pilot actor precision or frozen sampling law differs')
         if precision not in {"float32","bfloat16"}:
@@ -425,7 +432,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         def autocast():
             return torch.autocast("cuda", dtype=torch.bfloat16,enabled=precision=="bfloat16")
         local = dict(local_files_only=True,trust_remote_code=False)
-        actor_source = local_model_identity(actor_path)
+        actor_source = actor_identity(actor_path)
         tokenizer = AutoTokenizer.from_pretrained(str(actor_path),**local)
         if tokenizer.eos_token_id is None:
             raise ValueError("missing actor EOS token")
@@ -439,6 +446,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             retrievers[domain],sources[domain] = _domain_retriever(domain,spec,deployment,plan,config["model"],
                                                                  encoder,renderer,examples,qrels)
     seed = plan["training_seeds"][0]
+    generation_seed=stable_seed(seed,"biology_scale_generation","capacity" if pilot["stage"]=="capacity" else "training") if scale else seed
     binding = dict(schema_version=2,config_sha256=fingerprint(config),recipe_fingerprint=resolved["fingerprint"],
                    source_sha256=fingerprint(_source_hashes()),deployment_sha256=fingerprint(
                    {k:v for k,v in deployment.items() if k not in {"test_scope","expected_test_domains"}}),
@@ -462,6 +470,11 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
     if pilot:
         binding['behavior']['precision_pilot']=dict(candidate=pilot['candidate'],rollout_numeric=pilot['numeric_mode'],
             teacher_compute=precision,parameter_storage='float32',validation_plan_sha256=pilot['validation_plan_sha256'])
+    if scale:binding["behavior"]["scale_sampling_namespace"]="capacity" if pilot["stage"]=="capacity" else "training"
+    if scale and pilot['stage']=='training':
+        baseline=Path(pilot['common_initial_root'])
+        binding['common_initial']=dict(report_sha256=file_sha256(baseline/'initial-development/summary.json'),
+            policy_version=read_json(baseline/'initial-evaluation-complete.json')['policy_version'],actor_path=str(actor_path))
     from .continuation import (fresh_schedule, parent_run, scheduled_queries, validate_fresh_schedule,
                                validate_state_position)
     parent = parent_run(deployment,binding,plan,train)
@@ -505,15 +518,19 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             atomic_json(root/name,value)
     restored = None
     if resume:
-        cp, restored = recovery_checkpoint(root,bound)
+        if scale and not list(root.glob('iteration-[0-9]*')):
+            from .scale_training import verify_initial_state
+            cp=root/'initial-state';restored=verify_initial_state(root,bound)
+        else:cp, restored = recovery_checkpoint(root,bound)
         if (root/"completed.json").exists():
             finished = read_json(root/"completed.json")
-            verify_checkpoint(require_cluster_storage(finished["selected_checkpoint"]["checkpoint"]),bound)
+            if not (scale and finished["selected_checkpoint"].get("kind")=="frozen_initial_source"):
+                verify_checkpoint(require_cluster_storage(finished["selected_checkpoint"]["checkpoint"]),bound)
             if (finished["selected_checkpoint"] != selected_so_far(root,plan["checkpoint_selection"])
                     or restored["iteration"]+1 != plan["total_updates"]):
                 raise ValueError("completed run selection or update position differs")
             return finished
-        actor_load = cp/"actor"
+        actor_load = actor_path if restored['iteration']==-1 else cp/"actor"
     else:
         actor_load = parent['checkpoint']/'actor' if parent else actor_path
     def load_actor(path):
@@ -531,7 +548,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         from .modeling import enable_eval_layer_checkpointing
         activation_statistics=enable_eval_layer_checkpointing(actor)
     elif activation_mode!='none':raise ValueError('unsupported activation checkpointing mode')
-    if local_model_identity(actor_path) != actor_source:
+    if actor_identity(actor_path) != actor_source:
         raise ValueError("actor/tokenizer assets changed while loading")
     opt = plan["optimizer_hyperparameters"]
     optimizer = torch.optim.AdamW(actor.parameters(),lr=plan["actor_learning_rate"],betas=tuple(opt["betas"]),
@@ -548,6 +565,10 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         optimizer.load_state_dict(state["optimizer"])
         torch.random.set_rng_state(state["cpu_rng"])
         torch.cuda.set_rng_state(state["cuda_rng"],actor_device)
+        if scale:
+            if state.get("query_schedule_position")!=loading["iteration"]+1 or state.get("query_schedule_sha256")!=fingerprint(frozen_schedule):
+                raise ValueError("checkpoint query schedule position/identity differs")
+            torch.cuda.set_rng_state_all(state["cuda_rng_all"])
         from .checkpoint_io import rng_probe, state_digest
         atomic_json(attempt_dir/'loaded-state.json',dict(binding=loading_binding,
             policy_version=loading['policy_version'],local_iteration=loading['iteration'],
@@ -556,6 +577,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             optimizer_steps=sorted({int(v['step'].item()) for v in state['optimizer']['state'].values() if 'step' in v})))
         del state
     behavior = binding["behavior"]
+    live_validation={}
     def register_policy():
         key,evidence = identify(actor,behavior)
         path = root/"behavior-identities"/(key+".json")
@@ -564,10 +586,19 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                 raise ValueError("behavior identity collision")
         else:
             atomic_json(path,evidence)
+        if scale:
+            from .asset_identity import tensor_versions
+            live_validation.update(policy=key,evidence=evidence,tensor_versions=tensor_versions(actor))
         return key
     version = {"value":register_policy()}
     if loading and version["value"] != loading["policy_version"]:
         raise ValueError("restored live policy differs from committed behavior identity")
+    if scale and not resume and pilot['stage']!='initial':
+        from .scale_training import publish_initial_state
+        publish_initial_state(root,dict(optimizer=optimizer.state_dict(),iteration=-1,seed=seed,binding=bound,
+            policy_version=version['value'],cpu_rng=torch.random.get_rng_state(),cuda_rng=torch.cuda.get_rng_state(actor_device),
+            cuda_rng_all=torch.cuda.get_rng_state_all(),global_update_index=-1,query_schedule_position=0,
+            query_schedule_sha256=fingerprint(frozen_schedule)))
     generator = HFNativeGenerator(model=actor,tokenizer=tokenizer,device=actor_device,
         policy_version_getter=lambda:version["value"],max_new_tokens=plan["max_new_tokens_per_step"],
         max_context_tokens=plan["max_context_tokens"],prefilled_think=True,precision_context=autocast,
@@ -585,7 +616,8 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             version=lambda:version['value'],behavior=behavior,device=actor_device,root=attempt_dir/'vllm',
             rpc_root=require_cluster_storage(deployment['vllm_rpc_root']),
             max_new_tokens=plan['max_new_tokens_per_step'],max_context_tokens=plan['max_context_tokens'],
-            vllm_runtime=effective_generation['vllm_runtime'],numeric_mode=pilot['numeric_mode'] if pilot else 'ieee_fp32')
+            vllm_runtime=effective_generation['vllm_runtime'],numeric_mode=pilot['numeric_mode'] if pilot else 'ieee_fp32',
+            reuse_verified_assets=scale,validated_policy_getter=(lambda:live_validation) if scale else None)
         cleanup.callback(generator.close)
     reward = PyTrecReward(qrels)
     runners = {domain:RolloutRunner(generator=generator,retriever=backend,reward_scorer=reward,
@@ -598,7 +630,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         for domain,backend in retrievers.items()}
     if initial_evaluation_mode(deployment, parent=parent, resume=resume):
         output = root / "initial-development"
-        with operation("initial_development_evaluation"):
+        with operation("initial_development_evaluation",evaluation_scope=True):
             summary = evaluate_queries(
                 examples=dev, expected_ids=frozen.identities["development"], split="development",
                 phase="initial_development", method=plan["method"], root_seed=seed,
@@ -611,6 +643,11 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                   "samples_per_query":plan["eval_samples_per_query"], "summary":summary}
         atomic_json(root / "initial-evaluation-complete.json", result)
         return result
+    if scale and pilot["stage"]=="training":
+        from .scale_training import bind_initial
+        baseline=Path(pilot["common_initial_root"])
+        initial_policy=read_json(baseline/"initial-evaluation-complete.json")["policy_version"] if resume else version["value"]
+        bind_initial(root,baseline,binding,initial_policy,actor_path)
     scoring = make_forward(reference_model=reference,device=actor_device,logit_chunk_size=deployment["logit_chunk_size"],
                            max_context_tokens=plan["max_context_tokens"],policy_call_kwargs={},reference_call_kwargs={},
                            projection_mode=deployment.get("hf_projection_mode","full_sequence"))
@@ -655,7 +692,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                 arguments=dict(query_id=q,trajectory_id=identity,original_query=ex.query,
                     initial_prefix_token_ids=prefix,old_policy_version=policy_version,
                     initial_ndcg=reward.score(q,tuple(d.document_id for d in initial.documents)),
-                    seeds=tuple(stable_seed(seed,"original",global_i,ex.domain,q,n,d) for d in range(1,plan["rollout_depth"]+1)))
+                    seeds=tuple(stable_seed(generation_seed,"original",global_i,ex.domain,q,n,d) for d in range(1,plan["rollout_depth"]+1)))
                 if sampling_backend=='serial_hf_v1':
                     yield runners[ex.domain].run(**arguments)
                 else:
@@ -678,7 +715,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         if action_recovery:action_recovery.check_anchor(a)
         ex = train[t.query_id]
         requests = [BranchRequest(f"{t.trajectory_id}-d{a.depth}-b{b}",
-                    tuple(stable_seed(seed,"branch_v2",ex.domain,t.query_id,t.trajectory_id,a.depth,b,d)
+                    tuple(stable_seed(generation_seed,"branch_v2",ex.domain,t.query_id,t.trajectory_id,a.depth,b,d)
                           for d in range(a.depth,plan["rollout_depth"]+1)))
                     for b in range(1,plan["total_branches_including_original"])]
         return ex.domain,dict(original_query=ex.query,original=t,anchor=a,requests=requests)
@@ -740,7 +777,13 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             original_pilot=mismatch_statistics(pilot_q,pilot_p,pilot_adv)
             index=global_start+int(directory.name.split('-')[-1])
             from .training_validation import update_risk_limit
-            outside_max=update_risk_limit(index) if validation else (.01 if index==0 else .02)
+            if scale:
+                from .scale_training import risk_limit
+                outside_max=risk_limit(index)
+                atomic_json(directory/"scale-original-probability-risk.json",dict(report=original_pilot,outside_limit=outside_max,pass_risk_screen=risk_screen(original_pilot,outside_max=outside_max)))
+                if not risk_screen(original_pilot,outside_max=outside_max):
+                    raise ValueError("scale original probability risk failed; no branch dilution and no optimizer step")
+            else:outside_max=update_risk_limit(index) if validation else (.01 if index==0 else .02)
             with torch.no_grad(),autocast():
                 def pilot_branch_score(t):
                     scored=sampled_old_log_probs(actor,t.token_ids,t.generated_mask,device=actor_device,
@@ -751,7 +794,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                     check=mismatch_statistics(qr,pr)
                     pilot_q.extend(qr);pilot_p.extend(pr)
                     return check
-                if validation:
+                if validation or scale:
                     from .branch_audit import select_branch_checks,branch_check_plan,execute_branch_checks
                     options=dict(update_index=index,policy=deployment['branch_probability_audit'])
                     selected=select_branch_checks(sampled_branches,**options)
@@ -769,7 +812,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                     checked_branch_count=len(sampled_branches)
             combined=mismatch_statistics(pilot_q,pilot_p)
             passed=risk_screen(combined,outside_max=outside_max)
-            if validation:passed=passed and risk_screen(original_pilot,outside_max=outside_max)
+            if validation or scale:passed=passed and risk_screen(original_pilot,outside_max=outside_max)
             atomic_json(directory/'pilot-probability-risk.json',dict(originals=original_pilot,all_actual_tokens=combined,
                 branch_count=len(sampled_branches),checked_branch_count=checked_branch_count,outside_limit=outside_max,
                 coverage='originals plus selected branch records; reused prefix positions included',
@@ -800,7 +843,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         with torch.enable_grad():
             observer=comparison=None
             pilot_gradient=None
-            if pilot:
+            if pilot and not scale:
                 from .pilot_gradient import prepare
                 def ieee_forward(model,item):
                     with torch.autocast('cuda',enabled=False):return scoring(model,item)
@@ -813,7 +856,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                     forward=forward,device=actor_device,recipe=plan)
             diagnostics = ppo_plan_update(actor,optimizer,items,policy_version=old_version,forward=forward,
                                           device=actor_device,recipe=plan,step_observer=observer)
-            if validation:
+            if validation or scale:
                 diagnostics['hf_precision']=dict(matmul_precision=torch.get_float32_matmul_precision(),
                     matmul_allow_tf32=torch.backends.cuda.matmul.allow_tf32,cudnn_allow_tf32=torch.backends.cudnn.allow_tf32)
                 if diagnostics['hf_precision']!={'matmul_precision':'highest','matmul_allow_tf32':False,'cudnn_allow_tf32':False}:
@@ -828,6 +871,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                 diagnostics['credit_gradient_comparison']=comparison
         version["value"] = register_policy()
         diagnostics["actual_state_dict_changed"] = version["value"] != old_version
+        if scale:optimizer.zero_grad(set_to_none=True)  # committed gradients are no longer needed or offloaded
         if activation_statistics is not None:
             diagnostics['activation_checkpointing']={**activation_statistics,
                 'actual_recomputation_observed':activation_statistics['layer_executions']>activation_statistics['checkpoint_forwards'],
@@ -847,18 +891,20 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         current = version["value"]
         last = i+1 == plan["total_updates"]
         pilot_stop=False
-        if pilot and not validation:
+        if pilot and not validation and not scale:
             update_record=read_json(directory/'update.json')
             pilot_stop=last or update_record['optimizer']['pilot_gradient']['reward_gradient_nonzero']
             last=pilot_stop
         global_completed = global_start+i+1
         dev_due = last or global_completed % plan["development_every_updates"] == 0
-        save_due = validation or dev_due or global_completed % plan["checkpoint_every_updates"] == 0
+        if scale and pilot["stage"]=="capacity":dev_due=False
+        save_due = validation or (scale and pilot["stage"]=="capacity") or dev_due or global_completed % plan["checkpoint_every_updates"] == 0
         def write_payload(staging):
             from .checkpoint_io import verified_local_copy,state_digest,rng_probe
             payload=dict(optimizer=optimizer.state_dict(),iteration=i,seed=seed,policy_version=current,
                 binding=bound,cpu_rng=torch.random.get_rng_state(),cuda_rng=torch.cuda.get_rng_state(actor_device),
                 global_update_index=global_start+i)
+            if scale:payload.update(cuda_rng_all=torch.cuda.get_rng_state_all(),query_schedule_position=i+1,query_schedule_sha256=fingerprint(frozen_schedule))
             expected_digest=state_digest(payload) if checkpoint_io=='local_verified_v1' else None
             def write_local(folder):
                 actor.save_pretrained(folder/'actor',safe_serialization=True)
@@ -887,7 +933,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             checked = verify_checkpoint(cp_path,bound,allow_missing_stage=True)
             if checked["policy_version"] != current:
                 raise ValueError("restored actor and saved checkpoint differ")
-            if not recovered:
+            if not recovered and not (scale and checkpoint_io=="local_verified_v1"):
                 reloaded, info = AutoModelForCausalLM.from_pretrained(str(cp_path/"actor"),torch_dtype=torch.float32,
                                                                       output_loading_info=True,**local)
                 if any(info.get(k) for k in ("missing_keys","mismatched_keys","error_msgs")):
@@ -898,6 +944,11 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                     raise ValueError("reloaded checkpoint weights differ from saved policy")
                 del reloaded
                 atomic_json(directory/"reload-verification.json",dict(policy_version=current,weights_verified=True))
+            if scale and not recovered and checkpoint_io=="local_verified_v1":
+                io=read_json(cp_path/"io-verification.json")
+                if not io.get("local_payload_verified") or not io.get("shared_copy_verified"):
+                    raise ValueError("checkpoint copy lacks verified local reload")
+                atomic_json(directory/"reload-verification.json",dict(policy_version=current,weights_verified=True,verification_source="local Actor reload plus exact shared-copy hashes; duplicate reload omitted"))
             complete_stage(directory,"checkpoint_complete",current,{"checkpoint/complete.json":file_sha256(cp_path/"complete.json")})
         else:
             complete_stage(directory,"checkpoint_complete",current,{"skipped":"cadence"})
@@ -908,10 +959,12 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                 validate_committed_progress(record,index=i,policy=current,
                     checkpoint=file_sha256(directory/'checkpoint/complete.json'),risk=file_sha256(directory/'pilot-post-update-risk.json'))
                 return record if last else None
-            if pilot and not pilot_stop and not validation:
+            if pilot and not pilot_stop and not validation and not scale:
                 complete_stage(directory,'development_complete',current,{'skipped':'bounded pilot; no development evaluation'})
                 complete_stage(directory,'iteration_complete',current,{'selected_checkpoint_so_far':None})
                 return None
+            if scale and recovered and (root/"capacity-complete.json").exists():
+                return read_json(root/"capacity-complete.json")
             # Check the real post-update engine snapshot on one fixed native
             # condition. This is a sampling probe, without retrieval or PPO.
             saved=read_json(directory/'trajectories.json')
@@ -956,29 +1009,72 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                 atomic_json(directory/'training-validation.json',result)
                 if last:atomic_json(root/'training-validation-complete.json',result)
                 return result
+            if scale:
+                result.update(status="capacity_update_complete",method=plan["method"],optimizer_steps=1,queries=32,original_trajectories=128)
+                complete_stage(directory,"development_complete",current,{"skipped":"independent capacity batch, no development"})
+                complete_stage(directory,"iteration_complete",current,{"capacity_complete":True})
+                atomic_json(root/"capacity-complete.json",result)
+                return result
             atomic_json(root/'diagnostic-complete.json',result)
             return result
         def evaluate(out):
-            with operation("development_evaluation",iteration=i):
+            probe=[]
+            with operation("development_evaluation",iteration=i,evaluation_scope=True):
                 evaluate_queries(examples=dev,expected_ids=frozen.identities["development"],split="development",
                     phase="development",method=plan["method"],root_seed=seed,policy_version=current,
                     rollout_depth=plan["rollout_depth"],retrievers=retrievers,runners=runners,renderer=renderer,
                     reward=reward,output=out,scope="complete", manifest_sha256=frozen.manifest_sha256["development"],
                     backend_fingerprints={d:fingerprint(sources[d]) for d in retrievers},
-                    samples_per_query=plan["eval_samples_per_query"])
+                    samples_per_query=plan["eval_samples_per_query"],
+                    trajectory_observer=(lambda t:probe.append(t) if not probe else None) if scale and last else None)
+            if scale and last:
+                t=probe[0]
+                if t.policy_version!=current:raise ValueError('final evaluation sampled stale policy')
+                generator.prepare_scoring()
+                with operation('final_weight_probability_probe',iteration=i),torch.no_grad(),autocast():
+                    scores=sampled_old_log_probs(actor,t.token_ids,t.generated_mask,device=actor_device,
+                        logit_chunk_size=deployment['logit_chunk_size'],max_context_tokens=plan['max_context_tokens'],policy_call_kwargs={})[0].cpu().tolist()
+                from .precision_pilot import mismatch_statistics,risk_screen
+                q=trajectory_behavior_log_probs(t);m=t.generated_mask
+                check=mismatch_statistics([x for x,b in zip(q,m,strict=True) if b],[x for x,b in zip(scores,m,strict=True) if b])
+                passed=risk_screen(check,outside_max=.02)
+                atomic_json(directory/'scale-final-weight-probe.json',dict(policy_version=current,
+                    source='first fixed final evaluation query/sample; no extra generation',report=check,pass_risk_screen=passed))
+                if not passed:raise ValueError('final refreshed-weight probability risk failed')
         finish_development(directory,current,due=dev_due,output=directory/"development-attempts"/attempt_dir.name,
                            evaluate=evaluate)
         best = selected_so_far(root,plan["checkpoint_selection"])
         complete_stage(directory,"iteration_complete",current,{"selected_checkpoint_so_far":best})
     start = 0
+    if scale:
+        from .scale_training import recomputation_generations
+        recomputations=recomputation_generations(root)
+    else:recomputations={}
     if restored:
         i = restored["iteration"]
-        recovered_result=finish(i,recovered=True)
+        recovered_result=finish(i,recovered=True) if i>=0 else None
         if validation and recovered_result is not None:return recovered_result
         start = i+1
     for i in range(start,plan["total_updates"]):
-        run_iteration(components,iteration=i,policy_version=version["value"],output_root=root,recipe=plan,root_seed=seed)
-        diagnostic=finish(i)
+        import time
+        iteration_started=time.monotonic()
+        with operation("training_iteration",iteration=i,recovery_generation=recomputations.get(i,0)):
+            run_iteration(components,iteration=i,policy_version=version["value"],output_root=root,recipe=plan,root_seed=seed)
+            diagnostic=finish(i)
+        if scale:
+            persisted=max((int(p.parent.parent.name[10:])+1 for p in root.glob('iteration-*/checkpoint/complete.json')),default=0)
+            atomic_json(root/f'iteration-{i:06d}'/'scale-progress.json',dict(computed_updates=i+1,persisted_updates=persisted,
+                iteration_seconds=time.monotonic()-iteration_started,policy_version=version['value'],queries=plan['queries_per_update'],
+                checkpoint_complete=persisted==i+1,development_due=(pilot['stage']=='training' and (i+1==plan['total_updates'] or (i+1)%4==0)),
+                recovery_generation=recomputations.get(i,0)))
+            if pilot['stage']=='training' and persisted==i+1:
+                from .scale_training import stop_at_checkpoint
+                durations=[read_json(p)['iteration_seconds'] for p in sorted(root.glob('iteration-*/scale-progress.json'))]
+                if stop_at_checkpoint(durations,i+1,plan['total_updates']):
+                    result=dict(status='stopped_at_persistent_checkpoint',computed_updates=i+1,persisted_updates=persisted,
+                        requested_updates=plan['total_updates'],policy_version=version['value'])
+                    atomic_json(attempt_dir/'planned-stop.json',result)
+                    return result
         if diagnostic is not None:
             atomic_json(attempt_dir/'cost-report.json',cost_report(root))
             return diagnostic

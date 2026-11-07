@@ -9,7 +9,7 @@ import time
 import signal
 import tempfile
 from pathlib import Path
-from .audit import event,fingerprint
+from .audit import event,fingerprint,operation
 from .artifacts import atomic_json
 from .vllm_two_stage import VLLMTwoStage,BACKEND,vllm_runtime_options
 
@@ -35,7 +35,11 @@ def _worker(connection,spec):
     try:
         if not Path(spec['rpc_path']).is_dir():raise ValueError('missing dedicated RPC directory')
         with attempt(Path(spec['evidence'])):
-            identity=local_model_identity(spec['model'])
+            if spec.get('reuse_verified_assets'):
+                from .asset_identity import VerifiedModelIdentity
+                identities=VerifiedModelIdentity();model_identity=identities.get
+            else:model_identity=local_model_identity
+            identity=model_identity(spec['model'])
             if identity!=spec['assets']:raise ValueError('published sampling snapshot changed')
             tok=AutoTokenizer.from_pretrained(spec['model'],local_files_only=True,trust_remote_code=False)
             inspection={'worker_extension_cls':'ricepo.gemm_diagnostic.GemmInspection'} if numeric_mode in ('tf32_gemm_pilot','tf32_gemm_control') else {}
@@ -45,7 +49,7 @@ def _worker(connection,spec):
             expected='high' if numeric_mode=='tf32_gemm_pilot' else 'highest'
             if inspection and not all(s['matmul_allow_tf32']==(expected=='high') and s['torch_float32_matmul_precision']==expected for s in gemm_state):
                 raise ValueError('actual GEMM worker precision differs from frozen candidate')
-            if local_model_identity(spec['model'])!=identity:raise ValueError('sampling snapshot changed during engine load')
+            if model_identity(spec['model'])!=identity:raise ValueError('sampling snapshot changed during engine load')
             connection.send(('ready',dict(policy=spec['policy'],assets=identity,pid=os.getpid(),
                 runtime_options=engine.runtime_options,numeric_mode=numeric_mode,
                 **({'gemm_state':gemm_state} if inspection else {}))))
@@ -119,7 +123,8 @@ class WorkerTransport:
 class PhaseSeparatedGenerator:
     """HF model/optimizer residency changes only; objective and histories stay fixed."""
     def __init__(self,*,actor,reference,optimizer,tokenizer,version,behavior,device,root,rpc_root,
-                 max_new_tokens=4096,max_context_tokens=32768,vllm_runtime=None,numeric_mode='ieee_fp32'):
+                 max_new_tokens=4096,max_context_tokens=32768,vllm_runtime=None,numeric_mode='ieee_fp32',
+                 reuse_verified_assets=False,validated_policy_getter=None):
         self.actor,self.reference,self.optimizer=actor,reference,optimizer
         self.tokenizer,self.version,self.behavior=tokenizer,version,behavior
         self.device=device;self.root=Path(root);self.rpc_root=Path(rpc_root)
@@ -128,6 +133,7 @@ class PhaseSeparatedGenerator:
         self.worker=None;self.sampler=None;self.serial=0;self.snapshots={};self.moves=[]
         self.max_new_tokens=max_new_tokens;self.max_context_tokens=max_context_tokens
         self.numeric_mode=numeric_mode
+        self.reuse_verified_assets=reuse_verified_assets;self.validated_policy_getter=validated_policy_getter
         self.vllm_runtime=vllm_runtime_options(vllm_runtime,numeric_mode=numeric_mode)
     @property
     def policy_version(self):return self.version()
@@ -142,6 +148,12 @@ class PhaseSeparatedGenerator:
         torch.cuda.synchronize(self.device);torch.cuda.empty_cache()
     def prepare_generation(self):
         if self.worker is not None:
+            if self.worker.ready["policy"]!=self.policy_version:raise RuntimeError("stale vLLM process after weight update")
+            return
+        with operation("model_lifecycle",transition="prepare_generation"):
+            return self._prepare_generation()
+    def _prepare_generation(self):
+        if self.worker is not None:
             if self.worker.ready['policy']!=self.policy_version:raise RuntimeError('stale vLLM process after weight update')
             return
         from .policy_identity import identify
@@ -150,7 +162,12 @@ class PhaseSeparatedGenerator:
         import torch
         start=time.monotonic();version=self.policy_version
         self._offload()
-        actual,evidence=identify(self.actor,self.behavior)
+        if self.actor.training:raise ValueError('behavior identity requires eval mode')
+        from .asset_identity import tensor_versions
+        verified=self.validated_policy_getter() if self.validated_policy_getter else None
+        if (verified and verified.get("policy")==version and verified.get("tensor_versions")==tensor_versions(self.actor)):
+            actual,evidence=version,verified["evidence"]
+        else:actual,evidence=identify(self.actor,self.behavior)
         if actual!=version:raise ValueError('live Actor differs from registered behavior policy')
         if version not in self.snapshots:
             folder=self.root/('snapshot-'+version);folder.mkdir()
@@ -163,7 +180,7 @@ class PhaseSeparatedGenerator:
             self.snapshots[version]=(folder/'actor',assets)
         model,assets=self.snapshots[version];self.serial+=1
         spec=dict(model=str(model),assets=assets,policy=version,cuda_mask=self.cuda_mask,context=self.max_context_tokens,
-            runtime_options=self.vllm_runtime,numeric_mode=self.numeric_mode,
+            runtime_options=self.vllm_runtime,numeric_mode=self.numeric_mode,reuse_verified_assets=self.reuse_verified_assets,
             rpc_path=str(fresh_rpc_path(self.rpc_root)),evidence=str(self.root/('worker-'+str(self.serial))))
         self.worker=WorkerTransport(spec)
         self.sampler=VLLMTwoStage(self.worker,self.tokenizer,self.version,self.max_new_tokens,self.max_context_tokens,
@@ -174,6 +191,9 @@ class PhaseSeparatedGenerator:
         event('vllm_policy_ready',policy_version=version,runtime_options=self.vllm_runtime,
               load_seconds=time.monotonic()-start)
     def prepare_scoring(self):
+        with operation("model_lifecycle",transition="prepare_scoring"):
+            return self._prepare_scoring()
+    def _prepare_scoring(self):
         if self.worker is not None:
             self.worker.close();self.worker=None;self.sampler=None
         self.actor.to(self.device);self.reference.to(self.device)

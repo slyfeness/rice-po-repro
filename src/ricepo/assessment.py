@@ -90,7 +90,8 @@ def summarize_assessment(rows, expected_ids, *, split, manifest_sha256, scope="c
 
 def evaluate_queries(*, examples, expected_ids, split, phase, method, root_seed, policy_version,
                      rollout_depth, retrievers, runners, renderer, reward, output, manifest_sha256,
-                     backend_fingerprints, behavior_sha256=None, scope="complete", samples_per_query=1):
+                     backend_fingerprints, behavior_sha256=None, scope="complete", samples_per_query=1,
+                     trajectory_observer=None):
     """Evaluate the supplied split. Baselines and trained methods use identical folds and seeds.
 
     expected_ids is the frozen set of (domain, original query ID) pairs from the data
@@ -165,6 +166,7 @@ def evaluate_queries(*, examples, expected_ids, split, phase, method, root_seed,
                         if zero:
                             from .failure_zero import validate_trajectory
                             validate_trajectory(trajectory,rollout_depth)
+                        if trajectory_observer is not None:trajectory_observer(trajectory)
                         final_ranked = (tuple(doc.document_id for doc in trajectory.steps[-1].retrieval.documents)
                                         if trajectory.steps else ranked)
                         final_score = trajectory.final_reward if zero else reward.score(key, final_ranked)

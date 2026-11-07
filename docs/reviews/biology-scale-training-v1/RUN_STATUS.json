@@ -1,0 +1,33 @@
+{
+  "phase": "SOURCE_PREPARED_GPU_NOT_STARTED",
+  "base_commit": "9e74eb27ddf613af5db614229ab0b539fc5a7a5c",
+  "capacity_completed": {
+    "ricepo": 0,
+    "grpo": 0
+  },
+  "formal_computed_updates": {
+    "ricepo": 0,
+    "grpo": 0
+  },
+  "formal_persisted_updates": {
+    "ricepo": 0,
+    "grpo": 0
+  },
+  "requested_formal_updates": 10,
+  "maximum_gpus": 4,
+  "data_counts": {
+    "train": 128,
+    "development": 32,
+    "test": 103
+  },
+  "data_freeze_job": 176690,
+  "cpu_preflight_job": 176697,
+  "actual_targeted_unittest": {
+    "passed": 15,
+    "failed": 0,
+    "skipped": 0
+  },
+  "GPU_jobs": [],
+  "historical_readiness_unchanged": true,
+  "execution_permission": "explicit new user authorization, not global validation flags"
+}

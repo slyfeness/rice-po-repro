@@ -13,6 +13,7 @@ from .artifacts import atomic_json
 _attempt = ContextVar("ricepo_attempt", default=None)
 _recovery = ContextVar("ricepo_recovery", default=False)
 _request = ContextVar("ricepo_request", default=None)
+_timing = ContextVar("ricepo_exclusive_timing", default=None)
 
 
 class GenerationTruncated(RuntimeError):
@@ -88,11 +89,18 @@ def operation(phase, **identity):
     started = perf_counter()
     operation_id = uuid4().hex
     fields = {**(_request.get() or {}), **identity, "phase": phase, "operation_id": operation_id}
+    fields['parent_operation_id']=(_request.get() or {}).get('operation_id')
+    parent_timing=_timing.get();timing={'children':0.}
+    def elapsed_fields():
+        elapsed=perf_counter()-started
+        if parent_timing is not None:parent_timing['children']+=elapsed
+        return dict(elapsed_seconds=elapsed,exclusive_elapsed_seconds=max(0.,elapsed-timing['children']))
     if phase in {"branch_generation","original_generation"} and _attempt.get() is not None:
         fields.update(_register_request(fields))
         if fields.get("saved_native_replay") or fields.get('recovery_reexecution'):
             fields.update(recovery_replay=True,independent_sample=False)
     token = _request.set(fields)
+    timing_token=_timing.set(timing)
     try:
         event("started")
         yield
@@ -102,12 +110,13 @@ def operation(phase, **identity):
             exc.audit_category = category
             exc.audit_operation = fields
         event("failed", category=category, exception=type(exc).__name__, message=str(exc),
-              elapsed_seconds=perf_counter() - started)
+              **elapsed_fields())
         raise
     else:
-        event("completed", elapsed_seconds=perf_counter() - started)
+        event("completed", **elapsed_fields())
     finally:
         _request.reset(token)
+        _timing.reset(timing_token)
 
 
 def raw_completion(ids, reason, prefix, seed, version, preview=None, replay_source=None):
@@ -158,7 +167,9 @@ def cost_report(run):
 
 def logical_request_id(version, query, trajectory, depth, seed):
     parent = _request.get() or {}
-    return fingerprint([version, query, trajectory, depth, seed, parent.get("split"), parent.get("iteration")])
+    parts=[version, query, trajectory, depth, seed, parent.get("split"), parent.get("iteration")]
+    if parent.get('recovery_generation',0):parts.append(['explicit_update_recomputation',parent['recovery_generation']])
+    return fingerprint(parts)
 
 
 def check_scheduled_request(fields):
@@ -193,4 +204,5 @@ def _register_request(fields):
         if not _recovery.get() or prior["identity"] != identity or prior["attempt"] == attempt_root.name:
             raise ValueError("duplicate or inconsistent generation request")
         return {"recovery_replay":True,"first_attempt":prior["attempt"],"independent_sample":False}
-    return {"recovery_replay":False,"first_attempt":attempt_root.name,"independent_sample":True}
+    recomputed=bool(fields.get('recovery_generation',0))
+    return {"recovery_replay":recomputed,"first_attempt":attempt_root.name,"independent_sample":not recomputed}

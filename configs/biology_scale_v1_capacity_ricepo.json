@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "extends": "biology_scale_v1_base.json",
+  "method": "ricepo",
+  "runtime_bindings": {
+    "total_updates": 1
+  },
+  "deviations": {
+    "queries_per_update": {
+      "value": 32,
+      "reason": "Independent one-update capacity batch excluded from formal learning curves."
+    }
+  }
+}
