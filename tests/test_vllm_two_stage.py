@@ -6,7 +6,7 @@ from ricepo.vllm_two_stage import VLLMTwoStage
 
 
 def test_runtime_options_only_expose_scheduler_controls_and_keep_ieee_protocol():
-    from ricepo.vllm_two_stage import vllm_runtime_options
+    from ricepo.vllm_two_stage import vllm_numeric_options,vllm_runtime_options
     resolved=vllm_runtime_options({'max_num_seqs':128,'max_num_batched_tokens':32768,
                                    'gpu_memory_utilization':.9})
     assert resolved['max_num_seqs']==128 and resolved['enable_prefix_caching'] is True
@@ -14,6 +14,15 @@ def test_runtime_options_only_expose_scheduler_controls_and_keep_ieee_protocol()
         vllm_runtime_options({'dtype':'bfloat16'})
     with pytest.raises(ValueError,match='CUDA Graphs'):
         vllm_runtime_options({'enforce_eager':True})
+    assert vllm_numeric_options('ieee_fp32')['dtype']=='float32'
+    assert vllm_numeric_options('bf16_fast')['dtype']=='bfloat16'
+    assert vllm_numeric_options('bf16_fast')['ppo_compatible'] is False
+    fast=vllm_runtime_options({'attention_backend':'FLASH_ATTN'},numeric_mode='bf16_fast')
+    assert fast['attention_backend']=='FLASH_ATTN'
+    with pytest.raises(ValueError,match='requires FLASH_ATTN'):
+        vllm_runtime_options({},numeric_mode='bf16_fast')
+    with pytest.raises(ValueError,match='unsupported numeric mode'):
+        vllm_numeric_options('tf32')
 
 class Engine:
     def __init__(self,first,second):self.scripts=[first,second];self.calls=[]

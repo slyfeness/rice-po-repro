@@ -27,8 +27,23 @@ DEFAULT_RUNTIME = {
     'attention_backend': 'TRITON_ATTN',
 }
 
+# ``bf16_fast`` is deliberately a benchmark-only transport mode.  Its
+# probability records can be checked, but it is not an approved replacement
+# for the IEEE FP32 behavior policy used by the PPO path.
+NUMERIC_MODES = {
+    'ieee_fp32': {'dtype': 'float32', 'requires_triton_ieee': True, 'ppo_compatible': True},
+    'bf16_fast': {'dtype': 'bfloat16', 'requires_triton_ieee': False, 'ppo_compatible': False},
+}
 
-def vllm_runtime_options(options=None):
+
+def vllm_numeric_options(mode='ieee_fp32'):
+    """Resolve an explicit numeric mode without silently changing PPO fidelity."""
+    if mode not in NUMERIC_MODES:
+        raise ValueError('unsupported numeric mode: '+repr(mode))
+    return dict(NUMERIC_MODES[mode])
+
+
+def vllm_runtime_options(options=None, *, numeric_mode='ieee_fp32'):
     """Validate benchmarkable scheduler settings without relaxing fidelity.
 
     ``None`` is the previously verified FP32 baseline.  Unknown keys are
@@ -53,8 +68,10 @@ def vllm_runtime_options(options=None):
         raise ValueError('gpu_memory_utilization must be within [0.5, 0.95]')
     if resolved['enforce_eager'] is not False or resolved['enable_prefix_caching'] is not True:
         raise ValueError('RICE benchmark requires CUDA Graphs and prefix caching')
-    if resolved['attention_backend'] != 'TRITON_ATTN':
-        raise ValueError('RICE IEEE benchmark requires TRITON_ATTN')
+    numeric=vllm_numeric_options(numeric_mode)
+    required_attention='TRITON_ATTN' if numeric['requires_triton_ieee'] else 'FLASH_ATTN'
+    if resolved['attention_backend'] != required_attention:
+        raise ValueError('numeric mode requires '+required_attention)
     resolved['gpu_memory_utilization'] = float(memory)
     return resolved
 
@@ -120,13 +137,16 @@ class VLLMEngine:
     Stop strings terminate after sampling and keep the entire native stop token.
     Unrepresentable rows are stop IDs, never masked out of the distribution.
     """
-    def __init__(self,model_path,tokenizer,policy_version,*,max_context_tokens=32768,runtime_options=None):
+    def __init__(self,model_path,tokenizer,policy_version,*,max_context_tokens=32768,runtime_options=None,
+                 numeric_mode='ieee_fp32'):
         import os
-        if os.environ.get('TRITON_F32_DEFAULT')!='ieee':raise ValueError('IEEE Triton must be set before engine import')
+        self.numeric=vllm_numeric_options(numeric_mode)
+        if self.numeric['requires_triton_ieee'] and os.environ.get('TRITON_F32_DEFAULT')!='ieee':
+            raise ValueError('IEEE Triton must be set before engine import')
         from vllm import LLM
         self.version=policy_version
-        self.runtime_options=vllm_runtime_options(runtime_options)
-        self.llm=LLM(model=str(model_path),tokenizer=str(model_path),dtype='float32',tensor_parallel_size=1,
+        self.runtime_options=vllm_runtime_options(runtime_options,numeric_mode=numeric_mode)
+        self.llm=LLM(model=str(model_path),tokenizer=str(model_path),dtype=self.numeric['dtype'],tensor_parallel_size=1,
             max_model_len=max_context_tokens,max_num_seqs=self.runtime_options['max_num_seqs'],
             max_num_batched_tokens=self.runtime_options['max_num_batched_tokens'],
             gpu_memory_utilization=self.runtime_options['gpu_memory_utilization'],
