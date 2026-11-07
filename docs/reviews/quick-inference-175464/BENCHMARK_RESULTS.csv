@@ -1,0 +1,5 @@
+candidate,numeric_mode,attention_backend,max_num_seqs,max_num_batched_tokens,gpu_memory_utilization,runs,mean_formal_wall_seconds,formal_wall_stdev_seconds,mean_generated_tokens,mean_tokens_per_second,observed_device_used_bytes,all_requests_complete
+A,bf16_fast,FLASH_ATTN,128,32768,0.90,2,18.148269552,0.328889615,34668.0,1910.266,79128100864,true
+B,bf16_fast,FLASH_ATTN,144,32768,0.90,2,18.109694984,0.293821955,34659.5,1913.880,78891122688,true
+C,ieee_fp32,TRITON_ATTN,64,16384,0.80,1,152.698397519,,35472.0,232.301,70313771008,true
+D,ieee_fp32,TRITON_ATTN,128,32768,0.80,1,164.216254359,,35472.0,216.008,71544799232,true
