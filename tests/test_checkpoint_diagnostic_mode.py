@@ -1,7 +1,13 @@
 import unittest
-from ricepo.hf_runtime import checkpoint_diagnostic_mode
+from ricepo.hf_runtime import checkpoint_diagnostic_mode,require_qualified_retrieval_batch
 
 class DiagnosticModeTests(unittest.TestCase):
+    def test_unqualified_diver_batch_rejected_before_model_loading(self):
+        self.assertEqual(require_qualified_retrieval_batch({'dtype':'bfloat16'}),1)
+        for size in (True,0,2,4,8):
+            with self.assertRaises(ValueError):
+                require_qualified_retrieval_batch({'dtype':'bfloat16','retrieval_query_batch_size':size})
+
     def test_explicit_fresh_single_update_only(self):
         plan={'total_updates':1,'checkpoint_selection':'last'}
         self.assertFalse(checkpoint_diagnostic_mode({},plan,parent=None,resume=False))

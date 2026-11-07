@@ -314,6 +314,15 @@ def checkpoint_diagnostic_mode(deployment, plan, *, parent, resume):
     return enabled
 
 
+def require_qualified_retrieval_batch(deployment):
+    size=deployment.get('retrieval_query_batch_size',1)
+    if type(size) is not int or size<1:
+        raise ValueError('positive retrieval batch size required')
+    if deployment['dtype']=='bfloat16' and size>1:
+        raise ValueError('BF16 Diver batch>1 failed exact ranking regression; use qualified batch1')
+    return size
+
+
 def run(config, deployment, *, resume=False):
     require_execution(config, command="train")
     require_slurm()
@@ -330,6 +339,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
     resolved = resolve(config,"train")
     plan = resolved["values"]
     checkpoint_diagnostic_mode(deployment,plan,parent=deployment.get('parent_run_root'),resume=resume)
+    require_qualified_retrieval_batch(deployment)
     checkpoint_io=deployment.get('checkpoint_io','direct_shared_v1')
     sampling_backend=deployment.get('sampling_backend','serial_hf_v1')
     if sampling_backend not in ('serial_hf_v1','hf_native_wavefront_v1','vllm_ieee_two_stage_v1'):
