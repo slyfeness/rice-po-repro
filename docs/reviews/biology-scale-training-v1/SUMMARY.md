@@ -54,3 +54,5 @@ GRPO176700在step/checkpoint提交后，重启引擎因空闲70.75GiB低于0.90�
 独立资源资格验证：CPU176762的9项针对性测试及实际源码资格绑定通过；CPU176744核验保存的512条GRPO原生轨迹、P0身份与重算信用一致。GPU176724短轨迹、176729中轨迹的log-prob、Exact KL、loss及全参数梯度与原实现逐值一致；最长原生19538 token（既有评分horizon16947）在176735完成有限backward，峰值allocated76287229952字节。该测试没有optimizer.step，不代表128更新通过。176724/176729曾在最长样本OOM；176734漏设分配器参数，是控制脚本错误，保留失败及成本。
 
 恢复候选使用官方[save_on_cpu](https://docs.pytorch.org/docs/2.10/autograd.html#torch.autograd.graph.save_on_cpu)保留反传图，HF独立启用expandable_segments，Adam矩量在反传期间留CPU、实际step前恢复原设备。vLLM worker清除该HF分配器设置并核验实际设置，采样数值配方不变。新运行目录显式绑定旧未提交的P0批次，只重用同一逻辑更新的原生IDs/q/奖励/信用；重新执行完整概率风险检查，之后更新使用新在线采样。旧目录和失败现场不覆盖。
+
+修复证据的资格SHA、短/中轨迹逐梯度比较、最长轨迹峰值与失败作业见[MEMORY_REPAIR.json](MEMORY_REPAIR.json)。冻结源码6c70342经CPU176767再次核验通过，GRPO恢复作业176768已运行；此处仍未将128查询更新标记通过。

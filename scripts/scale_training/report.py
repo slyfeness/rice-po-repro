@@ -100,7 +100,13 @@ def update_stats(directory,cache):
     if recovery.exists():
         counts['reused_generation_tokens']=counts['generated_tokens']
         counts['new_generation_tokens_in_this_attempt']=0
-    else:counts['new_generation_tokens_in_this_attempt']=counts['generated_tokens']
+        counts['reused_retrieval_calls']=counts['retrieval_calls']
+        counts['new_retrieval_calls_in_this_attempt']=0
+        counts['new_input_tokens_submitted_in_this_attempt']=0
+    else:
+        counts['new_generation_tokens_in_this_attempt']=counts['generated_tokens']
+        counts['new_retrieval_calls_in_this_attempt']=counts['retrieval_calls']
+        counts['new_input_tokens_submitted_in_this_attempt']=counts['input_tokens_submitted']
     report=read(credit) if credit.exists() else {};anchors=report.get('anchors',[])
     signal=sum(x!=math.fsum(v)/4 for v in grouped.values() for x in v)
     risk_path=directory/'pilot-probability-risk.json';risk=read(risk_path)['originals'] if risk_path.exists() else None
