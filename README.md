@@ -1,5 +1,7 @@
 # RICE-PO 独立复现
 
+本轮[显式BF16权重验收：FAIL](docs/reviews/bf16-explicit-weights/BF16_TRAINING_DECISION.md)：同一16条原生历史、2591个采样token上，显式BF16比FP32权重/BF16 autocast误差更大，三项冻结门限均未通过。按停止规则未执行后续PPO或测速，保留IEEE FP32主线。
+
 面向祝融，目标为 DeepSeek-R1-Distill-Qwen-1.5B 和 BRIGHT。最初源码审查基准为 `d4b490a96f8ceb31392ca55abf31325bedb7078c`。[论文 v3](https://arxiv.org/html/2605.26352v3) · [逐项修改表](docs/REVISION_MATRIX.csv) · [验证状态](docs/VALIDATION.md)
 
 最新结果：[并行优化最终决策](docs/reviews/parallel-optimization-v1/DECISION_REPORT.md) · [推荐配置](docs/reviews/parallel-optimization-v1/BEST_RUNTIME_CONFIG.json)。匹配BF16方案未通过行为概率门槛，继续采用IEEE FP32。数组检索/batch1的完整906请求计时约快4.34倍，批量Diver编码2/4/8因排名变化被拒绝。四查询旧/新RICE与GRPO均完成更新、检查点和新权重采样，原生轨迹与奖励相同；整轮耗时仅约±1%变化，尚未证明明显端到端提速。128查询候选具备已记录的正确性/容量准备，但本轮未启动128查询连续训练；所有公开模板继续禁执行。
