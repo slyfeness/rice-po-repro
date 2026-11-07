@@ -259,6 +259,7 @@ def main(args):
     status['GPU_allocations']=allocations;status['measured_GPU_hours_at_snapshot']=math.fsum(r['GPU_hours'] for r in allocations)
     status['sampling_note']='training generation tokens exclude reused branch history and environment markers; submitted input counts include full repeated native context, not measured uncached prefill FLOPs'
     status['timing_note']='main-process exclusive spans only; evaluation includes its nested generation/tools. Uninstrumented verification/serialization remains unattributed. In-flight spans excluded from completed-phase totals.'
+    status['collection_started_at_utc']=status['observed_at_utc'];status['observed_at_utc']=datetime.now(timezone.utc).isoformat()
     write(public/'RUN_STATUS.json',status);write(public/'EVALUATION.json',dict(expected_queries=32,samples_per_query=4,evaluations=evals))
     columns=list(dict.fromkeys(k for r in curves for k in r)) or ['method','update','persisted','iteration_seconds']
     with (public/'TRAINING_CURVES.csv').open('w',newline='') as f:

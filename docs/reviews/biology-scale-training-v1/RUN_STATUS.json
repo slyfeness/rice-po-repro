@@ -698,10 +698,20 @@
     "176710.batch|COMPLETED|2382|2026-11-07T20:32:19|2026-11-07T20:32:19|2026-11-07T21:12:01|cpu=16,gres/gpu=2,mem=192G,node=1",
     "176712|COMPLETED|1|2026-11-07T20:35:29|2026-11-07T21:11:00|2026-11-07T21:11:01|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
     "176712.batch|COMPLETED|1|2026-11-07T21:11:00|2026-11-07T21:11:00|2026-11-07T21:11:01|cpu=16,gres/gpu=2,mem=192G,node=1",
-    "176713|RUNNING|51|2026-11-07T20:35:41|2026-11-07T21:12:01|Unknown|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
-    "176713.batch|RUNNING|51|2026-11-07T21:12:01|2026-11-07T21:12:01|Unknown|cpu=16,gres/gpu=2,mem=192G,node=1",
-    "176714|RUNNING|51|2026-11-07T20:35:41|2026-11-07T21:12:01|Unknown|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
-    "176714.batch|RUNNING|51|2026-11-07T21:12:01|2026-11-07T21:12:01|Unknown|cpu=16,gres/gpu=2,mem=192G,node=1"
+    "176713|RUNNING|8911|2026-11-07T20:35:41|2026-11-07T21:12:01|Unknown|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176713.batch|RUNNING|8911|2026-11-07T21:12:01|2026-11-07T21:12:01|Unknown|cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176713.0|COMPLETED|0|2026-11-07T21:27:35|2026-11-07T21:27:35|2026-11-07T21:27:35|cpu=1,gres/gpu=2,mem=192G,node=1",
+    "176714|FAILED|5431|2026-11-07T20:35:41|2026-11-07T21:12:01|2026-11-07T22:42:32|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176714.batch|FAILED|5431|2026-11-07T21:12:01|2026-11-07T21:12:01|2026-11-07T22:42:32|cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176714.0|COMPLETED|0|2026-11-07T21:27:35|2026-11-07T21:27:35|2026-11-07T21:27:35|cpu=1,gres/gpu=2,mem=192G,node=1",
+    "176724|FAILED|121|2026-11-07T22:54:22|2026-11-07T22:54:22|2026-11-07T22:56:23|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176724.batch|FAILED|121|2026-11-07T22:54:22|2026-11-07T22:54:22|2026-11-07T22:56:23|cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176729|FAILED|90|2026-11-07T22:59:34|2026-11-07T22:59:34|2026-11-07T23:01:04|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176729.batch|FAILED|90|2026-11-07T22:59:34|2026-11-07T22:59:34|2026-11-07T23:01:04|cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176734|FAILED|69|2026-11-07T23:03:49|2026-11-07T23:03:49|2026-11-07T23:04:58|billing=16,cpu=16,gres/gpu=1,mem=192G,node=1",
+    "176734.batch|FAILED|69|2026-11-07T23:03:49|2026-11-07T23:03:49|2026-11-07T23:04:58|cpu=16,gres/gpu=1,mem=192G,node=1",
+    "176735|COMPLETED|92|2026-11-07T23:07:35|2026-11-07T23:07:35|2026-11-07T23:09:07|billing=16,cpu=16,gres/gpu=1,mem=192G,node=1",
+    "176735.batch|COMPLETED|92|2026-11-07T23:07:35|2026-11-07T23:07:35|2026-11-07T23:09:07|cpu=16,gres/gpu=1,mem=192G,node=1"
   ],
   "GPU_allocations": [
     {
@@ -750,20 +760,49 @@
       "job_id": "176713",
       "state": "RUNNING",
       "allocated_gpus": 2,
-      "elapsed_seconds": 51,
-      "GPU_hours": 0.028333333333333332
+      "elapsed_seconds": 8911,
+      "GPU_hours": 4.950555555555556
     },
     {
       "job_id": "176714",
-      "state": "RUNNING",
+      "state": "FAILED",
       "allocated_gpus": 2,
-      "elapsed_seconds": 51,
-      "GPU_hours": 0.028333333333333332
+      "elapsed_seconds": 5431,
+      "GPU_hours": 3.0172222222222222
+    },
+    {
+      "job_id": "176724",
+      "state": "FAILED",
+      "allocated_gpus": 2,
+      "elapsed_seconds": 121,
+      "GPU_hours": 0.06722222222222222
+    },
+    {
+      "job_id": "176729",
+      "state": "FAILED",
+      "allocated_gpus": 2,
+      "elapsed_seconds": 90,
+      "GPU_hours": 0.05
+    },
+    {
+      "job_id": "176734",
+      "state": "FAILED",
+      "allocated_gpus": 1,
+      "elapsed_seconds": 69,
+      "GPU_hours": 0.019166666666666665
+    },
+    {
+      "job_id": "176735",
+      "state": "COMPLETED",
+      "allocated_gpus": 1,
+      "elapsed_seconds": 92,
+      "GPU_hours": 0.025555555555555557
     }
   ],
-  "measured_GPU_hours_at_snapshot": 5.471111111111111,
+  "measured_GPU_hours_at_snapshot": 13.544166666666667,
   "sampling_note": "training generation tokens exclude reused branch history and environment markers; submitted input counts include full repeated native context, not measured uncached prefill FLOPs",
   "timing_note": "main-process exclusive spans only; evaluation includes its nested generation/tools. Uninstrumented verification/serialization remains unattributed. In-flight spans excluded from completed-phase totals.",
   "snapshot_note": "Run-stage status refreshed from Slurm/complete receipts at stated UTC. Older allocation/timing arrays retain their original capacity-milestone measurement; full CPU export pending.",
-  "allocation_measurement_observed_at_utc": "2026-11-07T21:12:22+00:00"
+  "allocation_measurement_observed_at_utc": "2026-11-07T23:40:33+00:00",
+  "allocation_measurement_jobs_note": "Full CPU export176757; allocation snapshot includes old active176713 and failed176714 plus qualification probes; new176768 is not included in this earlier export."
 }
