@@ -1,0 +1,5 @@
+comparison,job,requests,reference_seconds,optimized_seconds,measured_component,rank_identity,ndcg_identity,notes
+historical_norm_cache,175294,900,,,whole_retrieval_217.634661339_seconds,exact,exact,no_matched_uncached_total_time_available
+historical_d0,175299,32,,,independent_paired_D0,exact,exact,max_raw_score_delta_zero
+paired_array_minmax,175496,906,140.031458169,54.558495525,fusion_and_sort_only,exact,exact,same_actual_dense_sparse_scores_per_call;2.56663x_fusion_stage_speedup
+paired_retrieval_total,175496,906,,,both_fusions_total269.379981078_seconds,exact,exact,includes_both_paths;not_an_independent_before_after_total

@@ -1,6 +1,6 @@
 import unittest
 import random
-from ricepo.retrieval import array_hybrid_rank, hybrid_rank, minmax
+from ricepo.retrieval import FixedHybridRetriever, array_hybrid_rank, hybrid_rank, minmax
 
 
 class FusionTests(unittest.TestCase):
@@ -15,6 +15,16 @@ class FusionTests(unittest.TestCase):
                 expected = hybrid_rank(dense, sparse, normalization=minmax, **kwargs)
                 actual = array_hybrid_rank(dense, sparse, ordered_ids=ids, **kwargs)
                 self.assertEqual(actual, expected)
+
+    def test_retriever_array_route_preserves_rendered_observation_and_ids(self):
+        kwargs = dict(dense_score=lambda q: {'a':1., 'b':2.}, sparse_score=lambda q: {'a':2., 'b':1.},
+                      corpus={'a':'first','b':'second'}, normalization=minmax,
+                      exclude_before_normalization=True, top_k=2,
+                      render_observation=lambda docs: tuple(len(d.text) for d in docs), backend_version='frozen')
+        reference = FixedHybridRetriever(**kwargs)
+        optimized = FixedHybridRetriever(**kwargs, ranking_impl='array_minmax_v1')
+        self.assertEqual(reference.retrieve('q',excluded_ids=frozenset()),
+                         optimized.retrieve('q',excluded_ids=frozenset()))
 
 
 if __name__ == "__main__":

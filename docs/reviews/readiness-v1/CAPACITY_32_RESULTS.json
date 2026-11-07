@@ -1,0 +1,195 @@
+{
+  "status": "PASS_REUSED_COMPLETED32",
+  "evidence_job": 175497,
+  "evidence_sha256": "7543f75df632b6e482f9d604772e01b576b50dae3f83406d1caa074264711a29",
+  "methods": {
+    "ricepo": {
+      "job": 175312,
+      "queries": 32,
+      "original_trajectories": 128,
+      "legal_originals": 75,
+      "max_steps": 5,
+      "original_probability_checks": 128,
+      "branch_probability_checks": 640,
+      "update": {
+        "new_policy_version": "7a915d2dcbe372315a48f3d9c0ccf754785cd3d8c388fdee4b506c32874c854c",
+        "optimizer": {
+          "activation_checkpointing": {
+            "actual_recomputation_observed": true,
+            "checkpoint_forwards": 3584,
+            "layer_executions": 7168,
+            "mode": "eval_layers_v1",
+            "model_training_mode": false
+          },
+          "actual_state_dict_changed": true,
+          "effective_clip_fraction": 0,
+          "global_generated_tokens": 232005,
+          "global_sequences": 128,
+          "grad_norm_before_clip": 501.1370849609375,
+          "negative_advantages": 99102,
+          "negative_advantages_fraction": 0.427154587185621,
+          "normalized_loss": -4.9876344203948975,
+          "optimizer_steps": 1,
+          "outside_clip_fraction": 0,
+          "parameter_probe_changed": true,
+          "parameter_probe_coordinates": "first, per-axis midpoint, last of every trainable tensor",
+          "parameter_probe_max_abs_delta": 0.0000019073486328125,
+          "policy_loss": -4.9876344203948975,
+          "positive_advantages": 91244,
+          "positive_advantages_fraction": 0.3932846274864766,
+          "ratio_max": 1.0004676580429077,
+          "ratio_mean": 0.9999999470519202,
+          "ratio_min": 0.9988448023796082,
+          "reference_kl": 0,
+          "steps": [
+            {
+              "effective_clip_count": 0,
+              "effective_clip_fraction": 0,
+              "epoch": 0,
+              "generated_tokens": 232005,
+              "grad_norm_before_clip": 501.1370849609375,
+              "loss_denominator": 128,
+              "minibatch_start": 0,
+              "negative_advantages": 99102,
+              "normalized_loss": -4.9876344203948975,
+              "outside_clip_count": 0,
+              "outside_clip_fraction": 0,
+              "policy_loss": -4.9876344203948975,
+              "positive_advantages": 91244,
+              "ratio_max": 1.0004676580429077,
+              "ratio_mean": 0.9999999470519202,
+              "ratio_min": 0.9988448023796082,
+              "reference_kl": 0,
+              "reference_kl_token_mean": 0,
+              "sequences": 128,
+              "zero_advantages": 41659
+            }
+          ],
+          "zero_advantages": 41659,
+          "zero_advantages_fraction": 0.17956078532790243,
+          "zero_gradient_all_steps": false
+        }
+      },
+      "resources": {
+        "elapsed_seconds": 7614.265006929636,
+        "peak_allocated": [
+          61068315136,
+          8150408704
+        ],
+        "peak_reserved": [
+          79668707328,
+          8174698496
+        ]
+      },
+      "reload": {
+        "policy_version": "7a915d2dcbe372315a48f3d9c0ccf754785cd3d8c388fdee4b506c32874c854c",
+        "weights_verified": true
+      },
+      "artifact_sha256": {
+        "trajectories.json": "a208a0c3b39a591c47a250029517e23b852d8317c53569dbde04e6c42e2b7fb7",
+        "update.json": "0745af002e690bcb77f88ed5446893482be80c0a11bb04e15327af6f7fc61521",
+        "reload-verification.json": "38f0dffbd16e187c51bf471fa46aa8ac4098edf1c55690c509bd29c6af301eb7",
+        "checkpoint_complete.receipt.json": "dd4ec7d62ad659aaef899b5d3ff4c85436edfeebc23557100d67064824fe1209",
+        "query-batch.json": "981040e63187ff9b24e58c965eaf4f9dc5025b41a4e520e69e8ce5d5a08b4116"
+      }
+    },
+    "grpo": {
+      "job": 175313,
+      "queries": 32,
+      "original_trajectories": 128,
+      "legal_originals": 75,
+      "max_steps": 5,
+      "original_probability_checks": 128,
+      "branch_probability_checks": 0,
+      "update": {
+        "new_policy_version": "fc02b56611e08aaa4a7e8103e7772ec0314546d4bc703273e74a383af56c01f9",
+        "optimizer": {
+          "activation_checkpointing": {
+            "actual_recomputation_observed": true,
+            "checkpoint_forwards": 3584,
+            "layer_executions": 7168,
+            "mode": "eval_layers_v1",
+            "model_training_mode": false
+          },
+          "actual_state_dict_changed": true,
+          "effective_clip_fraction": 0,
+          "global_generated_tokens": 232005,
+          "global_sequences": 128,
+          "grad_norm_before_clip": 515.257568359375,
+          "negative_advantages": 99079,
+          "negative_advantages_fraction": 0.4270554513911338,
+          "normalized_loss": -32.643459022045135,
+          "optimizer_steps": 1,
+          "outside_clip_fraction": 0,
+          "parameter_probe_changed": true,
+          "parameter_probe_coordinates": "first, per-axis midpoint, last of every trainable tensor",
+          "parameter_probe_max_abs_delta": 0.0000019073486328125,
+          "policy_loss": -32.643459022045135,
+          "positive_advantages": 93999,
+          "positive_advantages_fraction": 0.405159371565268,
+          "ratio_max": 1.0004945993423462,
+          "ratio_mean": 0.9999999477389002,
+          "ratio_min": 0.9988448023796082,
+          "reference_kl": 0,
+          "steps": [
+            {
+              "effective_clip_count": 0,
+              "effective_clip_fraction": 0,
+              "epoch": 0,
+              "generated_tokens": 232005,
+              "grad_norm_before_clip": 515.257568359375,
+              "loss_denominator": 128,
+              "minibatch_start": 0,
+              "negative_advantages": 99079,
+              "normalized_loss": -32.643459022045135,
+              "outside_clip_count": 0,
+              "outside_clip_fraction": 0,
+              "policy_loss": -32.643459022045135,
+              "positive_advantages": 93999,
+              "ratio_max": 1.0004945993423462,
+              "ratio_mean": 0.9999999477389002,
+              "ratio_min": 0.9988448023796082,
+              "reference_kl": 0,
+              "reference_kl_token_mean": 0,
+              "sequences": 128,
+              "zero_advantages": 38927
+            }
+          ],
+          "zero_advantages": 38927,
+          "zero_advantages_fraction": 0.1677851770435982,
+          "zero_gradient_all_steps": false
+        }
+      },
+      "resources": {
+        "elapsed_seconds": 3042.4550522160716,
+        "peak_allocated": [
+          61068618240,
+          8150408704
+        ],
+        "peak_reserved": [
+          84144029696,
+          8174698496
+        ]
+      },
+      "reload": {
+        "policy_version": "fc02b56611e08aaa4a7e8103e7772ec0314546d4bc703273e74a383af56c01f9",
+        "weights_verified": true
+      },
+      "artifact_sha256": {
+        "trajectories.json": "a5dd1e987aedb1c13ca8b61f5db9d74eb083dff3539feae51b2a13c33acbdb0a",
+        "update.json": "181cfe4e1584e584db8d85225d514a7592ef4c00e9acf1c37c8c825bdd5523ee",
+        "reload-verification.json": "b30dc2fd75e8ccf2d99ea1b64bc28a5629a242a087129f0b2323b1ca43c63150",
+        "checkpoint_complete.receipt.json": "260eb191c176f51afb695f2c5c5ba661a80499677cc023f97a5a525d0ba484bc",
+        "query-batch.json": "981040e63187ff9b24e58c965eaf4f9dc5025b41a4e520e69e8ce5d5a08b4116"
+      }
+    }
+  },
+  "rice_credit": {
+    "selected_anchors": 128,
+    "estimable_anchors": 72,
+    "nonzero_local_credit": 41,
+    "reasoning_gate_passes": 3,
+    "gate_passes_all_terminal": true,
+    "new_branches": 640
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "schema_version": 1,
+  "extends": "biology_readiness_ricepo.json",
+  "method": "grpo"
+}

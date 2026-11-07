@@ -277,7 +277,7 @@ def _domain_retriever(domain, spec, deployment, settings, model_spec, encoder, r
         backend = FixedHybridRetriever(dense_score=dense, sparse_score=sparse, corpus=corpus,
             normalization=minmax, exclude_before_normalization=settings["excluded_before_normalization"],
             top_k=deployment["retrieval_top_k"], render_observation=renderer.observation if renderer else lambda docs: (),
-            backend_version=spec["backend_version"])
+            backend_version=spec["backend_version"],ranking_impl=deployment.get('retrieval_ranking_impl','reference'))
         audit.update(backend_version=spec["backend_version"], ranking=backend.recipe(),
                      query_composition=settings.get("query_composition", {"mode":"original_query_D0"}),
                      observation_top_k=settings.get("observation_top_k",0),

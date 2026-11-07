@@ -115,7 +115,7 @@ class FixedHybridRetriever:
                  corpus: Mapping[str, str], normalization: Callable,
                  exclude_before_normalization: bool, top_k: int,
                  render_observation: Callable[[Sequence[RankedDocument]], Sequence[int]],
-                 backend_version: str):
+                 backend_version: str, ranking_impl: str = "reference"):
         if (not isinstance(backend_version, str) or not backend_version
                 or type(top_k) is not int or top_k <= 0
                 or type(exclude_before_normalization) is not bool):
@@ -128,10 +128,16 @@ class FixedHybridRetriever:
         self.exclude_before_normalization = exclude_before_normalization
         self.top_k, self.render_observation = top_k, render_observation
         self.backend_version = backend_version
+        if ranking_impl not in {"reference", "array_minmax_v1"}:
+            raise ValueError("unknown ranking implementation")
+        if ranking_impl == "array_minmax_v1" and normalization is not minmax:
+            raise ValueError("array fusion only implements minmax normalization")
+        self.ranking_impl = ranking_impl
+        self.ordered_ids = tuple(sorted(self.corpus))
 
     def recipe(self):
         """Bind the scorers actually in use, including normalization and cutoffs."""
-        return {
+        result = {
             "dense": self.dense_score.recipe(), "sparse": self.sparse_score.recipe(),
             "candidate_domain": "all_domain_corpus_rows", "backend_version": self.backend_version,
             "normalization": self.normalization.__name__,
@@ -143,6 +149,9 @@ class FixedHybridRetriever:
             "cutoff": self.top_k, "reward": "pytrec_eval.ndcg_cut_10_raw_fraction",
             "packages": package_versions(("numpy", "gensim", "scipy", "pyserini", "pyjnius", "pytrec-eval")),
         }
+        if self.ranking_impl != "reference":
+            result.update(ranking_impl=self.ranking_impl, fusion_source_sha256=source_sha256(array_hybrid_rank))
+        return result
 
     def score_trace(self, query: str, *, excluded_ids: frozenset[str]):
         if not isinstance(query, str) or not query:
@@ -154,7 +163,14 @@ class FixedHybridRetriever:
                        exclude_before_normalization=self.exclude_before_normalization, top_k=self.top_k)
 
     def retrieve(self, query: str, *, excluded_ids: frozenset[str]) -> RetrievalResult:
-        ranking = self.score_trace(query, excluded_ids=excluded_ids)["ranking"]
+        if self.ranking_impl == "array_minmax_v1":
+            if not isinstance(query, str) or not query:
+                raise ValueError("retrieval query must be a nonempty string")
+            ranking = array_hybrid_rank(self.dense_score(query), self.sparse_score(query),
+                ordered_ids=self.ordered_ids, excluded_ids=excluded_ids,
+                exclude_before_normalization=self.exclude_before_normalization, top_k=self.top_k)
+        else:
+            ranking = self.score_trace(query, excluded_ids=excluded_ids)["ranking"]
         documents = tuple(replace(d, text=self.corpus[d.document_id]) for d in ranking)
         observation = tuple(self.render_observation(documents))
         if any(type(t) is not int or t < 0 for t in observation):
