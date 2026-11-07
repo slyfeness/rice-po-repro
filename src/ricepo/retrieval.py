@@ -89,6 +89,17 @@ def array_hybrid_rank(dense, sparse, *, ordered_ids, excluded_ids,
         raise ValueError("array fusion requires fixed sorted complete scoring domain")
     left = np.asarray([dense[key] for key in ordered_ids], dtype=np.float64)
     right = np.asarray([sparse[key] for key in ordered_ids], dtype=np.float64)
+    return array_score_rank(left, right, ordered_ids=ordered_ids, excluded_ids=excluded_ids,
+        exclude_before_normalization=exclude_before_normalization, top_k=top_k)
+
+
+def array_score_rank(left, right, *, ordered_ids, excluded_ids,
+                     exclude_before_normalization, top_k):
+    """Rank arrays aligned to a constructor-validated lexical ID order."""
+    import numpy as np
+    left, right = np.asarray(left,dtype=np.float64), np.asarray(right,dtype=np.float64)
+    if left.shape != (len(ordered_ids),) or right.shape != left.shape:
+        raise ValueError('score arrays differ from document identities')
     if not np.isfinite(left).all() or not np.isfinite(right).all():
         raise ValueError("nonfinite retrieval score")
     eligible = np.asarray([key not in excluded_ids for key in ordered_ids], dtype=bool)
@@ -115,7 +126,7 @@ class FixedHybridRetriever:
                  corpus: Mapping[str, str], normalization: Callable,
                  exclude_before_normalization: bool, top_k: int,
                  render_observation: Callable[[Sequence[RankedDocument]], Sequence[int]],
-                 backend_version: str, ranking_impl: str = "reference"):
+                 backend_version: str, ranking_impl: str = "reference", query_batch_size: int = 1):
         if (not isinstance(backend_version, str) or not backend_version
                 or type(top_k) is not int or top_k <= 0
                 or type(exclude_before_normalization) is not bool):
@@ -134,6 +145,10 @@ class FixedHybridRetriever:
             raise ValueError("array fusion only implements minmax normalization")
         self.ranking_impl = ranking_impl
         self.ordered_ids = tuple(sorted(self.corpus))
+        if type(query_batch_size) is not int or query_batch_size < 1:
+            raise ValueError('positive retrieval query batch size required')
+        self.query_batch_size = query_batch_size
+        self._dense_order = self._sparse_order = None
 
     def recipe(self):
         """Bind the scorers actually in use, including normalization and cutoffs."""
@@ -150,7 +165,8 @@ class FixedHybridRetriever:
             "packages": package_versions(("numpy", "gensim", "scipy", "pyserini", "pyjnius", "pytrec-eval")),
         }
         if self.ranking_impl != "reference":
-            result.update(ranking_impl=self.ranking_impl, fusion_source_sha256=source_sha256(array_hybrid_rank))
+            result.update(ranking_impl=self.ranking_impl, fusion_source_sha256=source_sha256(array_hybrid_rank,array_score_rank),
+                          query_batch_size=self.query_batch_size)
         return result
 
     def score_trace(self, query: str, *, excluded_ids: frozenset[str]):
@@ -176,6 +192,41 @@ class FixedHybridRetriever:
         if any(type(t) is not int or t < 0 for t in observation):
             raise ValueError("invalid observation token IDs")
         return RetrievalResult(query, documents, observation, self.backend_version)
+
+    def retrieve_many(self, requests):
+        """One aligned result per ready query, including repeated query texts.
+
+        Only the explicit array route supports batched encoding. Each request
+        retains its own fixed exclusions; observations are rendered separately.
+        """
+        requests=tuple(requests)
+        if self.ranking_impl != 'array_minmax_v1' or not hasattr(self.dense_score,'score_many'):
+            return tuple(self.retrieve(r['query'],excluded_ids=r['excluded_ids']) for r in requests)
+        import numpy as np
+        if self._dense_order is None:
+            for scorer in (self.dense_score,self.sparse_score):
+                if set(scorer.ids)!=set(self.ordered_ids):raise ValueError('scorer/corpus identities differ')
+            dense_lookup={key:i for i,key in enumerate(self.dense_score.ids)}
+            sparse_lookup={key:i for i,key in enumerate(self.sparse_score.ids)}
+            self._dense_order=np.asarray([dense_lookup[k] for k in self.ordered_ids])
+            self._sparse_order=np.asarray([sparse_lookup[k] for k in self.ordered_ids])
+        results=[]
+        for start in range(0,len(requests),self.query_batch_size):
+            batch=requests[start:start+self.query_batch_size]
+            queries=[r['query'] for r in batch]
+            if any(not isinstance(q,str) or not q for q in queries):raise ValueError('nonempty query required')
+            dense=self.dense_score.score_many(queries)
+            if dense.shape != (len(batch),len(self.ordered_ids)):raise ValueError('incomplete dense scoring batch')
+            for request,values in zip(batch,dense,strict=True):
+                sparse=self.sparse_score.score_array(request['query'])
+                ranked=array_score_rank(values[self._dense_order],sparse[self._sparse_order],
+                    ordered_ids=self.ordered_ids,excluded_ids=request['excluded_ids'],
+                    exclude_before_normalization=self.exclude_before_normalization,top_k=self.top_k)
+                documents=tuple(replace(d,text=self.corpus[d.document_id]) for d in ranked)
+                observation=tuple(self.render_observation(documents))
+                if any(type(t) is not int or t<0 for t in observation):raise ValueError('invalid observation token IDs')
+                results.append(RetrievalResult(request['query'],documents,observation,self.backend_version))
+        return tuple(results)
 
 
 class PyTrecReward:
@@ -237,7 +288,7 @@ class DenseVectorScorer:
     Corpus encoding is a separate Slurm stage, never an implicit download/build.
     """
 
-    def __init__(self, document_ids, vectors, encode_query: Callable, *, chunk_size: int):
+    def __init__(self, document_ids, vectors, encode_query: Callable, *, chunk_size: int, encode_queries=None):
         import numpy as np
         self.ids = tuple(document_ids)
         if (not self.ids or any(not isinstance(identity, str) or not identity for identity in self.ids)
@@ -247,6 +298,7 @@ class DenseVectorScorer:
         if not np.issubdtype(vectors.dtype, np.floating):
             raise ValueError("corpus vectors must be floating point")
         self.vectors, self.encode_query, self.chunk_size = vectors, encode_query, chunk_size
+        self.encode_queries=encode_queries
         # Corpus vectors are an immutable, pre-encoded retrieval asset.  Scan
         # them once at load time using the same float32 blocks used for exact
         # scoring, then retain only their norms.  Query-time validation must
@@ -284,6 +336,31 @@ class DenseVectorScorer:
             if not np.isfinite(scores).all():
                 raise ValueError("nonfinite cosine score")
             result.update(zip(self.ids[start:start + len(scores)], map(float, scores), strict=True))
+        return result
+
+    def score_many(self,queries):
+        """Batch encoder, exact per-query GEMV order for fixed corpus scoring.
+
+        A GEMM would change float32 reduction order; this reference-equivalent
+        path batches encoding and corpus reads without changing that operation.
+        """
+        import numpy as np
+        vectors=np.asarray(self.encode_queries(queries) if self.encode_queries is not None
+                           else [self.encode_query(q) for q in queries],dtype=np.float32)
+        if vectors.shape!=(len(queries),self.vectors.shape[1]) or not np.isfinite(vectors).all():
+            raise ValueError('batch query embeddings have incorrect shape or nonfinite values')
+        # axis-wise norm may select a different reduction kernel. Match the
+        # existing single-query norm separately for every independent row.
+        norms=np.asarray([np.linalg.norm(vector) for vector in vectors],dtype=np.float32)
+        if not np.isfinite(norms).all() or not (norms>0).all():raise ValueError('invalid query norm')
+        vectors=vectors/norms[:,None]
+        result=np.empty((len(queries),len(self.ids)),dtype=np.float32)
+        for start in range(0,len(self.ids),self.chunk_size):
+            stop=min(start+self.chunk_size,len(self.ids))
+            block=np.asarray(self.vectors[start:stop],dtype=np.float32)
+            for i,vector in enumerate(vectors):
+                result[i,start:stop]=(block@vector)/self.document_norms[start:stop]
+        if not np.isfinite(result).all():raise ValueError('nonfinite cosine scores')
         return result
 
 
@@ -328,9 +405,11 @@ class LuceneBM25Scorer:
                 "source_sha256": source_sha256(type(self))}
 
     def __call__(self, query: str) -> dict[str, float]:
+        return dict(zip(self.ids,map(float,self.score_array(query)),strict=True))
+
+    def score_array(self,query):
         weighted = self.model[self.dictionary.doc2bow(self.analyzer.analyze(query))]
-        values = self.index[weighted].tolist()
-        return dict(zip(self.ids, map(float, values), strict=True))
+        return self.index[weighted]
 
 
 class DiverEncoder:

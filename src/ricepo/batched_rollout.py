@@ -1,6 +1,6 @@
 """Wavefront scheduling around the unchanged native rollout transition.
 
-Only generation is batched. Each returned action is consumed exactly once by
+Generation and already-ready legal retrievals may be batched. Each action is consumed once by
 the same validation, deterministic retrieval and failure-terminal machinery.
 There is no decoding/re-encoding, resampling or history/cache shared by rows.
 """
@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from copy import copy
 
 from .audit import operation, saved_item, fingerprint, check_scheduled_request
+from .contracts import InvalidGeneration
 
 
 @dataclass(frozen=True)
@@ -39,6 +40,16 @@ class _OneAction:
         return self.generation
 
 
+class _OneRetrieval:
+    def __init__(self,request,result):
+        self.request,self.result,self.used=request,result,False
+    def retrieve(self,query,*,excluded_ids):
+        if self.used or query!=self.request['query'] or excluded_ids!=self.request['excluded_ids']:
+            raise ValueError('batched retrieval identity or consumption differs')
+        self.used=True
+        return self.result
+
+
 def continue_many(runner,states):
     """States have the exact keyword contract of RolloutRunner._continue."""
     if not states or len({s['trajectory_id'] for s in states})!=len(states):
@@ -60,10 +71,25 @@ def continue_many(runner,states):
         with operation(kind,requests=identities,input_tokens=sum(map(len,prefixes))):
             generations=owner.generate_many(prefixes,seeds)
         if len(generations)!=len(active):raise ValueError('batch omitted a scheduled action')
+        retrievals={}
+        if hasattr(runner.retriever,'retrieve_many'):
+            ready=[]
+            for i,g in zip(active,generations,strict=True):
+                if isinstance(g,InvalidGeneration):continue
+                runner._validate_generation(g)
+                runner._check_length(tuple(states[i]['token_ids'])+tuple(g.token_ids))
+                ready.append((i,dict(query=runner.query_composer.compose(states[i]['original_query'],g.summary_text),
+                    excluded_ids=runner.excluded_ids_by_query.get(states[i]['query_id'],frozenset()))))
+            if ready:
+                with operation('retrieval_ready_wave',requests=len(ready)):
+                    values=runner.retriever.retrieve_many([r for _,r in ready])
+                if len(values)!=len(ready):raise ValueError('retrieval batch omitted a scheduled query')
+                retrievals={i:_OneRetrieval(request,value) for (i,request),value in zip(ready,values,strict=True)}
         following=[]
         for i,prefix,seed,g in zip(active,prefixes,seeds,generations,strict=True):
             runner._check_policy(states[i]['policy_version'])
             one=copy(runner);one.generator=_OneAction(owner,prefix,seed,g)
+            if i in retrievals:one.retriever=retrievals[i]
             state=states[i];depth=len(state['previous_steps'])+1
             t=one._continue(**{**state,'seeds':(seed,),'final_depth':depth})
             saved_item('batch_partial_trajectory',[t.trajectory_id,depth],t)
