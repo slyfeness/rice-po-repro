@@ -23,6 +23,14 @@ def recipe(stage='training', method='ricepo'):
 
 
 class ScaleContracts(unittest.TestCase):
+    def test_residency_cache_is_released_after_offload_frame(self):
+        from ricepo.vllm_lifecycle import release_residency_cache
+        calls=[]
+        with (patch('gc.collect',side_effect=lambda:calls.append('gc')),patch('torch.cuda.synchronize',side_effect=lambda d:calls.append('sync')),
+            patch('torch.cuda.empty_cache',side_effect=lambda:calls.append('empty')),
+            patch('torch.cuda.mem_get_info',return_value=(90,100)),patch('torch.cuda.memory_allocated',return_value=0),patch('torch.cuda.memory_reserved',return_value=0)):
+            result=release_residency_cache('assigned')
+        self.assertEqual(calls,['gc','sync','empty']);self.assertEqual(result['reserved_bytes'],0)
     def test_worker_response_budget_changes_wait_only_and_legacy_default_remains(self):
         from types import SimpleNamespace
         from ricepo.vllm_lifecycle import WorkerTransport

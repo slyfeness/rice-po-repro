@@ -17,6 +17,19 @@ def fresh_rpc_path(root):
     """Atomic unique attempt directory; retained after shutdown for traceability."""
     return Path(tempfile.mkdtemp(prefix='w-',dir=root))
 
+
+def release_residency_cache(device):
+    """Run after _offload returns, so its last CUDA tensor local is dead.
+
+    Emptying the allocator inside that frame can leave its entire segment
+    reserved until this second boundary. No live model/state tensor is dropped.
+    """
+    import gc,torch
+    gc.collect();torch.cuda.synchronize(device);torch.cuda.empty_cache()
+    free,total=torch.cuda.mem_get_info(device)
+    return dict(allocated_bytes=torch.cuda.memory_allocated(device),reserved_bytes=torch.cuda.memory_reserved(device),
+                free_device_bytes=free,total_device_bytes=total)
+
 def _worker(connection,spec):
     # Spawn a fresh interpreter; establish device and IEEE mode before imports.
     os.setsid()  # Dedicated group: recovery can reap only this worker and its children.
@@ -168,6 +181,8 @@ class PhaseSeparatedGenerator:
         import torch
         start=time.monotonic();version=self.policy_version
         self._offload()
+        released=release_residency_cache(self.device)
+        event('generation_residency_released',policy_version=version,**released)
         if self.actor.training:raise ValueError('behavior identity requires eval mode')
         from .asset_identity import tensor_versions
         verified=self.validated_policy_getter() if self.validated_policy_getter else None

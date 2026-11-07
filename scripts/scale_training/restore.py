@@ -57,4 +57,8 @@ def main():
         newly_executed_optimizer_steps=0,checkpoint_modified=False,elapsed_seconds=time.monotonic()-start,
         hf_matmul_allow_tf32=torch.backends.cuda.matmul.allow_tf32,hf_precision=torch.get_float32_matmul_precision()))
     print('INDEPENDENT_RESTORE_PASS',out.name,flush=True)
+    if os.environ.get('RICE_COMPLETE_CAPACITY')=='1':
+        from complete_capacity import complete
+        complete(run=run,cp=cp,record=record,binding=binding,plan=plan,actor=actor,optimizer=optimizer,restore_evidence=out)
+        atomic_json(run/'capacity-restore-complete.json',dict(status='PASS',evidence=str(out),sha256=file_sha256(out)))
 if __name__=='__main__':main()
