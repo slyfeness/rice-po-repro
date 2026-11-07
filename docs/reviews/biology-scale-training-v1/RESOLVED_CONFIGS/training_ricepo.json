@@ -1,0 +1,714 @@
+{
+  "private_recipe_fingerprint": "a7efb32d8b0eeea1b950095bced3dfb52aa6f9be77f06aafa6580e1336fdf5a1",
+  "public_config_disabled": {
+    "author_code": {
+      "commit": null,
+      "repository": null,
+      "status": "unverified"
+    },
+    "batch_unit": "queries",
+    "batch_unit_evidence": "The paper says batch size 128 without clarifying the unit. Reference runtime chooses 128 queries, each with N trajectories. This choice can be expensive and is not verified.",
+    "deviations": {
+      "checkpoint_every_updates": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "value": 2
+      },
+      "development_every_updates": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "value": 4
+      },
+      "eval_samples_per_query": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "value": 4
+      },
+      "format_failure_policy": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "value": "invalid_action_terminal_zero_v1"
+      },
+      "max_new_tokens_per_step": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "value": 4096
+      },
+      "native_span_parser": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "value": "two_stage_env_summary_v1"
+      },
+      "prompt_artifact": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "value": "prompts/ricepo_prefilled_think_smoke.txt"
+      },
+      "query_composition": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "value": {
+          "mode": "original_and_summary",
+          "separator": "\n"
+        }
+      },
+      "training_seeds": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "value": [
+          20261108
+        ]
+      }
+    },
+    "execution": {
+      "enabled": false,
+      "four_gpu_validated": false,
+      "runtime_validated": false
+    },
+    "implementation_provenance": "paper_reimplementation",
+    "method": "ricepo",
+    "model": {
+      "actor_id": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+      "actor_revision": "ad9f0ae0864d7fbcd1cd905e3c6c5b069cc8b562",
+      "retriever_id": "AQ-MedAI/Diver-Retriever-4B",
+      "retriever_revision": "ff7f8bc8d1827734dcf2bbfab99f065be618069a"
+    },
+    "paper": "https://arxiv.org/html/2605.26352v3",
+    "paper_constants": {
+      "actor_kl_coefficient": 0.001,
+      "actor_learning_rate": 1e-06,
+      "anchor_top_k": 4,
+      "influence_threshold": 0.05,
+      "max_retrieval_depth": 5,
+      "metric": "ndcg_cut_10",
+      "residual_threshold": 0.03,
+      "reward_scale": "0_to_1",
+      "training_batch_size": 128
+    },
+    "profile": "ablation",
+    "reference_plan": "single_process_v1",
+    "reference_research_settings": {
+      "checkpoint_selection": "best_development_macro",
+      "clip_epsilon": 0.2,
+      "development_split_manifest": null,
+      "document_encoding_profile": "original_model_card_raw_documents",
+      "excluded_before_normalization": true,
+      "format_failure_policy": "raise",
+      "hybrid_normalization": "minmax",
+      "initial_trajectories_per_query": 4,
+      "kl_estimator": "exact_categorical",
+      "local_advantage_normalization": "center_only",
+      "loss_reduction": "sequence_mean",
+      "max_context_tokens": 32768,
+      "max_new_tokens_per_step": 1024,
+      "native_span_parser": "strict_native_tag_boundaries_prefilled_think",
+      "normalization_epsilon": 1e-08,
+      "observation_token_limit": 512,
+      "observation_top_k": 5,
+      "optimize_counterfactual_branches": false,
+      "optimizer": "adamw",
+      "optimizer_hyperparameters": {
+        "betas": [
+          0.9,
+          0.999
+        ],
+        "eps": 1e-08,
+        "weight_decay": 0
+      },
+      "prompt_artifact": "prompts/ricepo_system.txt",
+      "query_composition": {
+        "mode": "summary_only",
+        "separator": "\n"
+      },
+      "temperature": 1,
+      "termination_policy": "full_depth_5",
+      "top_k": 0,
+      "top_p": 1,
+      "total_branches_including_original": 6,
+      "total_updates": null,
+      "train_split_manifest": null,
+      "training_seeds": [
+        42
+      ],
+      "trajectory_std_convention": "population"
+    },
+    "required_research_settings": {
+      "checkpoint_selection": "best_development_macro",
+      "clip_epsilon": 0.2,
+      "development_split_manifest": null,
+      "document_encoding_profile": "original_model_card_raw_documents",
+      "excluded_before_normalization": true,
+      "format_failure_policy": "raise",
+      "hybrid_normalization": "minmax",
+      "initial_trajectories_per_query": 4,
+      "kl_estimator": "exact_categorical",
+      "local_advantage_normalization": "center_only",
+      "loss_reduction": "sequence_mean",
+      "max_context_tokens": 32768,
+      "max_new_tokens_per_step": 1024,
+      "native_span_parser": "strict_native_tag_boundaries_prefilled_think",
+      "normalization_epsilon": 1e-08,
+      "observation_token_limit": 512,
+      "observation_top_k": 5,
+      "optimize_counterfactual_branches": false,
+      "optimizer": "adamw",
+      "optimizer_hyperparameters": {
+        "betas": [
+          0.9,
+          0.999
+        ],
+        "eps": 1e-08,
+        "weight_decay": 0
+      },
+      "prompt_artifact": "prompts/ricepo_system.txt",
+      "query_composition": {
+        "mode": "summary_only",
+        "separator": "\n"
+      },
+      "temperature": 1,
+      "termination_policy": "full_depth_5",
+      "top_k": 0,
+      "top_p": 1,
+      "total_branches_including_original": 6,
+      "total_updates": null,
+      "train_split_manifest": null,
+      "training_seeds": [
+        42
+      ],
+      "trajectory_std_convention": "population"
+    },
+    "runtime_bindings": {
+      "development_split_manifest": "<private-local-path:61378060b800dc8f>",
+      "total_updates": 10,
+      "train_split_manifest": "<private-local-path:459e700be0eebc4b>"
+    },
+    "schema_version": 1,
+    "setting_evidence": {
+      "checkpoint_selection": {
+        "reason": "Select the highest development macro NDCG@10, keeping the earliest checkpoint on ties. Author selection policy is unspecified.",
+        "status": "implementation_choice"
+      },
+      "clip_epsilon": {
+        "reason": "Paper specifies clipped PPO but omits the clipping value. This conventional value is not claimed as the author's.",
+        "status": "implementation_choice"
+      },
+      "development_split_manifest": {
+        "reason": "No author development IDs are available. Supply a disjoint independently versioned manifest; never select checkpoints on test.",
+        "status": "implementation_choice"
+      },
+      "document_encoding_profile": {
+        "reason": "Use the pinned original Diver model card's empty document prefix; other upstream scripts use a different prefix.",
+        "status": "implementation_choice"
+      },
+      "excluded_before_normalization": {
+        "reason": "Apply fixed BRIGHT excluded_ids before computing normalization extrema; no exclusion of previous retrieval results.",
+        "status": "implementation_choice"
+      },
+      "format_failure_policy": {
+        "reason": "Abort and retain preceding stage artifacts on malformed/empty output; paper does not define failure handling. Empty-summary zero-word allowance in Figure 5 does not define Eq. (1) entropy.",
+        "status": "implementation_choice"
+      },
+      "hybrid_normalization": {
+        "reason": "Diver describes normalization to [0,1] but not the complete range convention. Use min/max over the full allowed corpus, equal .5/.5 fusion.",
+        "status": "implementation_choice"
+      },
+      "initial_trajectories_per_query": {
+        "reason": "The paper uses N trajectories but does not publish N. Four is an explicit engineering choice, not an author setting.",
+        "status": "implementation_choice"
+      },
+      "kl_estimator": {
+        "reason": "Compute full-vocabulary conditional KL(current || frozen reference), then average using observed histories. No sampled-token KL approximation.",
+        "status": "implementation_choice"
+      },
+      "local_advantage_normalization": {
+        "reason": "Use r_original minus branch mean as in Proposition 1. The algorithm text does not explicitly specify a local standard deviation divisor.",
+        "status": "implementation_choice"
+      },
+      "loss_reduction": {
+        "reason": "Empirical mean over per-sequence token sums, following the expectation of token sums in Eq. (11).",
+        "status": "implementation_choice"
+      },
+      "max_context_tokens": {
+        "reason": "Allow room for D0 plus five observations (up to 6 x 5 x 512 snippet tokens) and five 1024-token generations. This is an input-length ceiling, not a GPU memory guarantee. The pinned actor config declares 131072 positions; no context is silently truncated.",
+        "status": "implementation_choice"
+      },
+      "max_new_tokens_per_step": {
+        "reason": "Capacity bound, not an author value. Incomplete/malformed generation aborts; no invented failure reward.",
+        "status": "implementation_choice"
+      },
+      "native_span_parser": {
+        "reason": "Prefill opening think tag and locate content boundaries on native generated token IDs; abort ambiguous boundaries.",
+        "status": "implementation_choice"
+      },
+      "normalization_epsilon": {
+        "reason": "Add epsilon to population standard deviation; numerical convention absent from the paper.",
+        "status": "implementation_choice"
+      },
+      "observation_token_limit": {
+        "reason": "Truncate each snippet to 512 actor-tokenizer tokens; explicit implementation choice rather than RICE paper constant.",
+        "status": "implementation_choice"
+      },
+      "observation_top_k": {
+        "reason": "Five snippets is a Diver-related default, not a reported RICE setting. It changes actor observations, not NDCG ranking cutoff.",
+        "status": "implementation_choice"
+      },
+      "optimize_counterfactual_branches": {
+        "reason": "Branches estimate statistics. Eq. (8) is applied to original N trajectories; no extra branch-policy objective is described.",
+        "status": "implementation_choice"
+      },
+      "optimizer": {
+        "reason": "Optimizer is not reported; reference runtime uses explicitly configured AdamW.",
+        "status": "implementation_choice"
+      },
+      "optimizer_hyperparameters": {
+        "reason": "Explicit AdamW settings; no weight decay, constant paper learning rate, one complete-batch update.",
+        "status": "implementation_choice"
+      },
+      "prompt_artifact": {
+        "reason": "Transcription of the actual RICE Figure 5; layout and chat wrapping documented separately.",
+        "status": "implementation_choice"
+      },
+      "query_composition": {
+        "reason": "Section 3 and Figure 5 use summary directly; Section 4.2.2 says summary together with input query. Choose summary-only, record ambiguity, and support explicit original_and_summary alternative.",
+        "status": "implementation_choice"
+      },
+      "temperature": {
+        "reason": "Unwarped model distribution makes generation probabilities identical to teacher-forced old-policy probabilities.",
+        "status": "implementation_choice"
+      },
+      "termination_policy": {
+        "reason": "All original and counterfactual episodes reach depth five, as required for maximum-depth residual comparison.",
+        "status": "implementation_choice"
+      },
+      "top_k": {
+        "reason": "No top-k truncation, maintaining the likelihood-ratio distribution.",
+        "status": "implementation_choice"
+      },
+      "top_p": {
+        "reason": "No nucleus truncation, maintaining the likelihood-ratio distribution.",
+        "status": "implementation_choice"
+      },
+      "total_branches_including_original": {
+        "reason": "Appendix A.1 reports five Monte Carlo branches; Eq. (4) includes original k=0 plus K new samples. Interpret five as new branches, giving six outcomes. Five total remains a sensitivity alternative.",
+        "status": "implementation_choice"
+      },
+      "total_updates": {
+        "reason": "Training budget is unpublished and is intentionally not invented; fill for an independently authorized experiment.",
+        "status": "implementation_choice"
+      },
+      "train_split_manifest": {
+        "reason": "The 4,011-row author selection is unpublished. Supply an independently versioned manifest and disclose its selection procedure.",
+        "status": "implementation_choice"
+      },
+      "training_seeds": {
+        "reason": "Independent reproduction seed; not an author seed. Reference driver accepts one seed per separate output root.",
+        "status": "implementation_choice"
+      },
+      "trajectory_std_convention": {
+        "reason": "Group-normalized trajectory rewards instantiated with population standard deviation.",
+        "status": "implementation_choice"
+      }
+    }
+  },
+  "redacted": true,
+  "resolved": {
+    "command": "train",
+    "derived_changes": {},
+    "deviations": {
+      "checkpoint_every_updates": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "reference": 1,
+        "value": 2
+      },
+      "development_every_updates": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "reference": 1,
+        "value": 4
+      },
+      "eval_samples_per_query": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "reference": 1,
+        "value": 4
+      },
+      "format_failure_policy": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "reference": "raise",
+        "value": "invalid_action_terminal_zero_v1"
+      },
+      "max_new_tokens_per_step": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "reference": 1024,
+        "value": 4096
+      },
+      "native_span_parser": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "reference": "strict_native_tag_boundaries_prefilled_think",
+        "value": "two_stage_env_summary_v1"
+      },
+      "prompt_artifact": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "reference": "prompts/ricepo_system.txt",
+        "value": "prompts/ricepo_prefilled_think_smoke.txt"
+      },
+      "query_composition": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "reference": {
+          "mode": "summary_only",
+          "separator": "\n"
+        },
+        "value": {
+          "mode": "original_and_summary",
+          "separator": "\n"
+        }
+      },
+      "training_seeds": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "reference": [
+          42
+        ],
+        "value": [
+          20261108
+        ]
+      }
+    },
+    "execution": {
+      "enabled": true,
+      "four_gpu_validated": false,
+      "runtime_validated": false
+    },
+    "fingerprint": "a7efb32d8b0eeea1b950095bced3dfb52aa6f9be77f06aafa6580e1336fdf5a1",
+    "issues": [],
+    "method": "ricepo",
+    "model": {
+      "actor_id": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+      "actor_revision": "ad9f0ae0864d7fbcd1cd905e3c6c5b069cc8b562",
+      "retriever_id": "AQ-MedAI/Diver-Retriever-4B",
+      "retriever_revision": "ff7f8bc8d1827734dcf2bbfab99f065be618069a"
+    },
+    "paper_constants": {
+      "actor_kl_coefficient": 0.001,
+      "actor_learning_rate": 1e-06,
+      "anchor_top_k": 4,
+      "influence_threshold": 0.05,
+      "max_retrieval_depth": 5,
+      "metric": "ndcg_cut_10",
+      "residual_threshold": 0.03,
+      "reward_scale": "0_to_1",
+      "training_batch_size": 128
+    },
+    "profile": "ablation",
+    "required_deployment_fields": [
+      "runtime",
+      "retriever_model_path",
+      "cache_root",
+      "retriever_device",
+      "dtype",
+      "document_prefix",
+      "retriever_max_length",
+      "domains",
+      "dataset_receipt_path",
+      "dataset_receipt_sha256",
+      "train_manifest_path",
+      "development_manifest_path",
+      "test_manifest_path",
+      "dense_chunk_size",
+      "retrieval_top_k",
+      "actor_device",
+      "prompt_path",
+      "output_parser_mode",
+      "actor_model_path",
+      "output_root",
+      "logit_chunk_size",
+      "expected_development_domains",
+      "entropy_chunk_size"
+    ],
+    "sources": {
+      "actor_kl_coefficient": {
+        "locator": "Appendix A.1",
+        "status": "paper_explicit",
+        "url": "https://arxiv.org/html/2605.26352v3"
+      },
+      "actor_learning_rate": {
+        "locator": "Appendix A.1",
+        "status": "paper_explicit",
+        "url": "https://arxiv.org/html/2605.26352v3"
+      },
+      "anchor_selection": {
+        "locator": "Equation (2)",
+        "status": "paper_explicit",
+        "url": "https://arxiv.org/html/2605.26352v3"
+      },
+      "anchors_per_query": {
+        "locator": "Appendix A.1",
+        "status": "paper_explicit",
+        "url": "https://arxiv.org/html/2605.26352v3"
+      },
+      "checkpoint_every_updates": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "status": "experiment_override"
+      },
+      "checkpoint_selection": {
+        "reason": "Select the highest development macro NDCG@10, keeping the earliest checkpoint on ties. Author selection policy is unspecified.",
+        "status": "implementation_choice"
+      },
+      "clip_epsilon": {
+        "reason": "Paper specifies clipped PPO but omits the clipping value. This conventional value is not claimed as the author's.",
+        "status": "implementation_choice"
+      },
+      "development_every_updates": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "status": "experiment_override"
+      },
+      "development_split_manifest": {
+        "reason": "Explicit run-local binding for an otherwise unresolved field.",
+        "status": "runtime_binding"
+      },
+      "document_encoding_profile": {
+        "reason": "Use the pinned original Diver model card's empty document prefix; other upstream scripts use a different prefix.",
+        "status": "implementation_choice"
+      },
+      "eval_samples_per_query": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "status": "experiment_override"
+      },
+      "excluded_before_normalization": {
+        "reason": "Apply fixed BRIGHT excluded_ids before computing normalization extrema; no exclusion of previous retrieval results.",
+        "status": "implementation_choice"
+      },
+      "format_failure_policy": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "status": "experiment_override"
+      },
+      "gate_mode": {
+        "locator": "Equation (6)",
+        "status": "paper_explicit",
+        "url": "https://arxiv.org/html/2605.26352v3"
+      },
+      "gradient_accumulation": {
+        "reason": "optimizer_minibatch_size / microbatch_size.",
+        "status": "derived"
+      },
+      "hybrid_normalization": {
+        "reason": "Diver describes normalization to [0,1] but not the complete range convention. Use min/max over the full allowed corpus, equal .5/.5 fusion.",
+        "status": "implementation_choice"
+      },
+      "influence_threshold": {
+        "locator": "Appendix A.1",
+        "status": "paper_explicit",
+        "url": "https://arxiv.org/html/2605.26352v3"
+      },
+      "kl_estimator": {
+        "reason": "Compute full-vocabulary conditional KL(current || frozen reference), then average using observed histories. No sampled-token KL approximation.",
+        "status": "implementation_choice"
+      },
+      "local_advantage_normalization": {
+        "reason": "Use r_original minus branch mean as in Proposition 1. The algorithm text does not explicitly specify a local standard deviation divisor.",
+        "status": "implementation_choice"
+      },
+      "loss_reduction": {
+        "reason": "Empirical mean over per-sequence token sums, following the expectation of token sums in Eq. (11).",
+        "status": "implementation_choice"
+      },
+      "max_context_tokens": {
+        "reason": "Allow room for D0 plus five observations (up to 6 x 5 x 512 snippet tokens) and five 1024-token generations. This is an input-length ceiling, not a GPU memory guarantee. The pinned actor config declares 131072 positions; no context is silently truncated.",
+        "status": "implementation_choice"
+      },
+      "max_grad_norm": {
+        "reason": "Explicit gradient norm clipping convention for the independent optimizer.",
+        "status": "implementation_choice"
+      },
+      "max_new_tokens_per_step": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "status": "experiment_override"
+      },
+      "method": {
+        "reason": "Selected comparison method.",
+        "status": "implementation_choice"
+      },
+      "metric": {
+        "locator": "Section 4.1 evaluation metric",
+        "status": "paper_explicit",
+        "url": "https://arxiv.org/html/2605.26352v3"
+      },
+      "microbatch_size": {
+        "reason": "Single-process reference forward/backward processes one trajectory at a time.",
+        "status": "implementation_choice"
+      },
+      "native_span_parser": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "status": "experiment_override"
+      },
+      "normalization_epsilon": {
+        "reason": "Add epsilon to population standard deviation; numerical convention absent from the paper.",
+        "status": "implementation_choice"
+      },
+      "observation_token_limit": {
+        "reason": "Truncate each snippet to 512 actor-tokenizer tokens; explicit implementation choice rather than RICE paper constant.",
+        "status": "implementation_choice"
+      },
+      "observation_top_k": {
+        "reason": "Five snippets is a Diver-related default, not a reported RICE setting. It changes actor observations, not NDCG ranking cutoff.",
+        "status": "implementation_choice"
+      },
+      "optimize_counterfactual_branches": {
+        "reason": "Branches estimate statistics. Eq. (8) is applied to original N trajectories; no extra branch-policy objective is described.",
+        "status": "implementation_choice"
+      },
+      "optimizer": {
+        "reason": "Optimizer is not reported; reference runtime uses explicitly configured AdamW.",
+        "status": "implementation_choice"
+      },
+      "optimizer_hyperparameters": {
+        "reason": "Explicit AdamW settings; no weight decay, constant paper learning rate, one complete-batch update.",
+        "status": "implementation_choice"
+      },
+      "optimizer_minibatch_size": {
+        "reason": "All original trajectories in queries_per_update × trajectories_per_query.",
+        "status": "derived"
+      },
+      "ppo_epochs": {
+        "reason": "One pass over the fixed original trajectories collected per update.",
+        "status": "implementation_choice"
+      },
+      "prompt_artifact": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "status": "experiment_override"
+      },
+      "queries_per_update": {
+        "reason": "The paper says batch size 128 without clarifying the unit. Reference runtime chooses 128 queries, each with N trajectories. This choice can be expensive and is not verified.",
+        "status": "implementation_choice"
+      },
+      "query_composition": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "status": "experiment_override"
+      },
+      "residual_threshold": {
+        "locator": "Appendix A.1",
+        "status": "paper_explicit",
+        "url": "https://arxiv.org/html/2605.26352v3"
+      },
+      "reward_scale": {
+        "locator": "Section 4.2 retrieval reward",
+        "status": "paper_explicit",
+        "url": "https://arxiv.org/html/2605.26352v3"
+      },
+      "rollout_depth": {
+        "locator": "Appendix A.1",
+        "status": "paper_explicit",
+        "url": "https://arxiv.org/html/2605.26352v3"
+      },
+      "temperature": {
+        "reason": "Unwarped model distribution makes generation probabilities identical to teacher-forced old-policy probabilities.",
+        "status": "implementation_choice"
+      },
+      "termination_policy": {
+        "reason": "All original and counterfactual episodes reach depth five, as required for maximum-depth residual comparison.",
+        "status": "implementation_choice"
+      },
+      "top_k": {
+        "reason": "No top-k truncation, maintaining the likelihood-ratio distribution.",
+        "status": "implementation_choice"
+      },
+      "top_p": {
+        "reason": "No nucleus truncation, maintaining the likelihood-ratio distribution.",
+        "status": "implementation_choice"
+      },
+      "total_branches_including_original": {
+        "reason": "Appendix A.1 reports five Monte Carlo branches; Eq. (4) includes original k=0 plus K new samples. Interpret five as new branches, giving six outcomes. Five total remains a sensitivity alternative.",
+        "status": "implementation_choice"
+      },
+      "total_updates": {
+        "reason": "Explicit run-local binding for an otherwise unresolved field.",
+        "status": "runtime_binding"
+      },
+      "train_split_manifest": {
+        "reason": "Explicit run-local binding for an otherwise unresolved field.",
+        "status": "runtime_binding"
+      },
+      "training_seeds": {
+        "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe.",
+        "status": "experiment_override"
+      },
+      "trajectories_per_query": {
+        "reason": "The paper uses N trajectories but does not publish N. Four is an explicit engineering choice, not an author setting.",
+        "status": "implementation_choice"
+      },
+      "trajectory_std_convention": {
+        "reason": "Group-normalized trajectory rewards instantiated with population standard deviation.",
+        "status": "implementation_choice"
+      }
+    },
+    "unresolved_fields": [],
+    "values": {
+      "actor_kl_coefficient": 0.001,
+      "actor_learning_rate": 1e-06,
+      "anchor_selection": "entropy",
+      "anchors_per_query": 4,
+      "checkpoint_every_updates": 2,
+      "checkpoint_selection": "best_development_macro",
+      "clip_epsilon": 0.2,
+      "development_every_updates": 4,
+      "development_split_manifest": "<private-local-path:61378060b800dc8f>",
+      "document_encoding_profile": "original_model_card_raw_documents",
+      "eval_samples_per_query": 4,
+      "excluded_before_normalization": true,
+      "format_failure_policy": "invalid_action_terminal_zero_v1",
+      "gate_mode": "paper",
+      "gradient_accumulation": 512,
+      "hybrid_normalization": "minmax",
+      "influence_threshold": 0.05,
+      "kl_estimator": "exact_categorical",
+      "local_advantage_normalization": "center_only",
+      "loss_reduction": "sequence_mean",
+      "max_context_tokens": 32768,
+      "max_grad_norm": 1.0,
+      "max_new_tokens_per_step": 4096,
+      "method": "ricepo",
+      "metric": "ndcg_cut_10",
+      "microbatch_size": 1,
+      "native_span_parser": "two_stage_env_summary_v1",
+      "normalization_epsilon": 1e-08,
+      "observation_token_limit": 512,
+      "observation_top_k": 5,
+      "optimize_counterfactual_branches": false,
+      "optimizer": "adamw",
+      "optimizer_hyperparameters": {
+        "betas": [
+          0.9,
+          0.999
+        ],
+        "eps": 1e-08,
+        "weight_decay": 0
+      },
+      "optimizer_minibatch_size": 512,
+      "ppo_epochs": 1,
+      "prompt_artifact": "prompts/ricepo_prefilled_think_smoke.txt",
+      "queries_per_update": 128,
+      "query_composition": {
+        "mode": "original_and_summary",
+        "separator": "\n"
+      },
+      "residual_threshold": 0.03,
+      "reward_scale": "0_to_1",
+      "rollout_depth": 5,
+      "temperature": 1,
+      "termination_policy": "full_depth_5",
+      "top_k": 0,
+      "top_p": 1,
+      "total_branches_including_original": 6,
+      "total_updates": 10,
+      "train_split_manifest": "<private-local-path:459e700be0eebc4b>",
+      "training_seeds": [
+        20261108
+      ],
+      "trajectories_per_query": 4,
+      "trajectory_std_convention": "population"
+    }
+  },
+  "runtime": {
+    "HF_matmul": "IEEE highest",
+    "actor_precision": "float32",
+    "hf_projection_mode": "full_sequence",
+    "vllm_numeric_mode": "tf32_gemm_pilot",
+    "vllm_runtime": {
+      "attention_backend": "TRITON_ATTN",
+      "enable_chunked_prefill": true,
+      "enable_prefix_caching": true,
+      "enforce_eager": false,
+      "gpu_memory_utilization": 0.9,
+      "max_num_batched_tokens": 32768,
+      "max_num_seqs": 144
+    }
+  }
+}

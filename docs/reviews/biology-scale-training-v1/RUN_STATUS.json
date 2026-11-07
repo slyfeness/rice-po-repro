@@ -1,5 +1,5 @@
 {
-  "phase": "SOURCE_PREPARED_GPU_NOT_STARTED",
+  "phase": "CAPACITY_RUNNING_INITIALIZING",
   "base_commit": "9e74eb27ddf613af5db614229ab0b539fc5a7a5c",
   "capacity_completed": {
     "ricepo": 0,
@@ -27,7 +27,41 @@
     "failed": 0,
     "skipped": 0
   },
-  "GPU_jobs": [],
+  "GPU_jobs": [
+    {
+      "job_id": 176699,
+      "method": "ricepo",
+      "phase": "capacity",
+      "state": "RUNNING",
+      "allocated_gpus": 2,
+      "model_ready": false
+    },
+    {
+      "job_id": 176700,
+      "method": "grpo",
+      "phase": "capacity_and_common_initial",
+      "state": "RUNNING",
+      "allocated_gpus": 2,
+      "model_ready": false
+    },
+    {
+      "job_id": 176701,
+      "method": "ricepo",
+      "phase": "training",
+      "state": "PENDING_DEPENDENCY",
+      "allocated_gpus": 0
+    },
+    {
+      "job_id": 176702,
+      "method": "grpo",
+      "phase": "training",
+      "state": "PENDING_DEPENDENCY",
+      "allocated_gpus": 0
+    }
+  ],
   "historical_readiness_unchanged": true,
-  "execution_permission": "explicit new user authorization, not global validation flags"
+  "execution_permission": "explicit new user authorization, not global validation flags",
+  "execution_source_commit": "b0ee0bb0f789f803770566572ef8fd1499f14550",
+  "final_execution_preflight_job": 176698,
+  "note": "Slurm RUNNING means allocation/batch started, not inference ready; formal jobs still gated by both capacities/restores and shared Initial."
 }
