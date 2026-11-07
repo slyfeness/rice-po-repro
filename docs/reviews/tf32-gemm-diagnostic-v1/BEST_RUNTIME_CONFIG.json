@@ -1,0 +1,73 @@
+{
+  "execution": {
+    "enabled": false
+  },
+  "status": "QUALIFIED_FOR_BOUNDED_PILOT_ONLY",
+  "model": {
+    "id": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+    "revision": "ad9f0ae0864d7fbcd1cd905e3c6c5b069cc8b562",
+    "initial_payload_sha256": "972c28b609f0a8f8b16d47c488d9f46da6292f50c1ad2936186b1c74716eedaf",
+    "weight_dtype": "float32"
+  },
+  "inference": {
+    "numeric_mode": "tf32_gemm_pilot",
+    "tensor_parallel_size": 1,
+    "max_model_len": 32768,
+    "runtime_options": {
+      "max_num_seqs": 144,
+      "max_num_batched_tokens": 32768,
+      "gpu_memory_utilization": 0.9,
+      "enforce_eager": false,
+      "enable_prefix_caching": true,
+      "enable_chunked_prefill": true,
+      "attention_backend": "TRITON_ATTN"
+    },
+    "worker_environment": {
+      "TRITON_F32_DEFAULT": "tf32",
+      "VLLM_FLOAT32_MATMUL_PRECISION": "high"
+    },
+    "sampling": {
+      "temperature": 1,
+      "top_p": 1,
+      "top_k": -1,
+      "repetition_penalty": 1,
+      "ignore_eos": false
+    },
+    "protocol": "two_stage_env_summary_v1",
+    "shared_action_model_token_budget": 4096,
+    "query_composition": {
+      "mode": "original_and_summary",
+      "separator": "\n"
+    }
+  },
+  "hf_training": {
+    "actor_dtype": "float32",
+    "reference_dtype": "float32",
+    "autocast": false,
+    "float32_matmul_precision": "highest",
+    "cuda_matmul_allow_tf32": false,
+    "cudnn_allow_tf32": false
+  },
+  "bounded_update": {
+    "queries": 2,
+    "originals_per_query": 4,
+    "anchors_per_query": 4,
+    "new_branches_per_anchor": 5,
+    "max_depth": 5,
+    "influence_threshold": 0.05,
+    "residual_threshold": 0.03,
+    "local_advantage_normalization": "center_only",
+    "ppo_epochs": 1,
+    "clip_epsilon": 0.2,
+    "learning_rate": 1e-06,
+    "kl_coefficient": 0.001,
+    "loss_reduction": "sequence_mean",
+    "total_updates": 1
+  },
+  "limitations": [
+    "dedicated sampling GPU with HF offload, not co-resident .90 with Diver",
+    "independent failure environment and two-stage protocol",
+    "no backend-equivalence or long-run/128-query qualification",
+    "no automatic replacement of existing training configuration"
+  ]
+}

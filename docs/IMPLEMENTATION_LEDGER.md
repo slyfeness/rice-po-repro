@@ -1,3 +1,7 @@
+## 2026-11-07 TF32 GEMM diagnostic
+
+Opt-in `tf32_gemm_pilot` sets worker-only matmul `high`; `GemmInspection` verifies actual worker precision and installed Linear dispatch. Optional profiler/worker extension arguments retain old defaults. The independent B gate requires the frozen speed/IEEE-teacher evidence and exactly one two-query update. The B observer records the actual total PPO gradient/parameter change without repeating reference backwards; the policy-only gradient remains unmeasured. HF FP32 handling adds B without changing T/A behavior. No reward/credit/objective or partitioner changes. These are diagnostic capabilities and a new bounded numerical implementation choice, not a backend-equivalence claim. [Actual tests, results and limitations](reviews/tf32-gemm-diagnostic-v1/CORRECTNESS_CHECKS.md).
+
 ## 2026-11-07 TF32 throughput stage
 
 Added optional native latency/cache/memory observations, deterministic sticky request partitioning and isolated immutable TP1 workers in `inference_*`; `VLLMEngine` metrics and low-memory co-residency require explicit opt-in. Default runtime and mathematical training modules remain unchanged. The benchmark Retriever loader explicitly overrides historical cache bindings. A labelled-counter ambiguity is marked unknown, and the original manifest API is retained. These are engineering capabilities/diagnostic fixes and optional deployment choices, not a change to credit, sampling temperature or PPO. [Actual measurements, failures and limits](reviews/tf32-swap-throughput-v1/CORRECTNESS_CHECKS.md).

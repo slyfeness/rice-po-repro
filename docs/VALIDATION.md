@@ -1,3 +1,7 @@
+## 2026-11-07 TF32 GEMM受限验证
+
+[本轮结果](reviews/tf32-gemm-diagnostic-v1/SUMMARY.md)：实际kernel切换、固定1152请求A/B/C、独立16历史概率、一次两查询RICE更新、新权重采样及独立Actor/Adam/RNG恢复已执行。4项针对性CPU测试实际通过，13项Slurm作业终态。B只为受限候选；线上/更新后历史一致性诊断超限项完整披露，本轮风险门槛通过不等于后端等价。没有32/128训练或开发评估，默认配置与全局验证布尔字段不升级。AST/JSON/差异检查单独标记，未重复旧基础测试。[检查范围](reviews/tf32-gemm-diagnostic-v1/CORRECTNESS_CHECKS.md)。
+
 ## 2026-11-07 TF32 推理调度
 
 [实测结果](reviews/tf32-swap-throughput-v1/SUMMARY.md)及[检查范围](reviews/tf32-swap-throughput-v1/CORRECTNESS_CHECKS.md)：8项针对性纯Python测试实际通过；单/双引擎、真实检索闭环、已有更新后快照切换及四个独立TP1纯推理实际执行。原生失败动作保留，首次同进程共存的原生崩溃也保留。没有新PPO、熵/信用计算或开发评估；不升级全局验证布尔字段，不代表多引擎Trainer、四rank或论文性能验收。

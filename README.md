@@ -2,7 +2,9 @@
 
 交付规则（2026-11-07更新）：之后仅同步GitHub审核分支和现有PR，不再生成交付、备份或临时源码传输压缩包。已生成的项目交付包与源码归档按用户要求清理；历史报告中的ZIP路径和SHA-256保留为历史记录，不代表文件目前仍可下载，也不会据此重新打包。已展开执行源码及私有实验原始产物保留。
 
-最新[TF32 推理调度实测](docs/reviews/tf32-swap-throughput-v1/SUMMARY.md)：独占卡选 S2（144/32768/0.90）；双引擎与 Diver 共存采用独立进程、S0 的0.80/0.45布局，同负载完成时间约快1.57倍。四卡纯推理1152请求冷/热实测1725/6784 token/s，热缓存收益不能当作在线训练速度。[可选配置](docs/reviews/tf32-swap-throughput-v1/BEST_RUNTIME_CONFIG.json)保持禁执行；本轮没有PPO或32/128查询训练，未自动替换训练配方。
+最新[TF32 GEMM诊断](docs/reviews/tf32-gemm-diagnostic-v1/SUMMARY.md)：实际worker由默认SGEMM切至Tensor Core，固定1152条件冷完成366.44→146.09秒（2.51×）。B完成独立数值筛选、一次两查询RICE更新、新权重采样和独立Actor/Adam/RNG恢复，仅为可选受限候选；更新后旧概率一致性诊断仍有超限项，不代表后端等价或128查询放行。[配置](docs/reviews/tf32-gemm-diagnostic-v1/BEST_RUNTIME_CONFIG.json)继续禁执行，未自动替换默认或启动后续训练。
+
+此前[TF32 推理调度实测](docs/reviews/tf32-swap-throughput-v1/SUMMARY.md)：独占卡选 S2（144/32768/0.90）；双引擎与 Diver 共存采用独立进程、S0 的0.80/0.45布局，同负载完成时间约快1.57倍。四卡纯推理1152请求冷/热实测1725/6784 token/s，热缓存收益不能当作在线训练速度。[可选配置](docs/reviews/tf32-swap-throughput-v1/BEST_RUNTIME_CONFIG.json)保持禁执行；本轮没有PPO或32/128查询训练，未自动替换训练配方。
 
 此前[混合后端受限验收](docs/reviews/precision-pilot-v1/DECISION.md)：TF32 rollout＋IEEE FP32训练完成两题真实RICE更新，5/8锚点可估计、2个非零局部优势，实际权重变化、新权重采样及独立Actor/Adam/RNG恢复通过。结论仅为`QUALIFIED_FOR_PILOT`；BF16 autocast A按优先级未新增验收，旧一致性FAIL不改写，未启动32/128查询训练。
 

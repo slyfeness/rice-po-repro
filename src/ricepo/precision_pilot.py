@@ -58,8 +58,8 @@ def pilot_settings(deployment, recipe):
     if spec is None:return None
     if deployment.get('sampling_backend')!='vllm_mixed_precision_pilot_v1':
         raise ValueError('pilot must use its independent backend identity')
-    if spec.get('candidate') not in ('T','A'):
-        raise ValueError('only predeclared T/A candidates are supported')
+    if spec.get('candidate') not in ('T','A','B'):
+        raise ValueError('only predeclared T/A/B candidates are supported')
     p=require_cluster_storage(spec['validation_plan_path'])
     if file_sha256(p)!=spec['validation_plan_sha256']:
         raise ValueError('frozen pilot plan fingerprint differs')
@@ -68,7 +68,14 @@ def pilot_settings(deployment, recipe):
     if (check['private_plan_sha256']!=spec['validation_plan_sha256'] or
             check['candidate']!=spec['candidate'] or not check['risk_screen_pass']):
         raise ValueError('independent held-out risk screen not passed')
-    if (recipe['method']!='ricepo' or recipe['queries_per_update']!=2 or recipe['total_updates']!=2
+    is_gemm=spec['candidate']=='B'
+    if is_gemm:
+        speed=json.loads(require_cluster_storage(spec['speed_gate_evidence_path']).read_text())
+        if (frozen['kind']!='tf32_gemm_B_independent_v1' or frozen['maximum_updates']!=1
+                or speed['private_plan_sha256']!=spec['validation_plan_sha256'] or speed['speedup']<1.5
+                or check['teacher_matmul_allow_tf32'] is not False or check['teacher_precision']!='highest'):
+            raise ValueError('B speed/independent IEEE teacher gate not passed')
+    if (recipe['method']!='ricepo' or recipe['queries_per_update']!=2 or recipe['total_updates']!=(1 if is_gemm else 2)
             or recipe['trajectories_per_query']!=4 or recipe['anchors_per_query']!=4
             or recipe['total_branches_including_original']!=6 or recipe['rollout_depth']!=5
             or recipe['training_seeds']!=[frozen['training_seed']]
@@ -79,4 +86,4 @@ def pilot_settings(deployment, recipe):
             or recipe['influence_threshold']!=.05 or recipe['residual_threshold']!=.03
             or deployment.get('parent_run_root') or not deployment.get('stop_after_checkpoint_diagnostic')):
         raise ValueError('pilot exceeds the frozen bounded two-query protocol')
-    return {**frozen,**spec,'numeric_mode':'tf32_pilot' if spec['candidate']=='T' else 'bf16_fast'}
+    return {**frozen,**spec,'numeric_mode':('tf32_gemm_pilot' if is_gemm else 'tf32_pilot' if spec['candidate']=='T' else 'bf16_fast')}

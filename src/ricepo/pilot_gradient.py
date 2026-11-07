@@ -5,6 +5,33 @@ from .objective import ppo_loss
 
 def prepare(model,optimizer,items,*,candidate_forward,ieee_forward,device,recipe,pilot):
     import torch
+    if pilot['candidate']=='B':
+        # GEMM changes only the sampling worker; HF remains IEEE. Observe the
+        # actual PPO backward/step without repeating two reference backwards.
+        report=dict(gradient_basis='actual total PPO gradient; policy-only component not separately isolated',
+            ieee_gradient_comparison='NOT_RUN; unchanged IEEE HF path',reference_comparison_optimizer_steps=0,
+            actual_q_and_advantages_fixed=True,reward_gradient_nonzero=None,
+            actual_reward_advantage_positions=sum(a!=0 for i in items for a,m in zip(i.advantages,i.generated_mask) if m))
+        state={}
+        def observe(stage):
+            if stage=='before_clip':
+                grad={n:p.grad.detach().cpu().clone() for n,p in model.named_parameters() if p.grad is not None}
+                if any(not bool(torch.isfinite(g).all()) for g in grad.values()):raise FloatingPointError('nonfinite B gradient')
+                report['candidate_gradient_norm']=math.sqrt(math.fsum(float(g.double().square().sum()) for g in grad.values()))
+                state['gradient']=grad;state['before']={n:p.detach().cpu().clone() for n,p in model.named_parameters() if p.requires_grad}
+            elif stage=='after_step':
+                squared=dot=0.;changed=0
+                for n,p in model.named_parameters():
+                    if not p.requires_grad:continue
+                    delta=p.detach().cpu()-state['before'][n]
+                    squared+=float(delta.double().square().sum());changed+=int(torch.count_nonzero(delta))
+                    if n in state['gradient']:dot+=float((delta.double()*state['gradient'][n].double()).sum())
+                report.update(parameter_delta_l2=math.sqrt(squared),changed_parameter_elements=changed,
+                    total_gradient_dot_parameter_delta=dot,optimizer_step_executed=True,
+                    fp32_master_parameters=all(p.dtype==torch.float32 for p in model.parameters()))
+                state.clear()
+            else:raise ValueError('unknown B optimizer event')
+        return observe,report
     if recipe['ppo_epochs']!=1 or recipe['optimizer_minibatch_size'] not in ('full_batch',len(items)):
         raise ValueError('pilot gradient comparison requires one full-batch step')
     denominator={'sum':1,'sequence_mean':len(items),'token_mean':sum(sum(i.generated_mask) for i in items)}[recipe['loss_reduction']]

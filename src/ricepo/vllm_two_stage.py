@@ -35,6 +35,7 @@ NUMERIC_MODES = {
     'ieee_fp32': {'dtype': 'float32', 'requires_triton_ieee': True, 'ppo_compatible': True},
     'bf16_fast': {'dtype': 'bfloat16', 'requires_triton_ieee': False, 'ppo_compatible': False},
     'tf32_pilot': {'dtype': 'float32', 'requires_triton_ieee': False, 'ppo_compatible': False},
+    'tf32_gemm_pilot': {'dtype': 'float32', 'requires_triton_ieee': False, 'ppo_compatible': False},
 }
 
 
@@ -143,18 +144,23 @@ class VLLMEngine:
     Unrepresentable rows are stop IDs, never masked out of the distribution.
     """
     def __init__(self,model_path,tokenizer,policy_version,*,max_context_tokens=32768,runtime_options=None,
-                 numeric_mode='ieee_fp32',collect_metrics=False,co_resident=False):
+                 numeric_mode='ieee_fp32',collect_metrics=False,co_resident=False,
+                 profiler_config=None,worker_extension_cls=None):
         import os
         self.numeric=vllm_numeric_options(numeric_mode)
         if self.numeric['requires_triton_ieee'] and os.environ.get('TRITON_F32_DEFAULT')!='ieee':
             raise ValueError('IEEE Triton must be set before engine import')
-        if numeric_mode=='tf32_pilot' and os.environ.get('TRITON_F32_DEFAULT')!='tf32':
+        if numeric_mode in ('tf32_pilot','tf32_gemm_pilot') and os.environ.get('TRITON_F32_DEFAULT')!='tf32':
             raise ValueError('TF32 pilot requires explicit pre-import Triton precision')
+        if numeric_mode=='tf32_gemm_pilot' and os.environ.get('VLLM_FLOAT32_MATMUL_PRECISION')!='high':
+            raise ValueError('GEMM B requires explicit worker matmul precision high')
         from vllm import LLM
         self.version=policy_version
         self.collect_metrics=collect_metrics
         self.runtime_options=vllm_runtime_options(runtime_options,numeric_mode=numeric_mode,allow_low_memory=co_resident)
         metrics_kwargs={'disable_log_stats':False} if collect_metrics else {}
+        if profiler_config is not None:metrics_kwargs['profiler_config']=profiler_config
+        if worker_extension_cls is not None:metrics_kwargs['worker_extension_cls']=worker_extension_cls
         self.llm=LLM(model=str(model_path),tokenizer=str(model_path),dtype=self.numeric['dtype'],tensor_parallel_size=1,
             max_model_len=max_context_tokens,max_num_seqs=self.runtime_options['max_num_seqs'],
             max_num_batched_tokens=self.runtime_options['max_num_batched_tokens'],

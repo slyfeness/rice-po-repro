@@ -1,0 +1,986 @@
+{
+  "update.json": {
+    "new_policy_version": "db666ca3266adac514fc4351558c46c762ae3b1c96be525780e6ff98dc622ae7",
+    "optimizer": {
+      "activation_checkpointing": {
+        "actual_recomputation_observed": true,
+        "checkpoint_forwards": 224,
+        "layer_executions": 448,
+        "mode": "eval_layers_v1",
+        "model_training_mode": false
+      },
+      "actual_state_dict_changed": true,
+      "effective_clip_fraction": 0.0,
+      "global_generated_tokens": 10036,
+      "global_sequences": 8,
+      "grad_norm_before_clip": 1782.188232421875,
+      "negative_advantages": 2525,
+      "negative_advantages_fraction": 0.25159426066161816,
+      "normalized_loss": -496.0549507141113,
+      "optimizer_steps": 1,
+      "outside_clip_fraction": 0.0,
+      "parameter_probe_changed": true,
+      "parameter_probe_coordinates": "first, per-axis midpoint, last of every trainable tensor",
+      "parameter_probe_max_abs_delta": 1.9073486328125e-06,
+      "pilot_gradient": {
+        "actual_q_and_advantages_fixed": true,
+        "actual_reward_advantage_positions": 9832,
+        "candidate_gradient_norm": 1782.1882447480962,
+        "changed_parameter_elements": 1546270516,
+        "fp32_master_parameters": true,
+        "gradient_basis": "actual total PPO gradient; policy-only component not separately isolated",
+        "ieee_gradient_comparison": "NOT_RUN; unchanged IEEE HF path",
+        "optimizer_step_executed": true,
+        "parameter_delta_l2": 0.03660403107809791,
+        "reference_comparison_optimizer_steps": 0,
+        "reference_has_gradients": false,
+        "reward_gradient_nonzero": null,
+        "total_gradient_dot_parameter_delta": -26.26952691141603
+      },
+      "policy_loss": -496.0549507141113,
+      "positive_advantages": 7307,
+      "positive_advantages_fraction": 0.7280789159027501,
+      "ratio_max": 1.0869290828704834,
+      "ratio_mean": 0.99997843097006,
+      "ratio_min": 0.9573974609375,
+      "reference_kl": 0.0,
+      "steps": [
+        {
+          "effective_clip_count": 0,
+          "effective_clip_fraction": 0.0,
+          "epoch": 0,
+          "generated_tokens": 10036,
+          "grad_norm_before_clip": 1782.188232421875,
+          "loss_denominator": 8,
+          "minibatch_start": 0,
+          "negative_advantages": 2525,
+          "normalized_loss": -496.0549507141113,
+          "outside_clip_count": 0,
+          "outside_clip_fraction": 0.0,
+          "policy_loss": -496.0549507141113,
+          "positive_advantages": 7307,
+          "ratio_max": 1.0869290828704834,
+          "ratio_mean": 0.99997843097006,
+          "ratio_min": 0.9573974609375,
+          "reference_kl": 0.0,
+          "reference_kl_token_mean": 0.0,
+          "sequences": 8,
+          "zero_advantages": 204
+        }
+      ],
+      "zero_advantages": 204,
+      "zero_advantages_fraction": 0.020326823435631726,
+      "zero_gradient_all_steps": false
+    }
+  },
+  "credit-diagnostics.json": {
+    "anchors": [
+      {
+        "constant_original_final_rewards": false,
+        "depth": 1,
+        "domain": "biology",
+        "entropy": 2.5121437486480263,
+        "failed_conditions": [
+          "influence",
+          "residual"
+        ],
+        "gate_rule": "paper",
+        "gates": {
+          "joint": false,
+          "local": false,
+          "residual": false
+        },
+        "influence_threshold": 0.05,
+        "influence_variance": 0.043388721876821745,
+        "iteration": 0,
+        "outcomes": [
+          {
+            "final": 0.0,
+            "id": "0-eb0211030db3f92f18463903dd604a9a64a76d9b686a902f92e55d978ba3cc1d-2",
+            "local": 0.6309297535714575,
+            "original": true,
+            "residual": -0.6309297535714575
+          },
+          {
+            "final": 0.31546487678572877,
+            "id": "0-eb0211030db3f92f18463903dd604a9a64a76d9b686a902f92e55d978ba3cc1d-2-d1-b1",
+            "local": 1.0,
+            "original": false,
+            "residual": -0.6845351232142712
+          },
+          {
+            "final": 0.6309297535714575,
+            "id": "0-eb0211030db3f92f18463903dd604a9a64a76d9b686a902f92e55d978ba3cc1d-2-d1-b2",
+            "local": 1.0,
+            "original": false,
+            "residual": -0.36907024642854247
+          },
+          {
+            "final": 0.0,
+            "id": "0-eb0211030db3f92f18463903dd604a9a64a76d9b686a902f92e55d978ba3cc1d-2-d1-b3",
+            "local": 1.0,
+            "original": false,
+            "residual": -1.0
+          },
+          {
+            "final": 0.38685280723454163,
+            "id": "0-eb0211030db3f92f18463903dd604a9a64a76d9b686a902f92e55d978ba3cc1d-2-d1-b4",
+            "local": 1.0,
+            "original": false,
+            "residual": -0.6131471927654584
+          },
+          {
+            "final": 0.3333333333333333,
+            "id": "0-eb0211030db3f92f18463903dd604a9a64a76d9b686a902f92e55d978ba3cc1d-2-d1-b5",
+            "local": 0.5,
+            "original": false,
+            "residual": -0.16666666666666669
+          }
+        ],
+        "propagated": false,
+        "query": "sha256:fae0ae3deca5d538db9525d432cb0596a066ccd842cfb369f3e648d242d1e9bb",
+        "reasoning_after": -0.5773502558562927,
+        "reasoning_tokens": 430,
+        "residual_threshold": 0.03,
+        "residual_variance": 0.06771919130577152,
+        "selected_rank": 1,
+        "summary_after": -0.22422520535711876,
+        "summary_tokens": 34,
+        "terminal_anchor": false,
+        "trajectory": "0-eb0211030db3f92f18463903dd604a9a64a76d9b686a902f92e55d978ba3cc1d-2",
+        "trajectory_advantage": -0.5773502558562927
+      },
+      {
+        "constant_original_final_rewards": false,
+        "depth": 5,
+        "domain": "biology",
+        "entropy": 0.6610217555933513,
+        "failed_conditions": [
+          "influence"
+        ],
+        "gate_rule": "paper",
+        "gates": {
+          "joint": false,
+          "local": false,
+          "residual": true
+        },
+        "influence_threshold": 0.05,
+        "influence_variance": 0.018918450944281257,
+        "iteration": 0,
+        "outcomes": [
+          {
+            "final": 1.0,
+            "id": "0-eb0211030db3f92f18463903dd604a9a64a76d9b686a902f92e55d978ba3cc1d-3",
+            "local": 1.0,
+            "original": true,
+            "residual": 0.0
+          },
+          {
+            "final": 1.0,
+            "id": "0-eb0211030db3f92f18463903dd604a9a64a76d9b686a902f92e55d978ba3cc1d-3-d5-b1",
+            "local": 1.0,
+            "original": false,
+            "residual": 0.0
+          },
+          {
+            "final": 0.6309297535714575,
+            "id": "0-eb0211030db3f92f18463903dd604a9a64a76d9b686a902f92e55d978ba3cc1d-3-d5-b2",
+            "local": 0.6309297535714575,
+            "original": false,
+            "residual": 0.0
+          },
+          {
+            "final": 1.0,
+            "id": "0-eb0211030db3f92f18463903dd604a9a64a76d9b686a902f92e55d978ba3cc1d-3-d5-b3",
+            "local": 1.0,
+            "original": false,
+            "residual": 0.0
+          },
+          {
+            "final": 1.0,
+            "id": "0-eb0211030db3f92f18463903dd604a9a64a76d9b686a902f92e55d978ba3cc1d-3-d5-b4",
+            "local": 1.0,
+            "original": false,
+            "residual": 0.0
+          },
+          {
+            "final": 1.0,
+            "id": "0-eb0211030db3f92f18463903dd604a9a64a76d9b686a902f92e55d978ba3cc1d-3-d5-b5",
+            "local": 1.0,
+            "original": false,
+            "residual": 0.0
+          }
+        ],
+        "propagated": false,
+        "query": "sha256:fae0ae3deca5d538db9525d432cb0596a066ccd842cfb369f3e648d242d1e9bb",
+        "reasoning_after": 1.7320507675688783,
+        "reasoning_tokens": 257,
+        "residual_threshold": 0.03,
+        "residual_variance": 0.0,
+        "selected_rank": 2,
+        "summary_after": 0.06151170773809034,
+        "summary_tokens": 39,
+        "terminal_anchor": true,
+        "trajectory": "0-eb0211030db3f92f18463903dd604a9a64a76d9b686a902f92e55d978ba3cc1d-3",
+        "trajectory_advantage": 1.7320507675688783
+      },
+      {
+        "constant_original_final_rewards": false,
+        "depth": 2,
+        "domain": "biology",
+        "entropy": 3.2311558331304697,
+        "failed_conditions": [
+          "influence"
+        ],
+        "gate_rule": "paper",
+        "gates": {
+          "joint": false,
+          "local": false,
+          "residual": true
+        },
+        "influence_threshold": 0.05,
+        "influence_variance": 0.0,
+        "iteration": 0,
+        "outcomes": [
+          {
+            "final": 1.0,
+            "id": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-0",
+            "local": 1.0,
+            "original": true,
+            "residual": 0.0
+          },
+          {
+            "final": 1.0,
+            "id": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-0-d2-b1",
+            "local": 1.0,
+            "original": false,
+            "residual": 0.0
+          },
+          {
+            "final": 1.0,
+            "id": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-0-d2-b2",
+            "local": 1.0,
+            "original": false,
+            "residual": 0.0
+          },
+          {
+            "final": 0.6309297535714575,
+            "id": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-0-d2-b3",
+            "local": 1.0,
+            "original": false,
+            "residual": -0.36907024642854247
+          },
+          {
+            "final": 1.0,
+            "id": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-0-d2-b4",
+            "local": 1.0,
+            "original": false,
+            "residual": 0.0
+          },
+          {
+            "final": 1.0,
+            "id": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-0-d2-b5",
+            "local": 1.0,
+            "original": false,
+            "residual": 0.0
+          }
+        ],
+        "propagated": false,
+        "query": "sha256:77dfa99596ade4d9db60c047e00e401acbee234a7de1bdfc145c04a7b66b84f1",
+        "reasoning_after": 0.5773502558562927,
+        "reasoning_tokens": 253,
+        "residual_threshold": 0.03,
+        "residual_variance": 0.01891845094428126,
+        "selected_rank": 1,
+        "summary_after": 0.0,
+        "summary_tokens": 40,
+        "terminal_anchor": false,
+        "trajectory": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-0",
+        "trajectory_advantage": 0.5773502558562927
+      },
+      {
+        "constant_original_final_rewards": false,
+        "depth": 5,
+        "domain": "biology",
+        "entropy": 2.0598274483842345,
+        "failed_conditions": [
+          "influence"
+        ],
+        "gate_rule": "paper",
+        "gates": {
+          "joint": false,
+          "local": false,
+          "residual": true
+        },
+        "influence_threshold": 0.05,
+        "influence_variance": 0.0,
+        "iteration": 0,
+        "outcomes": [
+          {
+            "final": 1.0,
+            "id": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-2",
+            "local": 1.0,
+            "original": true,
+            "residual": 0.0
+          },
+          {
+            "final": 1.0,
+            "id": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-2-d5-b1",
+            "local": 1.0,
+            "original": false,
+            "residual": 0.0
+          },
+          {
+            "final": 1.0,
+            "id": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-2-d5-b2",
+            "local": 1.0,
+            "original": false,
+            "residual": 0.0
+          },
+          {
+            "final": 1.0,
+            "id": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-2-d5-b3",
+            "local": 1.0,
+            "original": false,
+            "residual": 0.0
+          },
+          {
+            "final": 1.0,
+            "id": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-2-d5-b4",
+            "local": 1.0,
+            "original": false,
+            "residual": 0.0
+          },
+          {
+            "final": 1.0,
+            "id": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-2-d5-b5",
+            "local": 1.0,
+            "original": false,
+            "residual": 0.0
+          }
+        ],
+        "propagated": false,
+        "query": "sha256:77dfa99596ade4d9db60c047e00e401acbee234a7de1bdfc145c04a7b66b84f1",
+        "reasoning_after": 0.5773502558562927,
+        "reasoning_tokens": 281,
+        "residual_threshold": 0.03,
+        "residual_variance": 0.0,
+        "selected_rank": 2,
+        "summary_after": 0.0,
+        "summary_tokens": 164,
+        "terminal_anchor": true,
+        "trajectory": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-2",
+        "trajectory_advantage": 0.5773502558562927
+      },
+      {
+        "constant_original_final_rewards": false,
+        "depth": 3,
+        "domain": "biology",
+        "entropy": 1.5082493593240631,
+        "failed_conditions": [
+          "influence"
+        ],
+        "gate_rule": "paper",
+        "gates": {
+          "joint": false,
+          "local": false,
+          "residual": true
+        },
+        "influence_threshold": 0.05,
+        "influence_variance": 0.018918450944281257,
+        "iteration": 0,
+        "outcomes": [
+          {
+            "final": 1.0,
+            "id": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-0",
+            "local": 1.0,
+            "original": true,
+            "residual": 0.0
+          },
+          {
+            "final": 1.0,
+            "id": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-0-d3-b1",
+            "local": 1.0,
+            "original": false,
+            "residual": 0.0
+          },
+          {
+            "final": 1.0,
+            "id": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-0-d3-b2",
+            "local": 0.6309297535714575,
+            "original": false,
+            "residual": 0.36907024642854247
+          },
+          {
+            "final": 1.0,
+            "id": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-0-d3-b3",
+            "local": 1.0,
+            "original": false,
+            "residual": 0.0
+          },
+          {
+            "final": 1.0,
+            "id": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-0-d3-b4",
+            "local": 1.0,
+            "original": false,
+            "residual": 0.0
+          },
+          {
+            "final": 1.0,
+            "id": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-0-d3-b5",
+            "local": 1.0,
+            "original": false,
+            "residual": 0.0
+          }
+        ],
+        "propagated": false,
+        "query": "sha256:77dfa99596ade4d9db60c047e00e401acbee234a7de1bdfc145c04a7b66b84f1",
+        "reasoning_after": 0.5773502558562927,
+        "reasoning_tokens": 347,
+        "residual_threshold": 0.03,
+        "residual_variance": 0.01891845094428126,
+        "selected_rank": 3,
+        "summary_after": 0.06151170773809034,
+        "summary_tokens": 51,
+        "terminal_anchor": false,
+        "trajectory": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-0",
+        "trajectory_advantage": 0.5773502558562927
+      }
+    ],
+    "by_iteration_domain_depth": [
+      {
+        "anchors": 1,
+        "constant_branch_final_groups": 0.0,
+        "constant_local_groups": 0.0,
+        "constant_original_final_groups": 0.0,
+        "depth": 1,
+        "domain": "biology",
+        "gate_rates": {
+          "joint": 0.0,
+          "local": 0.0,
+          "residual": 0.0
+        },
+        "iteration": 0,
+        "local_final_covariance": 0.012454882257803147,
+        "mean_abs_local_advantage": 0.22422520535711876,
+        "negative": 1.0,
+        "positive": 0.0,
+        "sign_conflicts": 0.0,
+        "terminal_anchors": 0,
+        "zero": 0.0
+      },
+      {
+        "anchors": 1,
+        "constant_branch_final_groups": 0.0,
+        "constant_local_groups": 1.0,
+        "constant_original_final_groups": 0.0,
+        "depth": 2,
+        "domain": "biology",
+        "gate_rates": {
+          "joint": 0.0,
+          "local": 0.0,
+          "residual": 1.0
+        },
+        "iteration": 0,
+        "local_final_covariance": 0.0,
+        "mean_abs_local_advantage": 0.0,
+        "negative": 0.0,
+        "positive": 0.0,
+        "sign_conflicts": 0.0,
+        "terminal_anchors": 0,
+        "zero": 1.0
+      },
+      {
+        "anchors": 1,
+        "constant_branch_final_groups": 1.0,
+        "constant_local_groups": 0.0,
+        "constant_original_final_groups": 0.0,
+        "depth": 3,
+        "domain": "biology",
+        "gate_rates": {
+          "joint": 0.0,
+          "local": 0.0,
+          "residual": 1.0
+        },
+        "iteration": 0,
+        "local_final_covariance": 0.0,
+        "mean_abs_local_advantage": 0.06151170773809034,
+        "negative": 0.0,
+        "positive": 1.0,
+        "sign_conflicts": 0.0,
+        "terminal_anchors": 0,
+        "zero": 0.0
+      },
+      {
+        "anchors": 2,
+        "constant_branch_final_groups": 0.5,
+        "constant_local_groups": 0.5,
+        "constant_original_final_groups": 0.0,
+        "depth": 5,
+        "domain": "biology",
+        "gate_rates": {
+          "joint": 0.0,
+          "local": 0.0,
+          "residual": 1.0
+        },
+        "iteration": 0,
+        "local_final_covariance": 0.010405148019354693,
+        "mean_abs_local_advantage": 0.03075585386904517,
+        "negative": 0.0,
+        "positive": 0.5,
+        "sign_conflicts": 0.0,
+        "terminal_anchors": 2,
+        "zero": 0.5
+      }
+    ],
+    "estimable_anchor_count": 5,
+    "failure_semantics": "invalid_action_terminal_zero_v1",
+    "fallback": [
+      {
+        "anchor": {
+          "depth": 1,
+          "entropy": 3.475813865661621,
+          "query_id": "sha256:fae0ae3deca5d538db9525d432cb0596a066ccd842cfb369f3e648d242d1e9bb",
+          "reasoning_span": {
+            "end": 1664,
+            "start": 1162
+          },
+          "summary_span": {
+            "end": 1672,
+            "start": 1668
+          },
+          "trajectory_id": "0-eb0211030db3f92f18463903dd604a9a64a76d9b686a902f92e55d978ba3cc1d-3"
+        },
+        "missing_local_branch_ids": [
+          "0-eb0211030db3f92f18463903dd604a9a64a76d9b686a902f92e55d978ba3cc1d-3-d1-b5"
+        ],
+        "reason": "missing_counterfactual_anchor_summary",
+        "status": "not_estimable"
+      },
+      {
+        "anchor": {
+          "depth": 2,
+          "entropy": 1.4972045928190805,
+          "query_id": "sha256:fae0ae3deca5d538db9525d432cb0596a066ccd842cfb369f3e648d242d1e9bb",
+          "reasoning_span": {
+            "end": 3114,
+            "start": 2710
+          },
+          "summary_span": {
+            "end": 3137,
+            "start": 3118
+          },
+          "trajectory_id": "0-eb0211030db3f92f18463903dd604a9a64a76d9b686a902f92e55d978ba3cc1d-3"
+        },
+        "missing_local_branch_ids": [
+          "0-eb0211030db3f92f18463903dd604a9a64a76d9b686a902f92e55d978ba3cc1d-3-d2-b5"
+        ],
+        "reason": "missing_counterfactual_anchor_summary",
+        "status": "not_estimable"
+      },
+      {
+        "anchor": {
+          "depth": 4,
+          "entropy": 1.2237679361100289,
+          "query_id": "sha256:77dfa99596ade4d9db60c047e00e401acbee234a7de1bdfc145c04a7b66b84f1",
+          "reasoning_span": {
+            "end": 4528,
+            "start": 4257
+          },
+          "summary_span": {
+            "end": 4590,
+            "start": 4532
+          },
+          "trajectory_id": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-0"
+        },
+        "missing_local_branch_ids": [
+          "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-0-d4-b3"
+        ],
+        "reason": "missing_counterfactual_anchor_summary",
+        "status": "not_estimable"
+      }
+    ],
+    "gate_pass_count": 0,
+    "local_replacement_count": 5,
+    "nonzero_local_credit_count": 3,
+    "original_count": 8,
+    "original_failure_count": 4,
+    "selected_anchor_count": 8
+  },
+  "pilot-gradient-comparison.json": {
+    "actual_q_and_advantages_fixed": true,
+    "actual_reward_advantage_positions": 9832,
+    "candidate_gradient_norm": 1782.1882447480962,
+    "changed_parameter_elements": 1546270516,
+    "fp32_master_parameters": true,
+    "gradient_basis": "actual total PPO gradient; policy-only component not separately isolated",
+    "ieee_gradient_comparison": "NOT_RUN; unchanged IEEE HF path",
+    "optimizer_step_executed": true,
+    "parameter_delta_l2": 0.03660403107809791,
+    "reference_comparison_optimizer_steps": 0,
+    "reference_has_gradients": false,
+    "reward_gradient_nonzero": null,
+    "total_gradient_dot_parameter_delta": -26.26952691141603
+  },
+  "pilot-probability-risk.json": {
+    "all_actual_tokens": {
+      "absolute_error": {
+        "max": 0.1838397979736328,
+        "mean": 0.002072863723963021,
+        "min": 0.0,
+        "p50": 0.0009494423866271973,
+        "p90": 0.005461573600769043,
+        "p99": 0.014139175415039062
+      },
+      "effective_clip_fraction": null,
+      "ess_fraction": 0.9999851180162186,
+      "extreme_tail_fraction": 0.0,
+      "historical_consistency_pass": false,
+      "matched_consistency_pass": true,
+      "outside_clip_fraction": 0.0,
+      "ratio": {
+        "max": 1.1173177194861905,
+        "mean": 0.9999814469003789,
+        "min": 0.8320690923045092,
+        "p50": 1.0000051055233872,
+        "p90": 1.003308990493795,
+        "p99": 1.0105070863039065
+      },
+      "ratio_mean_in_diagnostic_band": true,
+      "signed_delta": {
+        "max": 0.1109309196472168,
+        "mean": -2.6001327170435404e-05,
+        "min": -0.1838397979736328,
+        "p50": 5.105510354042053e-06,
+        "p90": 0.00330352783203125,
+        "p99": 0.0104522705078125
+      },
+      "tokens": 76886,
+      "zero_advantage_fraction": null
+    },
+    "branch_count": 40,
+    "legacy_thresholds_not_rewritten": true,
+    "originals": {
+      "absolute_error": {
+        "max": 0.08335638046264648,
+        "mean": 0.002039716843046852,
+        "min": 0.0,
+        "p50": 0.0009204894304275513,
+        "p90": 0.005325496196746826,
+        "p99": 0.013844966888427734
+      },
+      "effective_clip_fraction": 0.0,
+      "ess_fraction": 0.9999855032749495,
+      "extreme_tail_fraction": 0.0,
+      "historical_consistency_pass": true,
+      "matched_consistency_pass": true,
+      "outside_clip_fraction": 0.0,
+      "ratio": {
+        "max": 1.086929099828077,
+        "mean": 0.9999784210006162,
+        "min": 0.9573974523316483,
+        "p50": 1.000002978723276,
+        "p90": 1.003239861906774,
+        "p99": 1.01002150090602
+      },
+      "ratio_mean_in_diagnostic_band": true,
+      "signed_delta": {
+        "max": 0.08335638046264648,
+        "mean": -2.879961787935655e-05,
+        "min": -0.04353666305541992,
+        "p50": 2.978718839585781e-06,
+        "p90": 0.0032346248626708984,
+        "p99": 0.00997161865234375
+      },
+      "tokens": 10036,
+      "zero_advantage_fraction": 0.020326823435631726
+    },
+    "risk_screen_pass": true
+  },
+  "pilot-post-update-risk.json": {
+    "fresh_worker_snapshot": true,
+    "pass_risk_screen": true,
+    "policy_version": "db666ca3266adac514fc4351558c46c762ae3b1c96be525780e6ff98dc622ae7",
+    "statistics": {
+      "absolute_error": {
+        "max": 0.1916484832763672,
+        "mean": 0.012057439414721718,
+        "min": 1.1920883480343036e-07,
+        "p50": 0.004721164703369141,
+        "p90": 0.027390480041503906,
+        "p99": 0.1554884910583496
+      },
+      "effective_clip_fraction": null,
+      "ess_fraction": 0.9992289896712225,
+      "extreme_tail_fraction": 0.0,
+      "historical_consistency_pass": false,
+      "matched_consistency_pass": false,
+      "outside_clip_fraction": 0.0032679738562091504,
+      "ratio": {
+        "max": 1.211244669365316,
+        "mean": 0.9987903405984543,
+        "min": 0.835973230292326,
+        "p50": 0.9999091368473463,
+        "p90": 1.0114376002713568,
+        "p99": 1.085738208170996
+      },
+      "ratio_mean_in_diagnostic_band": true,
+      "signed_delta": {
+        "max": 0.1916484832763672,
+        "mean": -0.001587731538800392,
+        "min": -0.17915868759155273,
+        "p50": -9.086728096008301e-05,
+        "p90": 0.011372685432434082,
+        "p99": 0.0822601318359375
+      },
+      "tokens": 306,
+      "zero_advantage_fraction": null
+    }
+  },
+  "reload-verification.json": {
+    "policy_version": "db666ca3266adac514fc4351558c46c762ae3b1c96be525780e6ff98dc622ae7",
+    "weights_verified": true
+  },
+  "rollout_complete.receipt.json": {
+    "artifacts": {
+      "trajectories.json": "861f54f5a33f596951b88bb764ae4186897cb1e6f6831b89cc87062a4085bbf4"
+    },
+    "completed_at_utc": "2026-11-07T09:20:40.669337+00:00",
+    "policy_version": "99f197c5e1ffe1cd6950b907fd6db1a6327c2e1717c42dfaaa6f7f434470da51",
+    "schema_version": 1,
+    "stage": "rollout_complete"
+  },
+  "branches_complete.receipt.json": {
+    "artifacts": {
+      "counterfactual-trajectories.json": "3d2108f994b9a963c976704f218403de2ae56b31d92635661bafa77aa1a319b9"
+    },
+    "completed_at_utc": "2026-11-07T09:23:45.188053+00:00",
+    "policy_version": "99f197c5e1ffe1cd6950b907fd6db1a6327c2e1717c42dfaaa6f7f434470da51",
+    "schema_version": 1,
+    "stage": "branches_complete"
+  },
+  "credit_complete.receipt.json": {
+    "artifacts": {
+      "advantages.json": "163befebe6108dc4009fc047bb744068b324280bf2c85c08ceb2fcb2edf5010c"
+    },
+    "completed_at_utc": "2026-11-07T09:23:45.428966+00:00",
+    "policy_version": "99f197c5e1ffe1cd6950b907fd6db1a6327c2e1717c42dfaaa6f7f434470da51",
+    "schema_version": 1,
+    "stage": "credit_complete"
+  },
+  "optimizer_step_committed.receipt.json": {
+    "artifacts": {
+      "update.json": "64d2278535ede1c4f0ee7721ec7c2d34b96296ae0faadd5d38604a56633753fc"
+    },
+    "completed_at_utc": "2026-11-07T09:26:31.314630+00:00",
+    "policy_version": "db666ca3266adac514fc4351558c46c762ae3b1c96be525780e6ff98dc622ae7",
+    "schema_version": 1,
+    "stage": "optimizer_step_committed"
+  },
+  "checkpoint_complete.receipt.json": {
+    "artifacts": {
+      "checkpoint/complete.json": "7be2c0711325240615c204799cc7e8161c4fddd9f337de796e540c6fe82eb776"
+    },
+    "completed_at_utc": "2026-11-07T09:31:19.990304+00:00",
+    "policy_version": "db666ca3266adac514fc4351558c46c762ae3b1c96be525780e6ff98dc622ae7",
+    "schema_version": 1,
+    "stage": "checkpoint_complete"
+  },
+  "trajectories.json-shape": {
+    "type": "list",
+    "length": 8,
+    "keys": null,
+    "first_keys": [
+      "failure",
+      "failure_terminal_reward",
+      "final_reward",
+      "generated_mask",
+      "initial_ndcg",
+      "last_valid_ndcg",
+      "policy_version",
+      "query_id",
+      "steps",
+      "termination",
+      "token_ids",
+      "trajectory_id"
+    ]
+  },
+  "originals": [
+    {
+      "trajectory_id": "0-eb0211030db3f92f18463903dd604a9a64a76d9b686a902f92e55d978ba3cc1d-0",
+      "final_reward": 0.0,
+      "last_valid_ndcg": 0.6309297535714575,
+      "failure_terminal_reward": 0.0,
+      "termination": "invalid_action_terminal_zero_v1",
+      "initial_ndcg": 1.0,
+      "legal_steps": 1,
+      "local_rewards": [
+        0.6309297535714575
+      ]
+    },
+    {
+      "trajectory_id": "0-eb0211030db3f92f18463903dd604a9a64a76d9b686a902f92e55d978ba3cc1d-1",
+      "final_reward": 0.0,
+      "last_valid_ndcg": 1.0,
+      "failure_terminal_reward": 0.0,
+      "termination": "invalid_action_terminal_zero_v1",
+      "initial_ndcg": 1.0,
+      "legal_steps": 0,
+      "local_rewards": []
+    },
+    {
+      "trajectory_id": "0-eb0211030db3f92f18463903dd604a9a64a76d9b686a902f92e55d978ba3cc1d-2",
+      "final_reward": 0.0,
+      "last_valid_ndcg": 0.6309297535714575,
+      "failure_terminal_reward": 0.0,
+      "termination": "invalid_action_terminal_zero_v1",
+      "initial_ndcg": 1.0,
+      "legal_steps": 1,
+      "local_rewards": [
+        0.6309297535714575
+      ]
+    },
+    {
+      "trajectory_id": "0-eb0211030db3f92f18463903dd604a9a64a76d9b686a902f92e55d978ba3cc1d-3",
+      "final_reward": 1.0,
+      "last_valid_ndcg": 1.0,
+      "failure_terminal_reward": null,
+      "termination": "depth_limit",
+      "initial_ndcg": 1.0,
+      "legal_steps": 5,
+      "local_rewards": [
+        0.6309297535714575,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "trajectory_id": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-0",
+      "final_reward": 1.0,
+      "last_valid_ndcg": 1.0,
+      "failure_terminal_reward": null,
+      "termination": "depth_limit",
+      "initial_ndcg": 1.0,
+      "legal_steps": 5,
+      "local_rewards": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "trajectory_id": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-1",
+      "final_reward": 1.0,
+      "last_valid_ndcg": 1.0,
+      "failure_terminal_reward": null,
+      "termination": "depth_limit",
+      "initial_ndcg": 1.0,
+      "legal_steps": 5,
+      "local_rewards": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "trajectory_id": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-2",
+      "final_reward": 1.0,
+      "last_valid_ndcg": 1.0,
+      "failure_terminal_reward": null,
+      "termination": "depth_limit",
+      "initial_ndcg": 1.0,
+      "legal_steps": 5,
+      "local_rewards": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "trajectory_id": "0-a13368fd951b3670f05531463f4da0759e0668540f2d8121c55f78afbff5e505-3",
+      "final_reward": 0.0,
+      "last_valid_ndcg": 1.0,
+      "failure_terminal_reward": 0.0,
+      "termination": "invalid_action_terminal_zero_v1",
+      "initial_ndcg": 1.0,
+      "legal_steps": 1,
+      "local_rewards": [
+        1.0
+      ]
+    }
+  ],
+  "counterfactual-trajectories.json-shape": {
+    "type": "list",
+    "length": 8,
+    "keys": null,
+    "first_keys": [
+      "group",
+      "trajectories"
+    ]
+  },
+  "advantages.json-shape": {
+    "type": "dict",
+    "length": 4,
+    "keys": [
+      "advantages",
+      "generated_masks",
+      "records",
+      "trajectory_ids"
+    ],
+    "first_keys": null
+  },
+  "anchors.json-shape": {
+    "type": "list",
+    "length": 8,
+    "keys": null,
+    "first_keys": [
+      "depth",
+      "entropy",
+      "query_id",
+      "reasoning_span",
+      "summary_span",
+      "trajectory_id"
+    ]
+  },
+  "branch_group_sizes": [
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5
+  ],
+  "actual_new_branch_count": 40,
+  "branch_failure_count": 7,
+  "unique_new_branch_identities": 40,
+  "diagnostic-complete.json": {
+    "checkpoint": "iteration-000000/checkpoint",
+    "checkpoint_selection": "not_performed",
+    "completed_updates": 1,
+    "development": "not_run_diagnostic_scope",
+    "optimizer_step_replayed": false,
+    "policy_version": "db666ca3266adac514fc4351558c46c762ae3b1c96be525780e6ff98dc622ae7",
+    "status": "diagnostic_update_checkpoint_and_sampling_complete"
+  },
+  "resources": {
+    "elapsed_seconds": 1138.8634223937988,
+    "peak_allocated_bytes": [
+      42713917440,
+      8139914752
+    ],
+    "peak_reserved_bytes": [
+      42832232448,
+      8174698496
+    ]
+  }
+}

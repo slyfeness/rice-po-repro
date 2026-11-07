@@ -404,7 +404,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                 precision!='float32' or parser_mode!='two_stage_env_summary_v1'
                 or (plan['temperature'],plan['top_p'],plan['top_k'])!=(1.,1.,0)):
             raise ValueError('vLLM candidate requires frozen IEEE FP32 two-stage T1/p1/k0')
-        if pilot and (precision!=('float32' if pilot['candidate']=='T' else 'bfloat16')
+        if pilot and (precision!=('float32' if pilot['candidate'] in ('T','B') else 'bfloat16')
                       or parser_mode!='two_stage_env_summary_v1' or (plan['temperature'],plan['top_p'],plan['top_k'])!=(1.,1.,0)):
             raise ValueError('pilot actor precision or frozen sampling law differs')
         if precision not in {"float32","bfloat16"}:
