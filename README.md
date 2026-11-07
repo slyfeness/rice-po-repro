@@ -2,7 +2,9 @@
 
 面向祝融，目标为 DeepSeek-R1-Distill-Qwen-1.5B 和 BRIGHT。最初源码审查基准为 `d4b490a96f8ceb31392ca55abf31325bedb7078c`。[论文 v3](https://arxiv.org/html/2605.26352v3) · [逐项修改表](docs/REVISION_MATRIX.csv) · [验证状态](docs/VALIDATION.md)
 
-最新结果：[检索协议、四卡部署与完整vLLM验收](docs/reviews/four-gpu-deployment-review/SUMMARY.md)。IEEE FP32 vLLM已完成两阶段五轮rollout、真实反事实信用、两次PPO更新、更新后权重切换和独立检查点/优化器/RNG恢复。完整32题失败调整分数RICE0.10583、GRPO0.11130；RICE没有性能优越性证据。新谱系每更新1查询，保留明确的两阶段/失败环境偏离，公开模板继续禁执行。新四卡拓扑及更大批次待审核。
+最新结果：[并行优化最终决策](docs/reviews/parallel-optimization-v1/DECISION_REPORT.md) · [推荐配置](docs/reviews/parallel-optimization-v1/BEST_RUNTIME_CONFIG.json)。匹配BF16方案未通过行为概率门槛，继续采用IEEE FP32。数组检索/batch1的完整906请求计时约快4.34倍，批量Diver编码2/4/8因排名变化被拒绝。四查询旧/新RICE与GRPO均完成更新、检查点和新权重采样，原生轨迹与奖励相同；整轮耗时仅约±1%变化，尚未证明明显端到端提速。128查询候选具备已记录的正确性/容量准备，但本轮未启动128查询连续训练；所有公开模板继续禁执行。
+
+此前[检索协议、四卡部署与完整vLLM验收](docs/reviews/four-gpu-deployment-review/SUMMARY.md)保留原实验谱系：IEEE FP32 vLLM已完成两阶段五轮rollout、真实反事实信用、两次PPO更新、更新后权重切换和独立检查点/优化器/RNG恢复。该阶段完整32题失败调整分数RICE0.10583、GRPO0.11130，没有RICE性能优越性证据，不能与新协议/新评估口径直接拼接。
 
 此前[HF三更新](docs/reviews/continuous-three-update/SUMMARY.md)和[早期单更新](docs/reviews/two-stage-native-v1/SUMMARY.md)保留原范围，不与本次新谱系拼接。
 
@@ -33,6 +35,6 @@
 - 数据准备保存三份划分、源行和正例关联的指纹。训练前读取绑定的评测身份，测试标签仅用于留出评估。完整结果要求精确覆盖全部 `(domain, query_id)`，按域内平均后计算域宏平均。[数据与复现边界](docs/REPRODUCIBILITY.md)
 - 文档向量、行 ID 和收据作为一个版本目录发布。查询编码器必须与文档编码时的实际权重、分词器和编码配置匹配。[检索身份和上游逐层比较](docs/RETRIEVAL_AUDIT.md)
 - 原始生成结果先于格式解析写盘。失败尝试、随机种子、前缀、成本和阶段收据保留。独占锁和已完成检查点约束恢复；开发集重试使用新尝试目录。[参考运行及恢复](docs/REFERENCE_RUNTIME.md)
-- HF 参考路径为单进程双设备，已有受限训练及显存测量。四卡仅以两个独立双卡作业并行使用；四卡分布式、vLLM 权重同步及正式规模容量仍未验证。[祝融部署](docs/ZHURONG.md) · [测试分级](docs/TEST_TIERS.md)
+- HF参考路径为单进程双设备，四卡以两个独立双卡作业并行使用。限定IEEE FP32路径的vLLM权重切换与32查询容量已有实据；四rank训练及128查询实际更新未执行。[祝融部署](docs/ZHURONG.md) · [测试分级](docs/TEST_TIERS.md)
 
 论文报告的 4,011 条训练配额与实际样本 ID 是两种证据。复现明确记录了分支计数、查询拼接和训练预算的来源。代码来源与现有第三方许可见 [NOTICE](NOTICE.md) 与 [来源清单](provenance/sources.json)。
