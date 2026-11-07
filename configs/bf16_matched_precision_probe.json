@@ -1,0 +1,18 @@
+{
+  "kind": "bf16_matched_training_probe_v1",
+  "execution": {"enabled": false},
+  "behavior": {"engine":"vllm","dtype":"bfloat16","attention":"FLASH_ATTN","temperature":1,"top_p":1,"top_k":0},
+  "training": {"master_weights":"float32","forward_autocast":"bfloat16","normalization":"float32","optimizer":"AdamW","optimizer_state":"float32","learning_rate":0.000001,"kl_coefficient":0.001},
+  "acceptance": {
+    "p99_abs_log_error_max":0.10,
+    "mean_abs_log_error_max":0.02,
+    "clip_fraction_max":0.01,
+    "summary_top4_overlap_min":0.75,
+    "finite_loss_and_gradients_required":true,
+    "actual_master_weight_change_required":true,
+    "new_snapshot_identity_and_fresh_kv_required":true,
+    "all_criteria_required_for_pass":true
+  },
+  "historical_fp32_probability_diagnostic": {"mean":0.02,"p99":0.06,"max":0.12},
+  "scope": "fixed saved native actions only; fail the behavior gate before spending a diagnostic optimizer update; no RICE credit or training-performance claim"
+}
