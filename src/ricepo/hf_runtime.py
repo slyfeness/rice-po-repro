@@ -309,6 +309,11 @@ def checkpoint_diagnostic_mode(deployment, plan, *, parent, resume):
     if type(enabled) is not bool:
         raise ValueError('checkpoint diagnostic flag must be a boolean')
     pilot=deployment.get('precision_pilot') is not None
+    validation=deployment.get('precision_pilot',{}).get('candidate') in ('G_A','G_B')
+    if validation:
+        if not enabled or parent is not None or plan['checkpoint_selection']!='last':
+            raise ValueError('paired validation requires checkpoint-only mode and immutable same-run recovery')
+        return True
     if enabled and (parent is not None or resume or (plan['total_updates']!=1 and not (pilot and plan['total_updates']==2))
                     or plan['checkpoint_selection']!='last'):
         raise ValueError('checkpoint diagnostic requires fresh one-update last-checkpoint selection')
@@ -341,6 +346,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
     plan = resolved["values"]
     from .precision_pilot import pilot_settings
     pilot=pilot_settings(deployment,plan)
+    validation=bool(pilot and pilot.get('kind')=='tf32_gemm_training_validation_v1')
     checkpoint_diagnostic_mode(deployment,plan,parent=deployment.get('parent_run_root'),resume=resume)
     require_qualified_retrieval_batch(deployment)
     checkpoint_io=deployment.get('checkpoint_io','direct_shared_v1')
@@ -399,12 +405,15 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                 or retriever_device.index is None or actor_device == retriever_device
                 or max(actor_device.index,retriever_device.index) >= torch.cuda.device_count()):
             raise ValueError("two distinct visible CUDA devices required")
+        if validation and (torch.get_float32_matmul_precision()!='highest' or torch.backends.cuda.matmul.allow_tf32
+                or torch.backends.cudnn.allow_tf32 or os.environ.get('TORCH_ALLOW_TF32_CUBLAS_OVERRIDE')=='1'):
+            raise ValueError('paired validation HF process must remain IEEE FP32')
         precision = deployment.get('actor_precision',deployment['dtype'])
         if sampling_backend=='vllm_ieee_two_stage_v1' and (
                 precision!='float32' or parser_mode!='two_stage_env_summary_v1'
                 or (plan['temperature'],plan['top_p'],plan['top_k'])!=(1.,1.,0)):
             raise ValueError('vLLM candidate requires frozen IEEE FP32 two-stage T1/p1/k0')
-        if pilot and (precision!=('float32' if pilot['candidate'] in ('T','B') else 'bfloat16')
+        if pilot and (precision!=('float32' if pilot['candidate'] in ('T','B','G_A','G_B') else 'bfloat16')
                       or parser_mode!='two_stage_env_summary_v1' or (plan['temperature'],plan['top_p'],plan['top_k'])!=(1.,1.,0)):
             raise ValueError('pilot actor precision or frozen sampling law differs')
         if precision not in {"float32","bfloat16"}:
@@ -724,20 +733,42 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         if pilot:
             from .precision_pilot import mismatch_statistics,risk_screen
             original_pilot=mismatch_statistics(pilot_q,pilot_p,pilot_adv)
+            index=global_start+int(directory.name.split('-')[-1])
+            from .training_validation import update_risk_limit
+            outside_max=update_risk_limit(index) if validation else (.01 if index==0 else .02)
             with torch.no_grad(),autocast():
-                for t in sampled_branches:
+                def pilot_branch_score(t):
                     scored=sampled_old_log_probs(actor,t.token_ids,t.generated_mask,device=actor_device,
                         logit_chunk_size=deployment['logit_chunk_size'],max_context_tokens=plan['max_context_tokens'],policy_call_kwargs={})[0].cpu().tolist()
                     q=trajectory_behavior_log_probs(t)
                     qr=[v for v,m in zip(q,t.generated_mask,strict=True) if m]
                     pr=[v for v,m in zip(scored,t.generated_mask,strict=True) if m]
                     check=mismatch_statistics(qr,pr)
-                    atomic_json(directory/'pilot-branch-probability-checks'/(fingerprint(t.trajectory_id)+'.json'),check)
                     pilot_q.extend(qr);pilot_p.extend(pr)
+                    return check
+                if validation:
+                    from .branch_audit import select_branch_checks,branch_check_plan,execute_branch_checks
+                    options=dict(update_index=index,policy=deployment['branch_probability_audit'])
+                    selected=select_branch_checks(sampled_branches,**options)
+                    atomic_json(directory/'branch-probability-plan.json',branch_check_plan(sampled_branches,**options))
+                    def save_check(t,check,expanded):
+                        folder='pilot-expanded-probability-checks' if expanded else 'pilot-branch-probability-checks'
+                        atomic_json(directory/folder/(fingerprint(t.trajectory_id)+'.json'),check)
+                    checks=execute_branch_checks(sampled_branches,selected,score=pilot_branch_score,
+                        save_check=save_check,save_expansion=lambda stage,record:atomic_json(directory/('pilot-expansion-'+stage+'.json'),record),
+                        passed=lambda c:risk_screen(c,outside_max=outside_max))
+                    checked_branch_count=len(checks)
+                else:
+                    for t in sampled_branches:
+                        atomic_json(directory/'pilot-branch-probability-checks'/(fingerprint(t.trajectory_id)+'.json'),pilot_branch_score(t))
+                    checked_branch_count=len(sampled_branches)
             combined=mismatch_statistics(pilot_q,pilot_p)
-            passed=risk_screen(combined,outside_max=.01 if directory.name=='iteration-000000' else .02)
+            passed=risk_screen(combined,outside_max=outside_max)
+            if validation:passed=passed and risk_screen(original_pilot,outside_max=outside_max)
             atomic_json(directory/'pilot-probability-risk.json',dict(originals=original_pilot,all_actual_tokens=combined,
-                branch_count=len(sampled_branches),risk_screen_pass=passed,legacy_thresholds_not_rewritten=True))
+                branch_count=len(sampled_branches),checked_branch_count=checked_branch_count,outside_limit=outside_max,
+                coverage='originals plus selected branch records; reused prefix positions included',
+                strict_one_percent_pass=risk_screen(combined),risk_screen_pass=passed,legacy_thresholds_not_rewritten=True))
             sampled_branches.clear()
             if not passed:raise ValueError('pilot online probability risk screen failed before optimizer step')
         elif is_vllm:
@@ -777,6 +808,11 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                     forward=forward,device=actor_device,recipe=plan)
             diagnostics = ppo_plan_update(actor,optimizer,items,policy_version=old_version,forward=forward,
                                           device=actor_device,recipe=plan,step_observer=observer)
+            if validation:
+                diagnostics['hf_precision']=dict(matmul_precision=torch.get_float32_matmul_precision(),
+                    matmul_allow_tf32=torch.backends.cuda.matmul.allow_tf32,cudnn_allow_tf32=torch.backends.cudnn.allow_tf32)
+                if diagnostics['hf_precision']!={'matmul_precision':'highest','matmul_allow_tf32':False,'cudnn_allow_tf32':False}:
+                    raise ValueError('HF precision changed during the paired validation')
             if pilot_gradient is not None:
                 pilot_gradient['reference_has_gradients']=any(p.grad is not None for p in reference.parameters())
                 atomic_json(directory/'pilot-gradient-comparison.json',pilot_gradient)
@@ -806,13 +842,13 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         current = version["value"]
         last = i+1 == plan["total_updates"]
         pilot_stop=False
-        if pilot:
+        if pilot and not validation:
             update_record=read_json(directory/'update.json')
             pilot_stop=last or update_record['optimizer']['pilot_gradient']['reward_gradient_nonzero']
             last=pilot_stop
         global_completed = global_start+i+1
         dev_due = last or global_completed % plan["development_every_updates"] == 0
-        save_due = dev_due or global_completed % plan["checkpoint_every_updates"] == 0
+        save_due = validation or dev_due or global_completed % plan["checkpoint_every_updates"] == 0
         def write_payload(staging):
             from .checkpoint_io import verified_local_copy,state_digest,rng_probe
             payload=dict(optimizer=optimizer.state_dict(),iteration=i,seed=seed,policy_version=current,
@@ -861,7 +897,13 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         else:
             complete_stage(directory,"checkpoint_complete",current,{"skipped":"cadence"})
         if checkpoint_diagnostic_mode(deployment,plan,parent=parent,resume=resume):
-            if pilot and not pilot_stop:
+            if validation and recovered:
+                from .training_validation import validate_committed_progress
+                record=read_json(directory/'training-validation.json')
+                validate_committed_progress(record,index=i,policy=current,
+                    checkpoint=file_sha256(directory/'checkpoint/complete.json'),risk=file_sha256(directory/'pilot-post-update-risk.json'))
+                return record if last else None
+            if pilot and not pilot_stop and not validation:
                 complete_stage(directory,'development_complete',current,{'skipped':'bounded pilot; no development evaluation'})
                 complete_stage(directory,'iteration_complete',current,{'selected_checkpoint_so_far':None})
                 return None
@@ -891,13 +933,24 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                 q=[v for v,m in zip(generated.sampled_log_probs,generated.action_mask,strict=True) if m]
                 p=[v for v,m in zip(teacher,mask,strict=True) if m]
                 stats=mismatch_statistics(q,p)
+                outside_limit=.02 if validation and i>0 else .01
+                passed=risk_screen(stats,outside_max=outside_limit)
                 atomic_json(directory/'pilot-post-update-risk.json',dict(policy_version=current,statistics=stats,
-                    fresh_worker_snapshot=True,pass_risk_screen=risk_screen(stats)))
-                if not risk_screen(stats):raise ValueError('updated pilot sampler/teacher risk screen failed')
+                    fresh_worker_snapshot=True,outside_limit=outside_limit,pass_risk_screen=passed))
+                if not passed:raise ValueError('updated pilot sampler/teacher risk screen failed')
             result=dict(status='diagnostic_update_checkpoint_and_sampling_complete',
                 completed_updates=i+1,policy_version=current,checkpoint=str(directory.relative_to(root)/'checkpoint'),
                 development='not_run_diagnostic_scope',checkpoint_selection='not_performed',
                 optimizer_step_replayed=False)
+            if validation:
+                result.update(status='paired_validation_update_complete',
+                    checkpoint_complete_sha256=file_sha256(directory/'checkpoint/complete.json'),
+                    post_update_risk_sha256=file_sha256(directory/'pilot-post-update-risk.json'))
+                complete_stage(directory,'development_complete',current,{'skipped':'explicit validation scope; no development score'})
+                complete_stage(directory,'iteration_complete',current,{'validation_only':True,'selected_checkpoint_so_far':None})
+                atomic_json(directory/'training-validation.json',result)
+                if last:atomic_json(root/'training-validation-complete.json',result)
+                return result
             atomic_json(root/'diagnostic-complete.json',result)
             return result
         def evaluate(out):
@@ -915,7 +968,8 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
     start = 0
     if restored:
         i = restored["iteration"]
-        finish(i,recovered=True)
+        recovered_result=finish(i,recovered=True)
+        if validation and recovered_result is not None:return recovered_result
         start = i+1
     for i in range(start,plan["total_updates"]):
         run_iteration(components,iteration=i,policy_version=version["value"],output_root=root,recipe=plan,root_seed=seed)

@@ -5,7 +5,7 @@ from .objective import ppo_loss
 
 def prepare(model,optimizer,items,*,candidate_forward,ieee_forward,device,recipe,pilot):
     import torch
-    if pilot['candidate']=='B':
+    if pilot['candidate'] in ('B','G_A','G_B'):
         # GEMM changes only the sampling worker; HF remains IEEE. Observe the
         # actual PPO backward/step without repeating two reference backwards.
         report=dict(gradient_basis='actual total PPO gradient; policy-only component not separately isolated',

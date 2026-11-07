@@ -35,6 +35,7 @@ NUMERIC_MODES = {
     'ieee_fp32': {'dtype': 'float32', 'requires_triton_ieee': True, 'ppo_compatible': True},
     'bf16_fast': {'dtype': 'bfloat16', 'requires_triton_ieee': False, 'ppo_compatible': False},
     'tf32_pilot': {'dtype': 'float32', 'requires_triton_ieee': False, 'ppo_compatible': False},
+    'tf32_gemm_control': {'dtype': 'float32', 'requires_triton_ieee': False, 'ppo_compatible': False},
     'tf32_gemm_pilot': {'dtype': 'float32', 'requires_triton_ieee': False, 'ppo_compatible': False},
 }
 
@@ -150,10 +151,12 @@ class VLLMEngine:
         self.numeric=vllm_numeric_options(numeric_mode)
         if self.numeric['requires_triton_ieee'] and os.environ.get('TRITON_F32_DEFAULT')!='ieee':
             raise ValueError('IEEE Triton must be set before engine import')
-        if numeric_mode in ('tf32_pilot','tf32_gemm_pilot') and os.environ.get('TRITON_F32_DEFAULT')!='tf32':
+        if numeric_mode in ('tf32_pilot','tf32_gemm_pilot','tf32_gemm_control') and os.environ.get('TRITON_F32_DEFAULT')!='tf32':
             raise ValueError('TF32 pilot requires explicit pre-import Triton precision')
         if numeric_mode=='tf32_gemm_pilot' and os.environ.get('VLLM_FLOAT32_MATMUL_PRECISION')!='high':
             raise ValueError('GEMM B requires explicit worker matmul precision high')
+        if numeric_mode=='tf32_gemm_control' and os.environ.get('VLLM_FLOAT32_MATMUL_PRECISION')!='highest':
+            raise ValueError('GEMM A requires explicit worker matmul precision highest')
         from vllm import LLM
         self.version=policy_version
         self.collect_metrics=collect_metrics
@@ -179,7 +182,14 @@ class VLLMEngine:
             logprobs=0,detokenize=True,stop=['</think>' if stage=='think' else '</summary>'],
             stop_token_ids=self.unmapped,include_stop_str_in_output=True,skip_special_tokens=False,
             presence_penalty=0.,frequency_penalty=0.,repetition_penalty=1.,ignore_eos=False) for r in requests]
+        import time
+        generation_start=time.monotonic()
         outputs=self.llm.generate([{'prompt_token_ids':list(r['prefix'])} for r in requests],params,use_tqdm=False)
+        generation_seconds=time.monotonic()-generation_start
+        event('vllm_native_generation_timing',stage_name=stage,policy_version=policy,
+            elapsed_seconds=generation_seconds,requests=len(requests),input_tokens=sum(len(r['prefix']) for r in requests),
+            generated_tokens=sum(len(c.token_ids) for o in outputs for c in o.outputs),
+            timing_basis='blocking LLM.generate API wall; excludes lifecycle, RPC and subsequent evidence writes')
         # Save every returned native completion BEFORE validating identities or
         # converting probability entries. An incomplete LP row must not erase
         # already generated tokens, including later rows in this same batch.

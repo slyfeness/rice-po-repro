@@ -57,13 +57,14 @@ def select_branch_checks(trajectories, *, update_index, policy="all"):
     return tuple(selected)
 
 
-def execute_branch_checks(trajectories, selected, *, score, save_check, save_expansion):
+def execute_branch_checks(trajectories, selected, *, score, save_check, save_expansion, passed=None):
     """Score selected native traces; numerical failure expands and blocks PPO.
 
     The caller keeps one frozen model for both phases. Already saved checks are
     reused. Infrastructure exceptions stop immediately; an exception during
     expansion also publishes an incomplete expansion record before propagating.
     """
+    passed = passed or (lambda check: check["within_bf16_tolerance"])
     rows, chosen = tuple(trajectories), tuple(selected)
     by_id = {t.trajectory_id:t for t in rows}
     chosen_ids = [t.trajectory_id for t in chosen]
@@ -75,7 +76,7 @@ def execute_branch_checks(trajectories, selected, *, score, save_check, save_exp
         check=score(t)
         save_check(t,check,False)
         checks[t.trajectory_id]=check
-        if check['within_bf16_tolerance']:
+        if passed(check):
             continue
         reused=list(checks)
         base=dict(trigger_trajectory=t.trajectory_id,total=len(rows),
@@ -96,6 +97,6 @@ def execute_branch_checks(trajectories, selected, *, score, save_check, save_exp
             raise
         save_expansion('complete',dict(base,checked=len(checks),coverage_complete=True,
             reused_checks=len(reused),new_expanded_checks=len(checks)-len(reused),
-            failed_trajectories=[identity for identity,c in checks.items() if not c['within_bf16_tolerance']]))
+            failed_trajectories=[identity for identity,c in checks.items() if not passed(c)]))
         raise ValueError('branch probability mismatch; expanded full audit completed; optimizer remains blocked')
     return checks

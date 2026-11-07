@@ -22,9 +22,10 @@ def _worker(connection,spec):
     os.setsid()  # Dedicated group: recovery can reap only this worker and its children.
     os.environ['CUDA_VISIBLE_DEVICES']=spec['cuda_mask']
     numeric_mode=spec.get('numeric_mode','ieee_fp32')
-    os.environ['TRITON_F32_DEFAULT']='tf32' if numeric_mode in ('tf32_pilot','tf32_gemm_pilot') else 'ieee'
+    os.environ['TRITON_F32_DEFAULT']='tf32' if numeric_mode in ('tf32_pilot','tf32_gemm_pilot','tf32_gemm_control') else 'ieee'
     if numeric_mode=='tf32_gemm_pilot':
         os.environ['VLLM_FLOAT32_MATMUL_PRECISION']='high'
+    if numeric_mode=='tf32_gemm_control':os.environ['VLLM_FLOAT32_MATMUL_PRECISION']='highest'
     os.environ['VLLM_RPC_BASE_PATH']=spec['rpc_path']
     from transformers import AutoTokenizer
     from .vllm_two_stage import VLLMEngine
@@ -37,12 +38,13 @@ def _worker(connection,spec):
             identity=local_model_identity(spec['model'])
             if identity!=spec['assets']:raise ValueError('published sampling snapshot changed')
             tok=AutoTokenizer.from_pretrained(spec['model'],local_files_only=True,trust_remote_code=False)
-            inspection={'worker_extension_cls':'ricepo.gemm_diagnostic.GemmInspection'} if numeric_mode=='tf32_gemm_pilot' else {}
+            inspection={'worker_extension_cls':'ricepo.gemm_diagnostic.GemmInspection'} if numeric_mode in ('tf32_gemm_pilot','tf32_gemm_control') else {}
             engine=VLLMEngine(spec['model'],tok,spec['policy'],max_context_tokens=spec['context'],
                               runtime_options=spec['runtime_options'],numeric_mode=numeric_mode,**inspection)
             gemm_state=engine.llm.collective_rpc('gemm_state') if inspection else None
-            if inspection and not all(s['matmul_allow_tf32'] and s['torch_float32_matmul_precision']=='high' for s in gemm_state):
-                raise ValueError('B snapshot worker did not enable high-precision TF32 GEMM')
+            expected='high' if numeric_mode=='tf32_gemm_pilot' else 'highest'
+            if inspection and not all(s['matmul_allow_tf32']==(expected=='high') and s['torch_float32_matmul_precision']==expected for s in gemm_state):
+                raise ValueError('actual GEMM worker precision differs from frozen candidate')
             if local_model_identity(spec['model'])!=identity:raise ValueError('sampling snapshot changed during engine load')
             connection.send(('ready',dict(policy=spec['policy'],assets=identity,pid=os.getpid(),
                 runtime_options=engine.runtime_options,numeric_mode=numeric_mode,

@@ -1,3 +1,7 @@
+## 2026-11-07 TF32 GEMM training validation
+
+Added isolated G_A/G_B four-query contract, frozen three-batch budget, exactly-one-update checkpoint handoffs and receipt-verified same-run resume. Legacy pilot budgets/defaults remain. Branch audit adds an optional acceptance callback while retaining its original default; the new path uses registered risk gates and existing stratification/expansion. Added explicit highest GEMM control and blocking engine-generation timing. No credit/objective/reward/parser/seed formula changes. [Measured speed, numerical trends, restore and limitations](reviews/tf32-gemm-training-validation-v1/SUMMARY.md); no32/128 launch or global validation upgrade.
+
 ## 2026-11-07 TF32 GEMM diagnostic
 
 Opt-in `tf32_gemm_pilot` sets worker-only matmul `high`; `GemmInspection` verifies actual worker precision and installed Linear dispatch. Optional profiler/worker extension arguments retain old defaults. The independent B gate requires the frozen speed/IEEE-teacher evidence and exactly one two-query update. The B observer records the actual total PPO gradient/parameter change without repeating reference backwards; the policy-only gradient remains unmeasured. HF FP32 handling adds B without changing T/A behavior. No reward/credit/objective or partitioner changes. These are diagnostic capabilities and a new bounded numerical implementation choice, not a backend-equivalence claim. [Actual tests, results and limitations](reviews/tf32-gemm-diagnostic-v1/CORRECTNESS_CHECKS.md).

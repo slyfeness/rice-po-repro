@@ -58,6 +58,9 @@ def pilot_settings(deployment, recipe):
     if spec is None:return None
     if deployment.get('sampling_backend')!='vllm_mixed_precision_pilot_v1':
         raise ValueError('pilot must use its independent backend identity')
+    if spec.get('candidate') in ('G_A','G_B'):
+        from .training_validation import settings
+        return settings(spec,recipe)
     if spec.get('candidate') not in ('T','A','B'):
         raise ValueError('only predeclared T/A/B candidates are supported')
     p=require_cluster_storage(spec['validation_plan_path'])
