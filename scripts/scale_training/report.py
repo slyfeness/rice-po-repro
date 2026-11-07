@@ -172,16 +172,23 @@ def evaluations(root,method):
 def main(args):
     if not os.environ.get('SLURM_JOB_ID'):raise RuntimeError('CPU Slurm export required')
     R=Path(os.environ['RICE_PROJECT_ROOT']);args.output.mkdir(parents=True,exist_ok=False);cache=R/'reports/biology-scale-v1-export-cache';cache.mkdir(exist_ok=True)
-    public=args.output/'public';public.mkdir();curves=[];status=dict(observed_at_utc=datetime.now(timezone.utc).isoformat(),source_commit='b0ee0bb0f789f803770566572ef8fd1499f14550',runs={},raw_assets_public=False)
+    public=args.output/'public';public.mkdir();curves=[];status=dict(observed_at_utc=datetime.now(timezone.utc).isoformat(),sampling_plan_source_commit='b0ee0bb0f789f803770566572ef8fd1499f14550',runs={},raw_assets_public=False)
     evals=evaluations(R/'runs/biology-scale-v1-initial','Initial')
     for stage in ('capacity','training'):
         for method in ('ricepo','grpo'):
             root=R/'runs'/f'biology-scale-v1-{stage}-{method}';info=dict(stage=stage,method=method,computed_updates=0,persisted_updates=0,status='NOT_STARTED')
             status['runs'][stage+'_'+method]=info
             if not root.exists():continue
+            launches=[read(p) for p in (R/'reports').glob(root.name+'-launch-*.json')]
+            info['execution_source_commits']=sorted({r['source_commit'] for r in launches})
+            if (root/'capacity-complete.json').exists():
+                recovery=read(root/'capacity-complete.json').get('recovery')
+                if recovery:info['capacity_recovery']={k:v for k,v in recovery.items() if k not in ('evidence',)}
             times,active=event_times(root,cache);info.update(status='IN_PROGRESS',active=active,phase_seconds=times)
             for d in sorted(root.glob('iteration-[0-9]*')):
-                if (d/'optimizer_step_committed.receipt.json').exists():info['computed_updates']=int(d.name[10:])+1
+                if (d/'optimizer_step_committed.receipt.json').exists():
+                    info['computed_updates']=int(d.name[10:])+1
+                    info['latest_committed_update']=read(d/'update.json')
                 if (d/'checkpoint/complete.json').exists() and (d/'checkpoint_complete.receipt.json').exists():info['persisted_updates']=int(d.name[10:])+1
                 if not (d/'iteration_complete.receipt.json').exists():continue
                 stats=update_stats(d,cache);progress=read(d/'scale-progress.json') if (d/'scale-progress.json').exists() else {}

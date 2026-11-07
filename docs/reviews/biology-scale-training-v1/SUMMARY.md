@@ -25,3 +25,5 @@ GRPO176700已真实完成128条原轨迹、一次PPO更新及完整checkpoint；
 修复为offload函数返回后执行GC与CUDA allocator清理，并记录实际allocated/reserved/free；保留.90和全部算法/精度。独立恢复入口只从已提交checkpoint补做固定更新后采样与IEEE概率检查，不重采原轨迹、不重做PPO、不改旧binding或失败记录。新恢复证据单独标记执行源码。CPU176708：12项SCALE及3项容量补验测试通过；这不是GPU修复通过证据。
 
 RICE176699仍运行，已保存原轨迹/分支/信用，尚未确认step。未启动的正式176701/176702因失败依赖已取消，GPU小时0；新正式队列须待修复后仍通过双容量、独立恢复和共同Initial门控。
+
+最新队列：GRPO完成项补验176710；RICE完成项补验后继176712（原作业若已完整通过则跳过，不重做step）；正式RICE176713、GRPO176714均PENDING，依赖前述完成项以及运行时双容量/独立恢复/Initial门控。CPU176711已导出真实状态：容量GRPO computed=1/persisted=1，RICE=0/0，正式均0；尚无正式学习曲线或开发结论。

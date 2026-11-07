@@ -1,68 +1,164 @@
 {
-  "phase": "CAPACITY_RUNNING_INITIALIZING",
-  "base_commit": "9e74eb27ddf613af5db614229ab0b539fc5a7a5c",
-  "capacity_completed": {
-    "ricepo": 0,
-    "grpo": 0
-  },
-  "formal_computed_updates": {
-    "ricepo": 0,
-    "grpo": 0
-  },
-  "formal_persisted_updates": {
-    "ricepo": 0,
-    "grpo": 0
-  },
-  "requested_formal_updates": 10,
-  "maximum_gpus": 4,
-  "data_counts": {
-    "train": 128,
-    "development": 32,
-    "test": 103
-  },
-  "data_freeze_job": 176690,
-  "cpu_preflight_job": 176697,
-  "actual_targeted_unittest": {
-    "passed": 15,
-    "failed": 0,
-    "skipped": 0
-  },
-  "GPU_jobs": [
-    {
-      "job_id": 176699,
+  "observed_at_utc": "2026-11-07T20:32:43.314423+00:00",
+  "sampling_plan_source_commit": "b0ee0bb0f789f803770566572ef8fd1499f14550",
+  "runs": {
+    "capacity_ricepo": {
+      "stage": "capacity",
       "method": "ricepo",
-      "phase": "capacity",
-      "state": "RUNNING",
-      "allocated_gpus": 2,
-      "model_ready": false
+      "computed_updates": 0,
+      "persisted_updates": 0,
+      "status": "IN_PROGRESS",
+      "execution_source_commits": [
+        "b0ee0bb0f789f803770566572ef8fd1499f14550"
+      ],
+      "active": {
+        "phase": "update",
+        "utc": "2026-11-07T20:18:27.686070+00:00",
+        "iteration": 0
+      },
+      "phase_seconds": {
+        "0": {
+          "retrieval": 159.04313654266298,
+          "generation": 882.6299410909414,
+          "entropy_credit": 755.2149721346796,
+          "model_lifecycle": 285.45804813690484,
+          "unattributed": 57.774359326809645,
+          "HF_scoring_PPO": 193.99625585228205
+        },
+        "initialization": {
+          "unattributed": 83.68602753058076,
+          "model_lifecycle": 7.103442901745439
+        }
+      }
     },
-    {
-      "job_id": 176700,
+    "capacity_grpo": {
+      "stage": "capacity",
       "method": "grpo",
-      "phase": "capacity_and_common_initial",
-      "state": "RUNNING",
-      "allocated_gpus": 2,
-      "model_ready": false
+      "computed_updates": 1,
+      "persisted_updates": 1,
+      "status": "COMMITTED_CHECKPOINT_RECOVERY_IN_PROGRESS",
+      "execution_source_commits": [
+        "b0ee0bb0f789f803770566572ef8fd1499f14550"
+      ],
+      "active": null,
+      "phase_seconds": {
+        "0": {
+          "retrieval": 34.86063898913562,
+          "HF_scoring_PPO": 1080.8828748781234,
+          "generation": 213.65887716412544,
+          "model_lifecycle": 246.09275934658945,
+          "entropy_credit": 1.7993207201361656,
+          "unattributed": 89.38441902771592,
+          "checkpoint": 212.4006484914571
+        },
+        "initialization": {
+          "unattributed": 53.14527721516788,
+          "model_lifecycle": 7.195797376334667
+        }
+      },
+      "latest_committed_update": {
+        "new_policy_version": "4887a54f03958698664f620777d457b7280dca66618ca190fb266ba5fa1ae25b",
+        "optimizer": {
+          "activation_checkpointing": {
+            "actual_recomputation_observed": true,
+            "checkpoint_forwards": 3584,
+            "layer_executions": 7168,
+            "mode": "eval_layers_v1",
+            "model_training_mode": false
+          },
+          "actual_state_dict_changed": true,
+          "effective_clip_fraction": 0.0,
+          "global_generated_tokens": 215821,
+          "global_sequences": 128,
+          "grad_norm_before_clip": 534.6090087890625,
+          "hf_precision": {
+            "cudnn_allow_tf32": false,
+            "matmul_allow_tf32": false,
+            "matmul_precision": "highest"
+          },
+          "negative_advantages": 86568,
+          "negative_advantages_fraction": 0.4011101792689312,
+          "normalized_loss": -281.2482330799103,
+          "optimizer_steps": 1,
+          "outside_clip_fraction": 0.0,
+          "parameter_probe_changed": true,
+          "parameter_probe_coordinates": "first, per-axis midpoint, last of every trainable tensor",
+          "parameter_probe_max_abs_delta": 1.9073486328125e-06,
+          "policy_loss": -281.2482330799103,
+          "positive_advantages": 108093,
+          "positive_advantages_fraction": 0.5008456081660265,
+          "ratio_max": 1.1298929452896118,
+          "ratio_mean": 0.9999985020603585,
+          "ratio_min": 0.8083212971687317,
+          "reference_kl": 0.0,
+          "steps": [
+            {
+              "effective_clip_count": 0,
+              "effective_clip_fraction": 0.0,
+              "epoch": 0,
+              "generated_tokens": 215821,
+              "grad_norm_before_clip": 534.6090087890625,
+              "loss_denominator": 128,
+              "minibatch_start": 0,
+              "negative_advantages": 86568,
+              "normalized_loss": -281.2482330799103,
+              "outside_clip_count": 0,
+              "outside_clip_fraction": 0.0,
+              "policy_loss": -281.2482330799103,
+              "positive_advantages": 108093,
+              "ratio_max": 1.1298929452896118,
+              "ratio_mean": 0.9999985020603585,
+              "ratio_min": 0.8083212971687317,
+              "reference_kl": 0.0,
+              "reference_kl_token_mean": 0.0,
+              "sequences": 128,
+              "zero_advantages": 21160
+            }
+          ],
+          "zero_advantages": 21160,
+          "zero_advantages_fraction": 0.09804421256504232,
+          "zero_gradient_all_steps": false
+        }
+      },
+      "failure_categories": [
+        "stage_failure"
+      ]
     },
-    {
-      "job_id": 176701,
+    "training_ricepo": {
+      "stage": "training",
       "method": "ricepo",
-      "phase": "training",
-      "state": "PENDING_DEPENDENCY",
-      "allocated_gpus": 0
+      "computed_updates": 0,
+      "persisted_updates": 0,
+      "status": "NOT_STARTED"
     },
-    {
-      "job_id": 176702,
+    "training_grpo": {
+      "stage": "training",
       "method": "grpo",
-      "phase": "training",
-      "state": "PENDING_DEPENDENCY",
-      "allocated_gpus": 0
+      "computed_updates": 0,
+      "persisted_updates": 0,
+      "status": "NOT_STARTED"
     }
+  },
+  "raw_assets_public": false,
+  "slurm_records": [
+    "176699|RUNNING|3299|2026-11-07T19:40:52|2026-11-07T19:40:53|Unknown|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176699.batch|RUNNING|3299|2026-11-07T19:40:53|2026-11-07T19:40:53|Unknown|cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176700|FAILED|1956|2026-11-07T19:40:52|2026-11-07T19:40:53|2026-11-07T20:13:29|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176700.batch|FAILED|1956|2026-11-07T19:40:53|2026-11-07T19:40:53|2026-11-07T20:13:29|cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176700.0|COMPLETED|3|2026-11-07T19:53:59|2026-11-07T19:53:59|2026-11-07T19:54:02|cpu=1,gres/gpu=2,mem=192G,node=1",
+    "176700.1|COMPLETED|1|2026-11-07T19:54:37|2026-11-07T19:54:37|2026-11-07T19:54:38|cpu=1,gres/gpu=2,mem=192G,node=1",
+    "176701|CANCELLED by 1037|0|2026-11-07T19:40:53|None|2026-11-07T20:26:26|",
+    "176702|CANCELLED by 1037|0|2026-11-07T19:40:53|None|2026-11-07T20:26:26|",
+    "176710|RUNNING|213|2026-11-07T20:32:17|2026-11-07T20:32:19|Unknown|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176710.batch|RUNNING|213|2026-11-07T20:32:19|2026-11-07T20:32:19|Unknown|cpu=16,gres/gpu=2,mem=192G,node=1"
   ],
-  "historical_readiness_unchanged": true,
-  "execution_permission": "explicit new user authorization, not global validation flags",
-  "execution_source_commit": "b0ee0bb0f789f803770566572ef8fd1499f14550",
-  "final_execution_preflight_job": 176698,
-  "note": "Slurm RUNNING means allocation/batch started, not inference ready; formal jobs still gated by both capacities/restores and shared Initial.",
-  "snapshot_note": "Launch snapshot, not a live dashboard; later capacity/first128/final snapshots replace it. See private actual Slurm phase until milestone export."
+  "sampling_note": "training generation tokens exclude reused branch history and environment markers; submitted input counts include full repeated native context, not measured uncached prefill FLOPs",
+  "timing_note": "main-process exclusive spans only; evaluation includes its nested generation/tools. Uninstrumented verification/serialization remains unattributed. In-flight spans excluded from completed-phase totals.",
+  "queued_successors": {
+    "capacity_completion_only": 176712,
+    "capacity_GRPO_restore_then_Initial": 176710,
+    "formal_RICE_10x128": 176713,
+    "formal_GRPO_10x128": 176714,
+    "gate": "afterok completion jobs plus runtime capacity/restore/Initial receipts; no training bypass"
+  }
 }
