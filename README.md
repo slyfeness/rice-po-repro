@@ -1,5 +1,7 @@
 # RICE-PO 独立复现
 
+交付规则（2026-11-07更新）：之后仅同步GitHub审核分支和现有PR，不再生成交付、备份或临时源码传输压缩包。已生成的项目交付包与源码归档按用户要求清理；历史报告中的ZIP路径和SHA-256保留为历史记录，不代表文件目前仍可下载，也不会据此重新打包。已展开执行源码及私有实验原始产物保留。
+
 最新[混合后端受限验收](docs/reviews/precision-pilot-v1/DECISION.md)：TF32 rollout＋IEEE FP32训练完成两题真实RICE更新，5/8锚点可估计、2个非零局部优势，实际权重变化、新权重采样及独立Actor/Adam/RNG恢复通过。结论仅为`QUALIFIED_FOR_PILOT`；BF16 autocast A按优先级未新增验收，旧一致性FAIL不改写，未启动32/128查询训练。
 
 此前[显式BF16权重验收：FAIL](docs/reviews/bf16-explicit-weights/BF16_TRAINING_DECISION.md)：同一16条原生历史、2591个采样token上，显式BF16比FP32权重/BF16 autocast误差更大，三项冻结门限均未通过。该阶段按停止规则未执行后续PPO或测速，保留IEEE FP32主线。
