@@ -1,0 +1,16 @@
+Base: a09a26c6936f29c81843aefd41239efd40d40c56
+Commits before final decision report:
+2747163a6a577493ed39a8092e6cbcf2f63bbf88 Add preregistered matched BF16 training precision probe
+2235d3049c511b7ed0aa3ec663780aa17327ab34 Batch ready retrieval queries with native per-row scoring semantics
+902a19b875f6a744fdf51ddb90c25d9852e37806 Audit stratified branch checks and freeze K4 evaluation cadence
+df51ca2ae6f4e2c32e19b729a4ebab6da1a1253b Report matched BF16 behavior gate failure on saved native actions
+4fbbe3b557520a3ce92a7d998b2bb640ed8b721a Verify retrieval waves preserve invalid-action terminal evidence
+725f41ec2ea8ea1a4ed7ddb5c3b471e7de6ea76e Use array scoring for singleton initial retrievals too
+195a4dd37c3d131ae559cb5715ad21ec9a613c9b Record real saved-branch audit timing and K4 validation
+e94cc79a81d40f7453449209b69d1fa022fa24d7 Wire fixed Diver query batches into runtime retriever
+ea8270ae4e9823c81bb90e62be162fa1ef772450 Add bounded update timing stop after checkpoint and new-policy probe
+e6526b491ec72bc184793732ab6ccfc93a28e02a Reject unqualified BF16 Diver batches before training
+be496873b05e8f2544811c904f86e7eecfb88253 Report exact singleton retrieval speedup and reject batched BF16 ranking changes
+c13f3811181f6b2bdf93c1d426b9176c328359ff Select stable IEEE S0 runtime from real-prefix screening
+a032d2f7e0c8fb309362ebed97511c64f699e257 Verify frozen Initial K4 metrics by offline reaggregation
+4b8093ef2b0473353dd378dc8de3a52eff3ca63b Expand failed branch sampling audits before aborting optimizer update

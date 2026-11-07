@@ -12,7 +12,8 @@ PROFILES = ("paper_reference", "smoke", "ablation")
 CONFIG_FIELDS = {"schema_version", "profile", "method", "reference_plan", "reference_research_settings",
                  "implementation_provenance", "paper", "author_code", "execution", "paper_constants",
                  "batch_unit", "batch_unit_evidence", "model", "required_research_settings",
-                 "setting_evidence", "deviations"}
+                 "setting_evidence", "deviations", "runtime_bindings"}
+RUNTIME_BINDING_FIELDS = frozenset({"total_updates", "train_split_manifest", "development_split_manifest"})
 PAPER_FIELDS = {
     "anchors_per_query": "anchor_top_k", "rollout_depth": "max_retrieval_depth",
     "influence_threshold": "influence_threshold", "residual_threshold": "residual_threshold",
@@ -32,7 +33,9 @@ REFERENCE_PLAN = {
     "max_grad_norm": (1.0, "Explicit gradient norm clipping convention for the independent optimizer."),
     "development_every_updates": (1, "Evaluate after each rollout update, and always after the final update."),
     "checkpoint_every_updates": (1, "Save each update, including the final update."),
+    "eval_samples_per_query": (1, "One fixed development rollout per query in the reference runtime."),
 }
+EVALUATE = ("eval_samples_per_query",)
 ENCODE = ("document_encoding_profile",)
 RETRIEVE = ENCODE + ("metric", "reward_scale", "hybrid_normalization", "excluded_before_normalization")
 GENERATE = ("temperature", "top_p", "top_k", "max_new_tokens_per_step", "max_context_tokens",
@@ -57,12 +60,12 @@ DEPLOYMENT_BASE = ("runtime", "retriever_model_path", "cache_root", "retriever_d
                    "document_prefix", "retriever_max_length", "domains")
 DEPLOYMENT_RETRIEVAL = ("dataset_receipt_path", "dataset_receipt_sha256", "train_manifest_path",
                         "development_manifest_path", "test_manifest_path", "dense_chunk_size", "retrieval_top_k")
-DEPLOYMENT_GENERATION = ("actor_device", "prompt_path")
+DEPLOYMENT_GENERATION = ("actor_device", "prompt_path", "output_parser_mode")
 FIXED_BACKEND = {
     "temperature": (1,), "top_p": (1,), "top_k": (0,), "optimizer": ("adamw",),
     "kl_estimator": ("exact_categorical",), "trajectory_std_convention": ("population",),
-    "hybrid_normalization": ("minmax",), "format_failure_policy": ("raise",),
-    "native_span_parser": ("strict_native_tag_boundaries_prefilled_think",),
+    "hybrid_normalization": ("minmax",), "format_failure_policy": ("raise","invalid_action_terminal_zero_v1"),
+    "native_span_parser": ("strict_native_tag_boundaries_prefilled_think", "configured_native_body_coverage_v1", "two_stage_env_summary_v1"),
     "document_encoding_profile": ("original_model_card_raw_documents",),
     "loss_reduction": ("sum", "token_mean", "sequence_mean"),
     "local_advantage_normalization": ("center_only", "center_std"),
@@ -90,6 +93,7 @@ def _scope(method, command):
     deployment = DEPLOYMENT_BASE + DEPLOYMENT_RETRIEVAL
     if method != "retrieval_only":
         fields += GENERATE
+        fields += EVALUATE
         deployment += DEPLOYMENT_GENERATION
         deployment += ("actor_model_path",)
     if command == "train":
@@ -124,8 +128,12 @@ def _reference(config, constants, key):
         return (value if config.get("reference_plan") == "single_process_v1" else None,
                 _source("implementation_choice", reason))
     name = LEGACY_NAMES.get(key, key)
-    return (config.get("required_research_settings", {}).get(name),
-            config.get("setting_evidence", {}).get(name, {}))
+    declared = config.get("required_research_settings", {}).get(name)
+    if declared is None and name in RUNTIME_BINDING_FIELDS:
+        binding = config.get("runtime_bindings", {}).get(name)
+        if binding is not None:
+            return binding, _source("runtime_binding", "Explicit run-local binding for an otherwise unresolved field.")
+    return declared, config.get("setting_evidence", {}).get(name, {})
 
 
 def _positive_int(value):
@@ -154,7 +162,7 @@ def _derived(key, values, has_plan):
 
 def _validate_evidence(key, source, issues):
     status = source.get("status") if isinstance(source, dict) else None
-    if status in ("implementation_choice", "experiment_override", "derived"):
+    if status in ("implementation_choice", "experiment_override", "derived", "runtime_binding"):
         if not isinstance(source.get("reason"), str) or not source["reason"].strip():
             issues.append(f"undocumented implementation choice: {key}")
     elif status in ("paper_explicit", "author_code_explicit", "upstream_explicit"):
@@ -172,7 +180,7 @@ def _validate_values(values, issues):
     for key in ("queries_per_update", "ppo_epochs", "optimizer_minibatch_size", "microbatch_size",
                 "gradient_accumulation", "development_every_updates", "checkpoint_every_updates",
                 "total_updates", "max_new_tokens_per_step", "max_context_tokens", "observation_top_k",
-                "observation_token_limit", "rollout_depth"):
+                "observation_token_limit", "rollout_depth", "eval_samples_per_query"):
         if values.get(key) is not None and not _positive_int(values[key]):
             issues.append(f"{key} must be a positive integer")
     for key in ("trajectories_per_query", "total_branches_including_original"):
@@ -265,6 +273,18 @@ def _declared_changes(config, profile, fields, issues):
     return parsed
 
 
+def _runtime_bindings(config, issues):
+    bindings = config.get("runtime_bindings", {})
+    if not isinstance(bindings, dict):
+        issues.append("runtime_bindings must be an object")
+        return
+    for key, value in bindings.items():
+        if key not in RUNTIME_BINDING_FIELDS:
+            issues.append(f"unsupported runtime binding: {key}")
+        elif value is None or (isinstance(value, str) and not value.strip()):
+            issues.append(f"runtime binding {key} must be nonempty")
+
+
 def expand(config, command, constants, independent_settings=None):
     issues = []
     method = config.get("method", "ricepo")
@@ -305,6 +325,7 @@ def expand(config, command, constants, independent_settings=None):
     if independent_settings is not None and not isinstance(independent_settings, dict):
         issues.append("reference_research_settings must be a settings object")
         independent_settings = {}
+    _runtime_bindings(config, issues)
     fields, deployment = _scope(method, command)
     method_fields, _ = _scope(method, dispatch)
     # A deviation can describe training while a holdout or encoding command uses

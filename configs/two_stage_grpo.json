@@ -1,0 +1,5 @@
+{
+  "schema_version": 1,
+  "extends": "two_stage_ricepo.json",
+  "method": "grpo"
+}

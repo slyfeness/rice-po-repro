@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "extends": "smoke.json",
+  "profile": "ablation",
+  "required_research_settings": {
+    "prompt_artifact": "prompts/ricepo_prefilled_think_compact_format_v1.txt"
+  },
+  "setting_evidence": {
+    "prompt_artifact": {
+      "status": "experiment_override",
+      "reason": "Compact, non-paper functional prompt used only for a pre-registered fixed-query/seed format-stability diagnostic; it is not the Figure 5 reference prompt."
+    }
+  },
+  "deviations": {
+    "prompt_artifact": {
+      "value": "prompts/ricepo_prefilled_think_compact_format_v1.txt",
+      "reason": "Minimize redundant formatting instructions while retaining the same native-token actor, sampling law, parser contract and retrieval semantics for functional diagnostics."
+    }
+  }
+}

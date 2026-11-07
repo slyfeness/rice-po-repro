@@ -1,0 +1,17 @@
+{
+  "scope": "Static source/JSON/TOML/link, known-private-marker, credential-pattern, size and license-diff review; not runtime tests.",
+  "files_checked": 236,
+  "static_parsed": {
+    "python": 96,
+    "json": 43,
+    "toml": 1
+  },
+  "largest_file_bytes": 395939,
+  "flags_kept_false": true,
+  "findings": [],
+  "license_files_changed": [],
+  "protected_math_paper_prompt_unchanged": true,
+  "private_raw_assets_published": false,
+  "limitations": "Pattern scanning is not a proof against arbitrary secrets. No upstream data/models/logs or new third-party source files are included.",
+  "self_report_excluded": true
+}

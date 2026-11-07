@@ -18,7 +18,7 @@ allowed to appear again, including in counterfactual branches.
 """
 
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from math import isfinite
 from types import MappingProxyType
 
@@ -36,6 +36,9 @@ from .contracts import (
     RewardScorer,
     Span,
     Trajectory,
+    InvalidGeneration,
+    FailureAction,
+    generation_action_mask,
 )
 
 
@@ -127,8 +130,14 @@ class RolloutRunner:
         should_stop: Callable[[tuple[RetrievalStep, ...]], bool],
         final_reward: Callable[[tuple[RetrievalStep, ...]], float],
         excluded_ids_by_query: Mapping[str, frozenset[str]] | None = None,
+        render_next_turn: Callable | None = None,
+        failure_semantics: str = "raise",
     ) -> None:
         self.generator = generator
+        if failure_semantics not in ("raise","invalid_action_terminal_zero_v1"):
+            raise ValueError("unsupported failure semantics")
+        self.failure_semantics = failure_semantics
+        self.render_next_turn = render_next_turn
         self.retriever = retriever
         self.reward_scorer = reward_scorer
         self.query_composer = query_composer
@@ -150,6 +159,11 @@ class RolloutRunner:
         if not expected or self.generator.policy_version != expected:
             raise PolicyVersionError(f"generator policy must remain frozen at {expected!r}")
 
+    def _verified_trace(self,trace):
+        replay=getattr(self.generator,'action_replay',None)
+        if replay and hasattr(replay,'validate_trace'):replay.validate_trace(trace)
+        return trace
+
     def _check_length(self, ids: Sequence[int]) -> None:
         if len(ids) > self.rules.max_context_tokens:
             raise RolloutLengthError("native-token history exceeds max_context_tokens")
@@ -160,7 +174,11 @@ class RolloutRunner:
         ids = _tokens(generation.token_ids, label="generation")
         if not ids:
             raise MalformedGenerationError("empty generation")
-        if len(ids) > self.rules.max_new_tokens:
+        try:
+            action_count=sum(generation_action_mask(generation))
+        except ValueError as exc:
+            raise MalformedGenerationError(str(exc)) from exc
+        if action_count > self.rules.max_new_tokens:
             raise RolloutLengthError("generation exceeds max_new_tokens")
         if generation.finish_reason not in self.rules.accepted_finish_reasons:
             raise MalformedGenerationError(
@@ -173,7 +191,7 @@ class RolloutRunner:
             reasoning.start, reasoning.end, summary.start, summary.end
         )):
             raise MalformedGenerationError("span offsets must be integer native-token positions")
-        if not (0 <= reasoning.start < reasoning.end <= summary.start < summary.end <= len(ids)):
+        if not (0 <= reasoning.start <= reasoning.end <= summary.start < summary.end <= len(ids)):
             raise MalformedGenerationError(
                 "format policy requires nonempty, ordered, in-bounds reasoning and summary spans"
             )
@@ -189,6 +207,10 @@ class RolloutRunner:
         return values
 
     def _validate_saved_history(self, original: Trajectory) -> None:
+        if self.failure_semantics == "invalid_action_terminal_zero_v1":
+            from .failure_zero import validate_trajectory
+            validate_trajectory(original,self.rules.depth)
+            return
         history = _tokens(original.steps[0].prefix_token_ids, label="saved initial prefix")
         if not history:
             raise ValueError("original trajectory must have a nonempty initial prefix")
@@ -205,7 +227,7 @@ class RolloutRunner:
                 raise ValueError("original absolute spans do not match native generation offsets")
             observation = _tokens(step.retrieval.observation_token_ids, label="saved observation")
             history += generated + observation
-            mask += (True,) * len(generated) + (False,) * len(observation)
+            mask += generation_action_mask(step.generation) + (False,) * len(observation)
         if history != original.token_ids or mask != original.generated_mask:
             raise ValueError("original trajectory IDs or mask do not match its saved steps")
         if any(type(value) is not bool for value in original.generated_mask):
@@ -225,6 +247,7 @@ class RolloutRunner:
         seeds: tuple[int, ...],
         final_depth: int,
         honor_stop: bool,
+        initial_ndcg: float | None = None,
     ) -> Trajectory:
         self._check_policy(policy_version)
         history = token_ids
@@ -238,10 +261,27 @@ class RolloutRunner:
             self._check_policy(policy_version)
             kind = "original_generation" if honor_stop else "branch_generation"
             request_id = logical_request_id(policy_version, query_id, trajectory_id, depth, seed)
+            replay = getattr(self.generator,"action_replay",None) or getattr(self.generator,"completion_replay",None)
+            saved_native_replay = bool(replay and replay(prefix,seed,policy_version) is not None)
+            reexecution=bool(replay and hasattr(replay,'paid_reexecution') and replay.paid_reexecution(prefix,seed,policy_version))
             with operation(kind, request_id=request_id, query_id=query_id, trajectory_id=trajectory_id,
-                           seed=seed, depth=depth, input_tokens=len(prefix), policy_version=policy_version, prefix_sha256=fingerprint(prefix)):
+                           seed=seed, depth=depth, input_tokens=len(prefix), policy_version=policy_version,
+                           saved_native_replay=saved_native_replay,recovery_reexecution=reexecution,prefix_sha256=fingerprint(prefix)):
                 generation = self.generator.generate(prefix, seed=seed)
             self._check_policy(policy_version)
+            if isinstance(generation,InvalidGeneration):
+                if self.failure_semantics != "invalid_action_terminal_zero_v1":
+                    raise MalformedGenerationError("unexpected invalid-action result")
+                ids = _tokens(generation.token_ids,label="failed native generation")
+                if not ids or sum(generation_action_mask(generation))>self.rules.max_new_tokens:
+                    raise MalformedGenerationError("invalid failure evidence size")
+                self._check_length(prefix+ids)
+                last = steps[-1].local_reward if steps else initial_ndcg
+                _finite_reward(last,label="last valid retrieval NDCG")
+                failure = FailureAction(depth,prefix,generation,seed,policy_version)
+                return self._verified_trace(Trajectory(query_id,trajectory_id,policy_version,prefix+ids,
+                    mask+generation_action_mask(generation),tuple(steps),0.0,"invalid_action_terminal_zero_v1",
+                    failure,initial_ndcg,last,0.0))
             generated_ids = self._validate_generation(generation)
             self._check_length(prefix + generated_ids)
             query = self.query_composer.compose(original_query, generation.summary_text)
@@ -266,6 +306,9 @@ class RolloutRunner:
             if any(isinstance(doc.score, bool) or not isinstance(doc.score, (int, float))
                    or not isfinite(doc.score) for doc in retrieval.documents):
                 raise RetrievalContractError("retriever returned a nonfinite document score")
+            if self.render_next_turn is not None:
+                retrieval = replace(retrieval, observation_token_ids=self.render_next_turn(
+                    retrieval.documents, generated_ids))
             observation = _tokens(retrieval.observation_token_ids, label="retrieval observation")
             local_reward = _finite_reward(
                 self.reward_scorer.score(query_id, ranked_ids), label="local reward"
@@ -283,7 +326,7 @@ class RolloutRunner:
             )
             steps.append(step)
             history = prefix + generated_ids + observation
-            mask += (True,) * len(generated_ids) + (False,) * len(observation)
+            mask += generation_action_mask(generation) + (False,) * len(observation)
             self._check_length(history)
             if honor_stop:
                 stop = self.should_stop(tuple(steps))
@@ -296,7 +339,7 @@ class RolloutRunner:
         frozen_steps = tuple(steps)
         reward = _finite_reward(self.final_reward(frozen_steps), label="final reward")
         self._check_policy(policy_version)
-        return Trajectory(
+        return self._verified_trace(Trajectory(
             query_id=query_id,
             trajectory_id=trajectory_id,
             policy_version=policy_version,
@@ -305,7 +348,9 @@ class RolloutRunner:
             steps=frozen_steps,
             final_reward=reward,
             termination=termination,
-        )
+            initial_ndcg=initial_ndcg,
+            last_valid_ndcg=reward if self.failure_semantics=="invalid_action_terminal_zero_v1" else None,
+        ))
 
     def run(
         self,
@@ -316,6 +361,7 @@ class RolloutRunner:
         initial_prefix_token_ids: Sequence[int],
         seeds: Sequence[int],
         old_policy_version: str,
+        initial_ndcg: float | None = None,
     ) -> Trajectory:
         """Run at most five retrievals; the caller explicitly defines early stopping."""
         if not query_id or not trajectory_id or not original_query:
@@ -334,32 +380,20 @@ class RolloutRunner:
             seeds=self._validate_seeds(seeds, self.rules.depth),
             final_depth=self.rules.depth,
             honor_stop=True,
+            initial_ndcg=initial_ndcg,
         )
 
-    def branch(
-        self,
-        *,
-        original_query: str,
-        original: Trajectory,
-        anchor: Anchor,
-        requests: Sequence[BranchRequest],
-    ) -> BranchRollouts:
-        """Regenerate from the exact saved prefix, retaining the observed outcome.
-
-        The original must have reached the maximum depth of five; every new
-        branch also reaches five. An early-stopped original is rejected rather
-        than silently changing its recorded final reward. Seeds and
-        branch IDs are explicit and distinct; a stateful generator must honor each
-        supplied seed independently. New trajectories are statistics/audit data.
-        """
+    def _prepare_branch(self, *, original_query: str, original: Trajectory, anchor: Anchor,
+                        requests: Sequence[BranchRequest]):
+        """Validate one branch group and retain only its immutable native state."""
         if (anchor.query_id, anchor.trajectory_id) != (original.query_id, original.trajectory_id):
             raise ValueError("anchor does not identify the original trajectory")
-        final_depth = len(original.steps)
-        if not 1 <= anchor.depth <= final_depth <= self.rules.depth:
+        final_depth = self.rules.depth if self.failure_semantics=="invalid_action_terminal_zero_v1" else len(original.steps)
+        if not 1 <= anchor.depth <= len(original.steps) <= final_depth <= self.rules.depth:
             raise ValueError("anchor/original depth is outside the configured rollout")
         if final_depth != self.rules.depth:
             raise ValueError(f"credit branches require an original at the full {self.rules.depth}-step horizon")
-        if tuple(step.depth for step in original.steps) != tuple(range(1, final_depth + 1)):
+        if tuple(step.depth for step in original.steps) != tuple(range(1, len(original.steps) + 1)):
             raise ValueError("original steps must have contiguous one-based depths")
         self._validate_saved_history(original)
         selected = original.steps[anchor.depth - 1]
@@ -396,28 +430,66 @@ class RolloutRunner:
             policy_version=original.policy_version,
             prefix_token_ids=prefix,
         )]
-        trajectories = []
-        for request, seeds in zip(requests, seed_sets, strict=True):
-            trajectory = self._continue(
-                query_id=original.query_id,
-                trajectory_id=request.trajectory_id,
-                original_query=original_query,
-                policy_version=original.policy_version,
-                token_ids=prefix,
-                generated_mask=original.generated_mask[:len(prefix)],
-                previous_steps=original.steps[:anchor.depth - 1],
-                seeds=seeds,
-                final_depth=final_depth,
-                honor_stop=False,
-            )
+        states=[dict(query_id=original.query_id,trajectory_id=request.trajectory_id,
+            original_query=original_query,policy_version=original.policy_version,token_ids=prefix,
+            generated_mask=original.generated_mask[:len(prefix)],previous_steps=original.steps[:anchor.depth-1],
+            seeds=seeds,final_depth=final_depth,honor_stop=False,initial_ndcg=original.initial_ndcg)
+            for request,seeds in zip(requests,seed_sets,strict=True)]
+        return dict(anchor=anchor,requests=requests,prefix=prefix,outcomes=outcomes,states=states)
+
+    def _finish_branch(self, plan, trajectories):
+        if len(trajectories)!=len(plan['requests']):
+            raise ValueError('branch completion count differs from the frozen request group')
+        outcomes=list(plan['outcomes'])
+        for trajectory in trajectories:
             saved_item('counterfactual', trajectory.trajectory_id, trajectory)
-            trajectories.append(trajectory)
             outcomes.append(BranchOutcome(
-                branch_id=request.trajectory_id,
+                branch_id=trajectory.trajectory_id,
                 is_original=False,
-                local_reward=trajectory.steps[anchor.depth - 1].local_reward,
+                local_reward=(trajectory.steps[plan['anchor'].depth - 1].local_reward
+                              if len(trajectory.steps)>=plan['anchor'].depth else None),
                 final_reward=trajectory.final_reward,
                 policy_version=trajectory.policy_version,
-                prefix_token_ids=prefix,
+                prefix_token_ids=plan['prefix'],
             ))
-        return BranchRollouts(BranchGroup(anchor=anchor, outcomes=tuple(outcomes)), tuple(trajectories))
+        return BranchRollouts(BranchGroup(anchor=plan['anchor'], outcomes=tuple(outcomes)), tuple(trajectories))
+
+    def branch(
+        self,
+        *,
+        original_query: str,
+        original: Trajectory,
+        anchor: Anchor,
+        requests: Sequence[BranchRequest],
+        batched: bool = False,
+    ) -> BranchRollouts:
+        """Regenerate one exact-prefix branch group without modifying its source."""
+        plan=self._prepare_branch(original_query=original_query,original=original,anchor=anchor,requests=requests)
+        if batched:
+            from .batched_rollout import continue_many
+            trajectories=continue_many(self,plan['states'])
+        else:
+            trajectories=tuple(self._continue(**state) for state in plan['states'])
+        return self._finish_branch(plan,trajectories)
+
+    def branch_many(self, jobs: Sequence[dict]) -> tuple[BranchRollouts,...]:
+        """Wavefront all ready anchors for one retriever without future context.
+
+        Each row keeps its own frozen prefix, seeds and previous retrieval
+        history.  The shared call only changes vLLM scheduling; ``continue_many``
+        consumes every row's real retrieval result before it is eligible for the
+        next depth.
+        """
+        plans=[self._prepare_branch(**dict(job)) for job in jobs]
+        if not plans:
+            return ()
+        states=[state for plan in plans for state in plan['states']]
+        identities=[state['trajectory_id'] for state in states]
+        if len(identities)!=len(set(identities)):
+            raise ValueError('cross-anchor branch identities must be globally unique')
+        from .batched_rollout import continue_many
+        result={trace.trajectory_id:trace for trace in continue_many(self,states)}
+        if len(result)!=len(states):
+            raise ValueError('cross-anchor branch wave omitted a trajectory')
+        return tuple(self._finish_branch(plan,tuple(result[state['trajectory_id']] for state in plan['states']))
+                     for plan in plans)

@@ -1,0 +1,903 @@
+{
+  "base_commit": "92addec697190eff6e00ded7bfab8d01f5a6ae8c",
+  "SPEED_PASS": false,
+  "STABILITY_PASS": true,
+  "READY_FOR_32": false,
+  "scope": "MEASURED bounded three updates x4 train queries; independent two-stage/invalid-action-zero variant, not long-run or paper-performance validation",
+  "speed_rule": {
+    "preregistered_minimum_complete_run_wall_reduction": 0.1,
+    "additional_requirement": "higher actual engine token/s",
+    "source": "independent engineering pilot choice, not paper constant"
+  },
+  "measured_speed": {
+    "A_run_seconds": 1625.8491881266236,
+    "B_run_seconds": 1565.9592437688261,
+    "wall_speedup": 1.0382448934070974,
+    "wall_reduction": 0.0368361006636817,
+    "engine_makespan_speedup": 1.283666602647914,
+    "engine_tps_speedup": 1.2406795621332225,
+    "output_token_ratio_B_over_A": 0.966512301226799,
+    "equal_output_comparison": false,
+    "primary_excludes_additional_read_only_restore_diagnostics": true
+  },
+  "common_initial_state_dict_sha256": "517a10e399f0fadbfe3a8b3e3ca7bbe3ccd5479bfa5a866f81f682520ccf0626",
+  "same_first_query_schedule": true,
+  "same_data_retriever_prompt_binding": true,
+  "configuration": {
+    "execution": {
+      "enabled": false
+    },
+    "actor": "DeepSeek-R1-Distill-Qwen-1.5B",
+    "actor_and_reference_storage": "float32",
+    "HF_training": {
+      "matmul_precision": "highest",
+      "allow_tf32": false,
+      "cudnn_allow_tf32": false
+    },
+    "sampling": {
+      "attention": "Triton TF32",
+      "A_worker_matmul": "highest",
+      "B_worker_matmul": "high",
+      "TP": 1,
+      "max_model_len": 32768,
+      "temperature": 1,
+      "top_p": 1,
+      "top_k_disabled": true,
+      "shared_action_budget": 4096,
+      "runtime": {
+        "attention_backend": "TRITON_ATTN",
+        "enable_chunked_prefill": true,
+        "enable_prefix_caching": true,
+        "enforce_eager": false,
+        "gpu_memory_utilization": 0.9,
+        "max_num_batched_tokens": 32768,
+        "max_num_seqs": 144
+      }
+    },
+    "algorithm": {
+      "queries_per_update": 4,
+      "originals_per_query": 4,
+      "anchors_per_query": 4,
+      "new_branches_per_anchor": 5,
+      "maximum_depth": 5,
+      "reward": "real NDCG@10 for valid retrieval; explicit failure utility0",
+      "influence_threshold": 0.05,
+      "residual_threshold": 0.03,
+      "local_normalization": "center_only",
+      "query_composition": "original_query + LF + summary",
+      "protocol": "two_stage_env_summary_v1",
+      "failure_semantics": "invalid_action_terminal_zero_v1"
+    },
+    "PPO": {
+      "ppo_epochs": 1,
+      "optimizer": "adamw",
+      "optimizer_hyperparameters": {
+        "betas": [
+          0.9,
+          0.999
+        ],
+        "eps": 1e-08,
+        "weight_decay": 0
+      },
+      "optimizer_minibatch_size": 16,
+      "microbatch_size": 1,
+      "gradient_accumulation": 16,
+      "loss_reduction": "sequence_mean",
+      "max_grad_norm": 1.0,
+      "clip_epsilon": 0.2,
+      "actor_learning_rate": 1e-06,
+      "actor_kl_coefficient": 0.001,
+      "minibatch_semantics": "full original-trajectory batch:16=4 queries x4; resolve again with any future query batch"
+    },
+    "checkpoint_every_updates": 2,
+    "development_every_updates": 4,
+    "boundary_checkpoints": "first handoff and final required; all3 saved",
+    "development_run": false
+  },
+  "per_update": [
+    {
+      "update": 1,
+      "slurm_job_id": 176263,
+      "run_seconds": 1565.9592437688261,
+      "allocation_seconds": 1581,
+      "policy_version": "c64be2cee134f374ef3dc534124eceb3bcd5a225b14d65483b544be6a1361ca2",
+      "checkpoint_identity": "f9383267741cce0382ae86c6717a15425528d6a11a3255b18e1e8b6a00aab580",
+      "original_logprob_diagnostics": {
+        "absolute_error": {
+          "max": 0.11314964294433594,
+          "mean": 0.002152309633786598,
+          "min": 0.0,
+          "p50": 0.000981152057647705,
+          "p90": 0.005678892135620117,
+          "p99": 0.014391601085662842
+        },
+        "effective_clip_fraction": 0.0,
+        "ess_fraction": 0.9999845473314927,
+        "extreme_tail_fraction": 0.0,
+        "historical_consistency_pass": true,
+        "matched_consistency_pass": true,
+        "outside_clip_fraction": 0.0,
+        "ratio": {
+          "max": 1.086282727587353,
+          "mean": 1.0000500041436267,
+          "min": 0.8930170164211676,
+          "p50": 1.0000064294060624,
+          "p90": 1.0034975037146758,
+          "p99": 1.011454842322677
+        },
+        "ratio_mean_in_diagnostic_band": true,
+        "signed_delta": {
+          "max": 0.08276152610778809,
+          "mean": 4.2277695402302096e-05,
+          "min": -0.11314964294433594,
+          "p50": 6.429385393857956e-06,
+          "p90": 0.0034914016723632812,
+          "p99": 0.011389732360839844
+        },
+        "tokens": 26545,
+        "zero_advantage_fraction": 0.22588058014692033
+      },
+      "audited_records_diagnostics": {
+        "absolute_error": {
+          "max": 0.11314964294433594,
+          "mean": 0.002144981006562321,
+          "min": 0.0,
+          "p50": 0.0009478926658630371,
+          "p90": 0.005704760551452637,
+          "p99": 0.014780282974243164
+        },
+        "effective_clip_fraction": null,
+        "ess_fraction": 0.9999844041087218,
+        "extreme_tail_fraction": 0.0,
+        "historical_consistency_pass": true,
+        "matched_consistency_pass": true,
+        "outside_clip_fraction": 0.0,
+        "ratio": {
+          "max": 1.1144755036961729,
+          "mean": 1.0000211033981594,
+          "min": 0.8930170164211676,
+          "p50": 1.000003455212721,
+          "p90": 1.0034611380013765,
+          "p99": 1.0113781596484694
+        },
+        "ratio_mean_in_diagnostic_band": true,
+        "signed_delta": {
+          "max": 0.1083838939666748,
+          "mean": 1.3304796850102836e-05,
+          "min": -0.11314964294433594,
+          "p50": 3.4552067518234253e-06,
+          "p90": 0.0034551620483398438,
+          "p99": 0.011313915252685547
+        },
+        "tokens": 185244,
+        "zero_advantage_fraction": null
+      },
+      "branch_audit": {
+        "scheduled": 80,
+        "checked": 80,
+        "coverage": "all on update1; fixed stratified subset afterwards; reused prefix score positions included"
+      },
+      "post_update_diagnostics": {
+        "fresh_worker_snapshot": true,
+        "outside_limit": 0.01,
+        "pass_risk_screen": true,
+        "policy_version": "c64be2cee134f374ef3dc534124eceb3bcd5a225b14d65483b544be6a1361ca2",
+        "statistics": {
+          "absolute_error": {
+            "max": 0.09574437141418457,
+            "mean": 0.009634179436544986,
+            "min": 0.0,
+            "p50": 0.00359199196100235,
+            "p90": 0.026792526245117188,
+            "p99": 0.08650588989257812
+          },
+          "effective_clip_fraction": null,
+          "ess_fraction": 0.9996848220294312,
+          "extreme_tail_fraction": 0.0,
+          "historical_consistency_pass": false,
+          "matched_consistency_pass": true,
+          "outside_clip_fraction": 0.0,
+          "ratio": {
+            "max": 1.1004777144731488,
+            "mean": 1.000551633598268,
+            "min": 0.9162830089370544,
+            "p50": 0.9999991656226327,
+            "p90": 1.0156612564601728,
+            "p99": 1.081598662121126
+          },
+          "ratio_mean_in_diagnostic_band": true,
+          "signed_delta": {
+            "max": 0.09574437141418457,
+            "mean": 0.0003954274196773552,
+            "min": -0.08743000030517578,
+            "p50": -8.343777153640985e-07,
+            "p90": 0.015539884567260742,
+            "p99": 0.07844018936157227
+          },
+          "tokens": 292,
+          "zero_advantage_fraction": null
+        }
+      },
+      "nonzero_advantage_positions": 20549,
+      "gradient_norm": 1339.5966796875,
+      "weight_delta_l2": 0.03695955229980015,
+      "reference_has_gradients": false,
+      "credit": {
+        "selected": 16,
+        "estimable": 8,
+        "nonzero": 5,
+        "think_propagations": 1,
+        "summary_changed_tokens": 504,
+        "think_changed_tokens": 415,
+        "terminal_propagations": 1
+      },
+      "actual_worker_gemm": [
+        [
+          {
+            "cache_block_size": 16,
+            "cuda_build": "12.8",
+            "cudnn_allow_tf32": true,
+            "gpu_name": "NVIDIA A800-SXM4-80GB",
+            "linear_dispatch": "vllm.model_executor.layers.utils.default_unquantized_gemm",
+            "linear_methods": {
+              "vllm.model_executor.layers.linear.UnquantizedLinearMethod": 112,
+              "vllm.model_executor.layers.vocab_parallel_embedding.UnquantizedEmbeddingMethod": 2
+            },
+            "matmul_allow_tf32": true,
+            "parameter_dtypes": {
+              "torch.float32": 199
+            },
+            "torch_float32_matmul_precision": "high",
+            "triton_f32_default": "tf32",
+            "worker_precision_env": "high"
+          }
+        ],
+        [
+          {
+            "cache_block_size": 16,
+            "cuda_build": "12.8",
+            "cudnn_allow_tf32": true,
+            "gpu_name": "NVIDIA A800-SXM4-80GB",
+            "linear_dispatch": "vllm.model_executor.layers.utils.default_unquantized_gemm",
+            "linear_methods": {
+              "vllm.model_executor.layers.linear.UnquantizedLinearMethod": 112,
+              "vllm.model_executor.layers.vocab_parallel_embedding.UnquantizedEmbeddingMethod": 2
+            },
+            "matmul_allow_tf32": true,
+            "parameter_dtypes": {
+              "torch.float32": 199
+            },
+            "torch_float32_matmul_precision": "high",
+            "triton_f32_default": "tf32",
+            "worker_precision_env": "high"
+          }
+        ],
+        [
+          {
+            "cache_block_size": 16,
+            "cuda_build": "12.8",
+            "cudnn_allow_tf32": true,
+            "gpu_name": "NVIDIA A800-SXM4-80GB",
+            "linear_dispatch": "vllm.model_executor.layers.utils.default_unquantized_gemm",
+            "linear_methods": {
+              "vllm.model_executor.layers.linear.UnquantizedLinearMethod": 112,
+              "vllm.model_executor.layers.vocab_parallel_embedding.UnquantizedEmbeddingMethod": 2
+            },
+            "matmul_allow_tf32": true,
+            "parameter_dtypes": {
+              "torch.float32": 199
+            },
+            "torch_float32_matmul_precision": "high",
+            "triton_f32_default": "tf32",
+            "worker_precision_env": "high"
+          }
+        ]
+      ],
+      "fresh_worker_per_weight_version": true,
+      "restore": {
+        "status": "PASS",
+        "adam_step": [
+          1
+        ],
+        "actor_state_dict_sha256": "361da3eabf60a133944f6c81783ffc4294dd48c6f7745e012e60ad66e316ebe6",
+        "optimizer_state_sha256": "1c832a6fdcdf9ac1fcad661dde75bbd990f263b32580cce68d33787f5928435d",
+        "cpu_cuda_rng_probe": {
+          "cpu_draw_sha256": "a65e96804aeb86e5cf966e224b4b735eb064189b099863b656247766148a44ed",
+          "cuda_draw_sha256": "1a2bf2c3b5119e94379dbf45d0f38d19f1e37ebab26ecef3051033dc835998e4"
+        },
+        "extra_optimizer_steps": 0
+      }
+    },
+    {
+      "update": 2,
+      "slurm_job_id": 176308,
+      "run_seconds": 1518.4669880177826,
+      "allocation_seconds": 1978,
+      "policy_version": "adb500d3139494ae169cb8d7d41a0ae78d2b5f65ac0dfe0e4da4a4f85aab9f33",
+      "checkpoint_identity": "6f363de662c9de78296944631a351e8d3edec5d6979435606f1db86f8e4c491a",
+      "original_logprob_diagnostics": {
+        "absolute_error": {
+          "max": 0.28924989700317383,
+          "mean": 0.006517366996686462,
+          "min": 0.0,
+          "p50": 0.0018386393785476685,
+          "p90": 0.01876768469810486,
+          "p99": 0.053081393241882324
+        },
+        "effective_clip_fraction": 3.2896901111915254e-05,
+        "ess_fraction": 0.999822850477921,
+        "extreme_tail_fraction": 0.0,
+        "historical_consistency_pass": false,
+        "matched_consistency_pass": true,
+        "outside_clip_fraction": 6.579380222383051e-05,
+        "ratio": {
+          "max": 1.3354254056411485,
+          "mean": 1.000030287780373,
+          "min": 0.7958661233012062,
+          "p50": 0.9999997615923633,
+          "p90": 1.0106699638257708,
+          "p99": 1.0422892605190937
+        },
+        "ratio_mean_in_diagnostic_band": true,
+        "signed_delta": {
+          "max": 0.28924989700317383,
+          "mean": -5.803121254254532e-05,
+          "min": -0.228324294090271,
+          "p50": -2.3840766516514122e-07,
+          "p90": 0.010613441467285156,
+          "p99": 0.04141950607299805
+        },
+        "tokens": 30398,
+        "zero_advantage_fraction": 0.35377327455753665
+      },
+      "audited_records_diagnostics": {
+        "absolute_error": {
+          "max": 0.28928565979003906,
+          "mean": 0.006916041753087266,
+          "min": 0.0,
+          "p50": 0.0024317502975463867,
+          "p90": 0.01925516128540039,
+          "p99": 0.05373549461364746
+        },
+        "effective_clip_fraction": null,
+        "ess_fraction": 0.9998160103674254,
+        "extreme_tail_fraction": 0.0,
+        "historical_consistency_pass": false,
+        "matched_consistency_pass": true,
+        "outside_clip_fraction": 6.826559868930051e-05,
+        "ratio": {
+          "max": 1.3354731650293044,
+          "mean": 1.000027033201795,
+          "min": 0.7958661233012062,
+          "p50": 0.9999997615923633,
+          "p90": 1.0112501270095882,
+          "p99": 1.0427958288709074
+        },
+        "ratio_mean_in_diagnostic_band": true,
+        "signed_delta": {
+          "max": 0.28928565979003906,
+          "mean": -6.456373382931991e-05,
+          "min": -0.228324294090271,
+          "p50": -2.3840766516514122e-07,
+          "p90": 0.011187314987182617,
+          "p99": 0.04190540313720703
+        },
+        "tokens": 43946,
+        "zero_advantage_fraction": null
+      },
+      "branch_audit": {
+        "scheduled": 80,
+        "checked": 7,
+        "coverage": "all on update1; fixed stratified subset afterwards; reused prefix score positions included"
+      },
+      "post_update_diagnostics": {
+        "fresh_worker_snapshot": true,
+        "outside_limit": 0.02,
+        "pass_risk_screen": true,
+        "policy_version": "adb500d3139494ae169cb8d7d41a0ae78d2b5f65ac0dfe0e4da4a4f85aab9f33",
+        "statistics": {
+          "absolute_error": {
+            "max": 0.10863137245178223,
+            "mean": 0.01060388325505806,
+            "min": 0.0,
+            "p50": 0.004629075527191162,
+            "p90": 0.026936769485473633,
+            "p99": 0.08453178405761719
+          },
+          "effective_clip_fraction": null,
+          "ess_fraction": 0.9996318928464766,
+          "extreme_tail_fraction": 0.0,
+          "historical_consistency_pass": false,
+          "matched_consistency_pass": true,
+          "outside_clip_fraction": 0.0,
+          "ratio": {
+            "max": 1.088207431330039,
+            "mean": 1.001268561172346,
+            "min": 0.8970610379676127,
+            "p50": 1.0001322905484924,
+            "p90": 1.019568558732129,
+            "p99": 1.0693764583138803
+          },
+          "ratio_mean_in_diagnostic_band": true,
+          "signed_delta": {
+            "max": 0.08453178405761719,
+            "mean": 0.0010819152569699023,
+            "min": -0.10863137245178223,
+            "p50": 0.00013228179886937141,
+            "p90": 0.01937955617904663,
+            "p99": 0.06707572937011719
+          },
+          "tokens": 450,
+          "zero_advantage_fraction": null
+        }
+      },
+      "nonzero_advantage_positions": 19644,
+      "gradient_norm": 1149.4146728515625,
+      "weight_delta_l2": 0.026143846650806185,
+      "reference_has_gradients": false,
+      "credit": {
+        "selected": 16,
+        "estimable": 10,
+        "nonzero": 5,
+        "think_propagations": 0,
+        "summary_changed_tokens": 435,
+        "think_changed_tokens": 0,
+        "terminal_propagations": 0
+      },
+      "actual_worker_gemm": [
+        [
+          {
+            "cache_block_size": 16,
+            "cuda_build": "12.8",
+            "cudnn_allow_tf32": true,
+            "gpu_name": "NVIDIA A800-SXM4-80GB",
+            "linear_dispatch": "vllm.model_executor.layers.utils.default_unquantized_gemm",
+            "linear_methods": {
+              "vllm.model_executor.layers.linear.UnquantizedLinearMethod": 112,
+              "vllm.model_executor.layers.vocab_parallel_embedding.UnquantizedEmbeddingMethod": 2
+            },
+            "matmul_allow_tf32": true,
+            "parameter_dtypes": {
+              "torch.float32": 199
+            },
+            "torch_float32_matmul_precision": "high",
+            "triton_f32_default": "tf32",
+            "worker_precision_env": "high"
+          }
+        ],
+        [
+          {
+            "cache_block_size": 16,
+            "cuda_build": "12.8",
+            "cudnn_allow_tf32": true,
+            "gpu_name": "NVIDIA A800-SXM4-80GB",
+            "linear_dispatch": "vllm.model_executor.layers.utils.default_unquantized_gemm",
+            "linear_methods": {
+              "vllm.model_executor.layers.linear.UnquantizedLinearMethod": 112,
+              "vllm.model_executor.layers.vocab_parallel_embedding.UnquantizedEmbeddingMethod": 2
+            },
+            "matmul_allow_tf32": true,
+            "parameter_dtypes": {
+              "torch.float32": 199
+            },
+            "torch_float32_matmul_precision": "high",
+            "triton_f32_default": "tf32",
+            "worker_precision_env": "high"
+          }
+        ],
+        [
+          {
+            "cache_block_size": 16,
+            "cuda_build": "12.8",
+            "cudnn_allow_tf32": true,
+            "gpu_name": "NVIDIA A800-SXM4-80GB",
+            "linear_dispatch": "vllm.model_executor.layers.utils.default_unquantized_gemm",
+            "linear_methods": {
+              "vllm.model_executor.layers.linear.UnquantizedLinearMethod": 112,
+              "vllm.model_executor.layers.vocab_parallel_embedding.UnquantizedEmbeddingMethod": 2
+            },
+            "matmul_allow_tf32": true,
+            "parameter_dtypes": {
+              "torch.float32": 199
+            },
+            "torch_float32_matmul_precision": "high",
+            "triton_f32_default": "tf32",
+            "worker_precision_env": "high"
+          }
+        ]
+      ],
+      "fresh_worker_per_weight_version": true,
+      "restore": {
+        "status": "PASS",
+        "adam_step": [
+          2
+        ],
+        "actor_state_dict_sha256": "a297f0e6f8f1e4b13d75a7dd415823dc52cf165547c85538670e26551215e70d",
+        "optimizer_state_sha256": "6331e54d5560f58f9da1ef881687aa9251bef800de9c9e189bdd511ee21474e3",
+        "cpu_cuda_rng_probe": {
+          "cpu_draw_sha256": "a65e96804aeb86e5cf966e224b4b735eb064189b099863b656247766148a44ed",
+          "cuda_draw_sha256": "1a2bf2c3b5119e94379dbf45d0f38d19f1e37ebab26ecef3051033dc835998e4"
+        },
+        "extra_optimizer_steps": 0
+      }
+    },
+    {
+      "update": 3,
+      "slurm_job_id": 176361,
+      "run_seconds": 1359.395308693871,
+      "allocation_seconds": 1428,
+      "policy_version": "c21f8967ba005e23740e62a334d24345e54e833fd8b0b96a36330d03cbf7a28c",
+      "checkpoint_identity": "214a950a65975fb0927192e773def670ae4f5c259892568b972d43284a03e104",
+      "original_logprob_diagnostics": {
+        "absolute_error": {
+          "max": 0.40921318531036377,
+          "mean": 0.012108023349432173,
+          "min": 0.0,
+          "p50": 0.0054280757904052734,
+          "p90": 0.031502723693847656,
+          "p99": 0.08949992060661316
+        },
+        "effective_clip_fraction": 8.30185546469636e-05,
+        "ess_fraction": 0.9995070372065754,
+        "extreme_tail_fraction": 0.0,
+        "historical_consistency_pass": false,
+        "matched_consistency_pass": true,
+        "outside_clip_fraction": 0.0003320742185878544,
+        "ratio": {
+          "max": 1.5056326650410026,
+          "mean": 0.9998337601181664,
+          "min": 0.6815656028241761,
+          "p50": 1.000011324946634,
+          "p90": 1.0188524415359679,
+          "p99": 1.0671870731753368
+        },
+        "ratio_mean_in_diagnostic_band": true,
+        "signed_delta": {
+          "max": 0.40921318531036377,
+          "mean": -0.00041518908564286064,
+          "min": -0.3833627700805664,
+          "p50": 1.1324882507324219e-05,
+          "p90": 0.018676936626434326,
+          "p99": 0.06502628326416016
+        },
+        "tokens": 24091,
+        "zero_advantage_fraction": 0.8462081275165
+      },
+      "audited_records_diagnostics": {
+        "absolute_error": {
+          "max": 0.40921318531036377,
+          "mean": 0.011621676061358287,
+          "min": 0.0,
+          "p50": 0.005062848329544067,
+          "p90": 0.030200660228729248,
+          "p99": 0.08774781227111816
+        },
+        "effective_clip_fraction": null,
+        "ess_fraction": 0.9995342728196218,
+        "extreme_tail_fraction": 0.0,
+        "historical_consistency_pass": false,
+        "matched_consistency_pass": true,
+        "outside_clip_fraction": 0.0002895422600089495,
+        "ratio": {
+          "max": 1.5056326650410026,
+          "mean": 0.9998349032900309,
+          "min": 0.681558615450182,
+          "p50": 1.0000146665754581,
+          "p90": 1.0179226900645735,
+          "p99": 1.065932418010164
+        },
+        "ratio_mean_in_diagnostic_band": true,
+        "signed_delta": {
+          "max": 0.40921318531036377,
+          "mean": -0.00040047574724256726,
+          "min": -0.3833730220794678,
+          "p50": 1.4666467905044556e-05,
+          "p90": 0.017763972282409668,
+          "p99": 0.06384992599487305
+        },
+        "tokens": 37991,
+        "zero_advantage_fraction": null
+      },
+      "branch_audit": {
+        "scheduled": 80,
+        "checked": 8,
+        "coverage": "all on update1; fixed stratified subset afterwards; reused prefix score positions included"
+      },
+      "post_update_diagnostics": {
+        "fresh_worker_snapshot": true,
+        "outside_limit": 0.02,
+        "pass_risk_screen": true,
+        "policy_version": "c21f8967ba005e23740e62a334d24345e54e833fd8b0b96a36330d03cbf7a28c",
+        "statistics": {
+          "absolute_error": {
+            "max": 0.22922325134277344,
+            "mean": 0.018209539428985858,
+            "min": 1.1920565157197416e-07,
+            "p50": 0.006894797086715698,
+            "p90": 0.05215716361999512,
+            "p99": 0.135847806930542
+          },
+          "effective_clip_fraction": null,
+          "ess_fraction": 0.998901599762942,
+          "extreme_tail_fraction": 0.0,
+          "historical_consistency_pass": false,
+          "matched_consistency_pass": false,
+          "outside_clip_fraction": 0.0028169014084507044,
+          "ratio": {
+            "max": 1.1455075420187404,
+            "mean": 1.0030400350133022,
+            "min": 0.7951509951606173,
+            "p50": 1.0001853009983614,
+            "p90": 1.0340809582000503,
+            "p99": 1.1204883130281673
+          },
+          "ratio_mean_in_diagnostic_band": true,
+          "signed_delta": {
+            "max": 0.135847806930542,
+            "mean": 0.0024778494305190205,
+            "min": -0.22922325134277344,
+            "p50": 0.0001852838322520256,
+            "p90": 0.03351306915283203,
+            "p99": 0.11376458406448364
+          },
+          "tokens": 355,
+          "zero_advantage_fraction": null
+        }
+      },
+      "nonzero_advantage_positions": 3705,
+      "gradient_norm": 511.12713623046875,
+      "weight_delta_l2": 0.02140451591335562,
+      "reference_has_gradients": false,
+      "credit": {
+        "selected": 16,
+        "estimable": 9,
+        "nonzero": 5,
+        "think_propagations": 0,
+        "summary_changed_tokens": 315,
+        "think_changed_tokens": 0,
+        "terminal_propagations": 0
+      },
+      "actual_worker_gemm": [
+        [
+          {
+            "cache_block_size": 16,
+            "cuda_build": "12.8",
+            "cudnn_allow_tf32": true,
+            "gpu_name": "NVIDIA A800-SXM4-80GB",
+            "linear_dispatch": "vllm.model_executor.layers.utils.default_unquantized_gemm",
+            "linear_methods": {
+              "vllm.model_executor.layers.linear.UnquantizedLinearMethod": 112,
+              "vllm.model_executor.layers.vocab_parallel_embedding.UnquantizedEmbeddingMethod": 2
+            },
+            "matmul_allow_tf32": true,
+            "parameter_dtypes": {
+              "torch.float32": 199
+            },
+            "torch_float32_matmul_precision": "high",
+            "triton_f32_default": "tf32",
+            "worker_precision_env": "high"
+          }
+        ],
+        [
+          {
+            "cache_block_size": 16,
+            "cuda_build": "12.8",
+            "cudnn_allow_tf32": true,
+            "gpu_name": "NVIDIA A800-SXM4-80GB",
+            "linear_dispatch": "vllm.model_executor.layers.utils.default_unquantized_gemm",
+            "linear_methods": {
+              "vllm.model_executor.layers.linear.UnquantizedLinearMethod": 112,
+              "vllm.model_executor.layers.vocab_parallel_embedding.UnquantizedEmbeddingMethod": 2
+            },
+            "matmul_allow_tf32": true,
+            "parameter_dtypes": {
+              "torch.float32": 199
+            },
+            "torch_float32_matmul_precision": "high",
+            "triton_f32_default": "tf32",
+            "worker_precision_env": "high"
+          }
+        ],
+        [
+          {
+            "cache_block_size": 16,
+            "cuda_build": "12.8",
+            "cudnn_allow_tf32": true,
+            "gpu_name": "NVIDIA A800-SXM4-80GB",
+            "linear_dispatch": "vllm.model_executor.layers.utils.default_unquantized_gemm",
+            "linear_methods": {
+              "vllm.model_executor.layers.linear.UnquantizedLinearMethod": 112,
+              "vllm.model_executor.layers.vocab_parallel_embedding.UnquantizedEmbeddingMethod": 2
+            },
+            "matmul_allow_tf32": true,
+            "parameter_dtypes": {
+              "torch.float32": 199
+            },
+            "torch_float32_matmul_precision": "high",
+            "triton_f32_default": "tf32",
+            "worker_precision_env": "high"
+          }
+        ]
+      ],
+      "fresh_worker_per_weight_version": true,
+      "restore": {
+        "status": "PASS",
+        "adam_step": [
+          3
+        ],
+        "actor_state_dict_sha256": "d08747078f7781f5a03155dce788e4d4c312a63d398a1fc31fbbe2ec2d4a9180",
+        "optimizer_state_sha256": "c5ea4fddf3724ce9e9ef3ddf29cebdc542ea6fe3cbba30757bb15bdc98bb894e",
+        "cpu_cuda_rng_probe": {
+          "cpu_draw_sha256": "a65e96804aeb86e5cf966e224b4b735eb064189b099863b656247766148a44ed",
+          "cuda_draw_sha256": "1a2bf2c3b5119e94379dbf45d0f38d19f1e37ebab26ecef3051033dc835998e4"
+        },
+        "extra_optimizer_steps": 0
+      }
+    }
+  ],
+  "timing_projection": {
+    "status": "ESTIMATED, not capacity measurement",
+    "formula": "T(Q)=F+(Q/4)*V",
+    "F_seconds": 989.9418277982622,
+    "V_seconds_per4_queries": 576.0174159705639,
+    "query32_single_update_seconds": 5598.081155562773,
+    "query128_single_update_seconds": 19422.499138856307,
+    "assumptions": [
+      "first-update exhaustive branch audit",
+      "same observed validity/history/output distribution",
+      "variable work approximately linear",
+      "fixed load/checkpoint costs unchanged",
+      "excludes extra independent read-only recovery diagnostics",
+      "no queue-time estimate"
+    ],
+    "unknown": [
+      "larger-wave concurrency/cache/preemption effects",
+      "full32K history capacity",
+      "long-run probability drift",
+      "initial HF model-loading exclusive time"
+    ]
+  },
+  "unresolved": [
+    "complete update improvement only3.68%, below preregistered10% rule",
+    "probability-error P99 grows across updates; observed histories differ, cause not isolated",
+    "old consistency diagnostics fail at updates2/3; registered risk screen still passes",
+    "sampler lifecycle, checkpoint and repeated weight/integrity checks dominate; separate profiling/optimization is a future task",
+    "no32-query TF32 capacity or development evaluation in this phase"
+  ],
+  "recommendation": "retain old TF32 configuration as default; B remains optional bounded numerical candidate; do not automatically start32/128",
+  "setup_validation": {
+    "actual_targeted_CPU_tests_passed": 3,
+    "expected_RED_job": 176256,
+    "zero_test_discovery_job_not_counted": 176254,
+    "initial_freeze_argument_error_fixed": true,
+    "static_checks_are_not_runtime_tests": true
+  },
+  "jobs": [
+    {
+      "id": 176249,
+      "state": "FAILED",
+      "elapsed_seconds": 8,
+      "exit_code": "1:0",
+      "gpus": 0
+    },
+    {
+      "id": 176253,
+      "state": "CANCELLED by 1037",
+      "elapsed_seconds": 0,
+      "exit_code": "0:0",
+      "gpus": 0
+    },
+    {
+      "id": 176254,
+      "state": "COMPLETED",
+      "elapsed_seconds": 1,
+      "exit_code": "0:0",
+      "gpus": 0
+    },
+    {
+      "id": 176255,
+      "state": "COMPLETED",
+      "elapsed_seconds": 1,
+      "exit_code": "0:0",
+      "gpus": 0
+    },
+    {
+      "id": 176256,
+      "state": "FAILED",
+      "elapsed_seconds": 1,
+      "exit_code": "1:0",
+      "gpus": 0
+    },
+    {
+      "id": 176261,
+      "state": "COMPLETED",
+      "elapsed_seconds": 1,
+      "exit_code": "0:0",
+      "gpus": 0
+    },
+    {
+      "id": 176262,
+      "state": "COMPLETED",
+      "elapsed_seconds": 1636,
+      "exit_code": "0:0",
+      "gpus": 2
+    },
+    {
+      "id": 176263,
+      "state": "COMPLETED",
+      "elapsed_seconds": 1581,
+      "exit_code": "0:0",
+      "gpus": 2
+    },
+    {
+      "id": 176308,
+      "state": "COMPLETED",
+      "elapsed_seconds": 1978,
+      "exit_code": "0:0",
+      "gpus": 2
+    },
+    {
+      "id": 176309,
+      "state": "COMPLETED",
+      "elapsed_seconds": 525,
+      "exit_code": "0:0",
+      "gpus": 1
+    },
+    {
+      "id": 176310,
+      "state": "COMPLETED",
+      "elapsed_seconds": 83,
+      "exit_code": "0:0",
+      "gpus": 1
+    },
+    {
+      "id": 176311,
+      "state": "COMPLETED",
+      "elapsed_seconds": 15,
+      "exit_code": "0:0",
+      "gpus": 0
+    },
+    {
+      "id": 176361,
+      "state": "COMPLETED",
+      "elapsed_seconds": 1428,
+      "exit_code": "0:0",
+      "gpus": 2
+    },
+    {
+      "id": 176362,
+      "state": "COMPLETED",
+      "elapsed_seconds": 388,
+      "exit_code": "0:0",
+      "gpus": 1
+    },
+    {
+      "id": 176363,
+      "state": "COMPLETED",
+      "elapsed_seconds": 22,
+      "exit_code": "0:0",
+      "gpus": 0
+    },
+    {
+      "id": 176400,
+      "state": "COMPLETED",
+      "elapsed_seconds": 106,
+      "exit_code": "0:0",
+      "gpus": 1
+    },
+    {
+      "id": 176403,
+      "state": "COMPLETED",
+      "elapsed_seconds": 75,
+      "exit_code": "0:0",
+      "gpus": 0
+    }
+  ],
+  "allocated_GPU_hours": 3.9855555555555555,
+  "max_concurrent_GPUs": 4,
+  "four_rank_training_validated": false,
+  "backend_equivalence": false,
+  "auto_merge": false,
+  "auto_start_next_stage": false,
+  "archive_generated": false
+}

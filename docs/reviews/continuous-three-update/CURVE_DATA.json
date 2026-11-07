@@ -1,0 +1,46 @@
+{
+  "initial_utility": 0.1592892915312017,
+  "d0": 0.6343234049838116,
+  "training": {
+    "grpo": [
+      {
+        "update": 1,
+        "mean_training_utility": 0.1019331095982161,
+        "grad_norm_before_clip": 1195.313720703125,
+        "development_utility": 0.047095933929665316
+      },
+      {
+        "update": 2,
+        "mean_training_utility": 0.0625,
+        "grad_norm_before_clip": 879.6287841796875,
+        "development_utility": null
+      },
+      {
+        "update": 3,
+        "mean_training_utility": 0.018066551644867992,
+        "grad_norm_before_clip": 523.9168090820312,
+        "development_utility": 0.0551253091064602
+      }
+    ],
+    "ricepo": [
+      {
+        "update": 1,
+        "mean_training_utility": 0.1019331095982161,
+        "grad_norm_before_clip": 1146.4722900390625,
+        "development_utility": 0.027714150226079426
+      },
+      {
+        "update": 2,
+        "mean_training_utility": 0.1760955853317459,
+        "grad_norm_before_clip": 1277.0782470703125,
+        "development_utility": null
+      },
+      {
+        "update": 3,
+        "mean_training_utility": 0.06635039447780317,
+        "grad_norm_before_clip": 654.4451293945312,
+        "development_utility": 0.0706831095982161
+      }
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+#!/bin/bash
+#SBATCH -p ${SLURM_PARTITION}
+#SBATCH -A ${SLURM_ACCOUNT}
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH --gres=gpu:1
+#SBATCH -c 8
+#SBATCH --mem=96G
+#SBATCH -t 01:00:00
+date -u '+BATCH_ENTRY %Y-%m-%dT%H:%M:%SZ'
+set -euo pipefail
+export RICE_PROJECT=${PROJECT_ROOT}
+source ${BULK_ROOT}/envs/ricepo-retrieval-overlay-v1/bin/activate
+export PYTHONPATH="$RICE_PROJECT/releases/native-recovery-v2/src" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 HF_DATASETS_OFFLINE=1 OMP_NUM_THREADS=4
+export TMPDIR="$RICE_PROJECT/tmp/vllm-score-$SLURM_JOB_ID" XDG_CACHE_HOME="$RICE_PROJECT/cache/vllm-score-$SLURM_JOB_ID"
+mkdir -p "$TMPDIR" "$XDG_CACHE_HOME"
+export CUDA_CACHE_PATH="$XDG_CACHE_HOME/cuda" TORCHINDUCTOR_CACHE_DIR="$XDG_CACHE_HOME/inductor" HF_HOME="$XDG_CACHE_HOME/hf"
+mkdir -p "$CUDA_CACHE_PATH" "$TORCHINDUCTOR_CACHE_DIR" "$HF_HOME"
+unset HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy
+python -u "$RICE_PROJECT/control/135-vllm-graph-score.py"

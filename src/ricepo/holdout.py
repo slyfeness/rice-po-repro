@@ -12,7 +12,7 @@ from .config import require_execution, resolve
 from .data import BRIGHT_TEST_COUNTS, verify_counts
 from .dataset_bundle import verify_bundle
 from .environment import configure_caches
-from .formats import PromptRenderer
+from .formats import CHAT_TURN, PromptRenderer, native_summary_mode, turn_protocol, parser_options
 from .hf_runtime import HFNativeGenerator, _domain_retriever, _local_file, _manifest, _source_hashes
 from .policy_identity import identify
 from .retrieval import DiverEncoder, ExplicitQueryComposer, PyTrecReward
@@ -37,6 +37,8 @@ def _selected_state(config, deployment, checkpoint_dir, bundle):
     completed = read_json(train_root / "completed.json")
     chosen = completed["selected_checkpoint"]
     binding = read_json(train_root / "binding.json")
+    if binding.get('continuation'):
+        raise ValueError('formal holdout selection across a parent/child lineage is not implemented; development only')
     train = resolve(config, "train")
     current_sources = _source_hashes()
     _verify_binding(binding, schema_version=2, config_sha256=fingerprint(config),
@@ -102,6 +104,8 @@ def _prompt(settings, deployment):
 
 
 def _actor_runtime(path, tokenizer_path, prompt, settings, deployment, policy_version_getter):
+    if deployment.get("sampling_backend") == "vllm_ieee_two_stage_v1":
+        raise ValueError("standalone vLLM holdout is not implemented; training development evaluation uses the bound vLLM runtime")
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -111,7 +115,7 @@ def _actor_runtime(path, tokenizer_path, prompt, settings, deployment, policy_ve
             or fixed_device.index is None or device == fixed_device
             or max(device.index, fixed_device.index) >= torch.cuda.device_count()):
         raise ValueError("generated evaluation requires distinct Slurm-visible actor and retriever CUDA devices")
-    precision = deployment["dtype"]
+    precision = deployment.get('actor_precision',deployment['dtype'])
     if precision not in ("float32", "bfloat16"):
         raise ValueError("unsupported reference precision")
     before = local_model_identity(path)
@@ -132,28 +136,37 @@ def _actor_runtime(path, tokenizer_path, prompt, settings, deployment, policy_ve
         model=actor, tokenizer=tokenizer, device=device, policy_version_getter=policy_version_getter,
         max_new_tokens=settings["max_new_tokens_per_step"], max_context_tokens=settings["max_context_tokens"],
         prefilled_think=True, precision_context=lambda: torch.autocast(
-            device_type="cuda", dtype=torch.bfloat16, enabled=(precision == "bfloat16")))
+            device_type="cuda", dtype=torch.bfloat16, enabled=(precision == "bfloat16")),
+        summary_mode=native_summary_mode(deployment["output_parser_mode"]),
+        structured_stop=turn_protocol(deployment) == CHAT_TURN, parser_settings=parser_options(deployment),
+        failure_semantics=settings["format_failure_policy"])
     tokenizer_behavior = {"tokenizer_length": len(tokenizer), "special_ids": tokenizer.all_special_ids,
                           "chat_template_sha256": fingerprint(tokenizer.chat_template)}
     return renderer, generator, tokenizer_behavior
 
 
-def _evaluate(config, deployment, *, command, output_root, checkpoint_dir=None, test_manifest=None):
+def _evaluate(config, deployment, *, command, output_root, checkpoint_dir=None, test_manifest=None, split="test"):
+    if split not in ("development", "test") or command == "evaluate" and split != "test":
+        raise ValueError("unsupported evaluation split")
     require_execution(config, command)
     job = require_slurm()
     if deployment.get("runtime") != "single_process_hf_reference" or int(os.environ.get("WORLD_SIZE", "1")) != 1:
         raise ValueError("offline evaluation requires the single-process reference deployment")
     report = resolve(config, command)
     settings, method = report["values"], report["method"]
+    if (deployment['output_parser_mode']=='two_stage_env_summary_v1') != (settings.get('native_span_parser')=='two_stage_env_summary_v1'):
+        raise ValueError('two-stage evaluation recipe differs from its generation protocol')
+    if parser_options(deployment).get("boundary_rule") == "native_body_coverage_v1" and settings.get("native_span_parser") != "configured_native_body_coverage_v1":
+        raise ValueError("resolved recipe differs from deployed native body coverage")
     output = require_cluster_storage(output_root)
     if command == "evaluate" and output.is_relative_to(require_cluster_storage(deployment["output_root"])):
         raise ValueError("holdout output must be a new directory outside the selected training run")
     output.mkdir(parents=True, exist_ok=False)
     with attempt(output):
-        with operation("asset_binding", method=method, split="test"):
+        with operation("asset_binding", method=method, split=split):
             configure_caches(deployment["cache_root"])
             bundle = verify_bundle(deployment)
-            path = bundle.paths["test"]
+            path = bundle.paths[split]
             if test_manifest is not None and require_cluster_storage(test_manifest) != path:
                 raise ValueError("test manifest differs from the path fixed by the precommitted dataset receipt")
             checkpoint = chosen = binding = previous_models = previous_retrievers = None
@@ -170,8 +183,13 @@ def _evaluate(config, deployment, *, command, output_root, checkpoint_dir=None, 
                 _verify_binding(binding, prompt_sha256=file_sha256(prompt))
             # Formal gold labels are accessed only inside this held-out assessment.
             _, examples, qrels = _manifest(path, set(deployment["domains"]),
-                                           expected_sha256=bundle.manifest_sha256["test"])
-            selected_examples, scope, label = _scope(deployment, examples, bundle.identities["test"])
+                                           expected_sha256=bundle.manifest_sha256[split])
+            if split == "development":
+                selected_examples, scope, label = examples, "complete", "frozen_development"
+                if {tuple(json.loads(q)) for q in examples} != bundle.identities[split]:
+                    raise ValueError("development membership mismatch")
+            else:
+                selected_examples, scope, label = _scope(deployment, examples, bundle.identities["test"])
             encoder = DiverEncoder.from_local(deployment)
             if encoder.identity["assets"] != models["retriever_model_path"]:
                 raise ValueError("deployed retriever asset identity changed during evaluation setup")
@@ -190,9 +208,16 @@ def _evaluate(config, deployment, *, command, output_root, checkpoint_dir=None, 
                     policy_path, tokenizer_path, prompt, settings, deployment, lambda: policy_version)
                 behavior = dict(**tokenizer_behavior, root_seed=settings["training_seeds"][0],
                                 temperature=settings["temperature"], top_p=settings["top_p"], top_k=settings["top_k"],
-                                repetition_penalty=1.0, model_mode="eval", precision=deployment["dtype"],
+                                repetition_penalty=1.0, model_mode="eval", precision=deployment.get('actor_precision',deployment['dtype']),
                                 initial_actor_payload=models["actor_model_path"]["payload_sha256"],
                                 prefilled_think=True, rng="sha256-json-stream-v1")
+                behavior["output_parser_mode"] = deployment["output_parser_mode"]
+                behavior["parser_settings"] = parser_options(deployment)
+                behavior["prompt_sha256"] = file_sha256(prompt)
+                behavior["seed_schedule"] = "controlled_v2"
+                behavior["failure_semantics"] = settings["format_failure_policy"]
+                if turn_protocol(deployment) == CHAT_TURN:
+                    behavior["turn_protocol"] = CHAT_TURN
                 if local_model_identity(tokenizer_path) != models["actor_model_path"]:
                     raise ValueError("initial actor/tokenizer identity changed while loading the policy")
                 live_version, live_identity = identify(generator.model, behavior)
@@ -213,6 +238,8 @@ def _evaluate(config, deployment, *, command, output_root, checkpoint_dir=None, 
                 if generate:
                     runners[domain] = RolloutRunner(
                         generator=generator, retriever=backend, reward_scorer=reward,
+                        render_next_turn=renderer.next_user_turn if turn_protocol(deployment) == CHAT_TURN else None,
+                        failure_semantics=settings["format_failure_policy"],
                         query_composer=ExplicitQueryComposer(**settings["query_composition"]),
                         rules=RolloutRules(frozenset({"stop"}), settings["max_new_tokens_per_step"],
                                            settings["max_context_tokens"], depth=settings["rollout_depth"]),
@@ -220,7 +247,7 @@ def _evaluate(config, deployment, *, command, output_root, checkpoint_dir=None, 
                         excluded_ids_by_query={key: ex.excluded_ids for key, ex in examples.items() if ex.domain == domain})
             if previous_retrievers is not None and previous_retrievers != domain_receipts:
                 raise ValueError("fixed retrieval assets or retrieval behavior changed after checkpoint selection")
-            evidence = dict(scope=label, split="test", slurm_job_id=job, method=method, policy_version=policy_version,
+            evidence = dict(scope=label, split=split, slurm_job_id=job, method=method, policy_version=policy_version,
                             source_sha256=_source_hashes(), config_sha256=fingerprint(config), recipe=report,
                             dataset_receipt_sha256=bundle.receipt_sha256, manifest_sha256=bundle.manifest_sha256,
                             models=models, retrievers=domain_receipts, deployment_sha256=_deploy_hash(deployment),
@@ -230,11 +257,11 @@ def _evaluate(config, deployment, *, command, output_root, checkpoint_dir=None, 
                                 checkpoint_receipt_sha256=file_sha256(checkpoint / "complete.json"))
             atomic_json(output / "evaluation-inputs.json", evidence)
         aggregate = evaluate_queries(
-            examples=selected_examples, expected_ids=bundle.identities["test"], split="test", phase="holdout",
+            examples=selected_examples, expected_ids=bundle.identities[split], split=split, phase="holdout",
             method=method, root_seed=settings["training_seeds"][0] if generate else None,
             policy_version=policy_version, rollout_depth=settings.get("rollout_depth"),
             retrievers=retrievers, runners=runners, renderer=renderer, reward=reward, scope=scope,
-            manifest_sha256=bundle.manifest_sha256["test"],
+            manifest_sha256=bundle.manifest_sha256[split],
             backend_fingerprints={domain: fingerprint(receipt) for domain, receipt in domain_receipts.items()},
             behavior_sha256=fingerprint(dict(policy_version=policy_version, behavior=behavior,
                                              prompt=evidence["prompt_sha256"], recipe=report["fingerprint"],
@@ -253,9 +280,9 @@ def _evaluate(config, deployment, *, command, output_root, checkpoint_dir=None, 
         return summary
 
 
-def evaluate_baseline(config, deployment, *, output_root):
+def evaluate_baseline(config, deployment, *, output_root, split="test"):
     """Score retrieval_only or the original prompting actor without training state."""
-    return _evaluate(config, deployment, command="baseline", output_root=output_root)
+    return _evaluate(config, deployment, command="baseline", output_root=output_root, split=split)
 
 
 def evaluate_checkpoint(config, deployment, *, checkpoint_dir, test_manifest, output_root):

@@ -18,6 +18,7 @@ from .contracts import (
     LocalNormalization,
     Span,
     Trajectory,
+    generation_action_mask,
 )
 
 
@@ -112,9 +113,10 @@ def _validate_trajectories(trajectories: Sequence[Trajectory]) -> None:
             ):
                 if absolute != Span(prefix_size + relative.start, prefix_size + relative.end):
                     raise ValueError("step spans must be shifted native generation spans")
-            if not all(trajectory.generated_mask[prefix_size:end]):
-                raise ValueError("every generated token must be marked as generated")
-            expected_mask[prefix_size:end] = [True] * len(generation.token_ids)
+            native_mask=generation_action_mask(generation)
+            if trajectory.generated_mask[prefix_size:end]!=native_mask:
+                raise ValueError("generation action mask differs from full native history")
+            expected_mask[prefix_size:end] = native_mask
             observation = step.retrieval.observation_token_ids
             observation_end = end + len(observation)
             if trajectory.token_ids[end:observation_end] != observation:
@@ -122,6 +124,11 @@ def _validate_trajectories(trajectories: Sequence[Trajectory]) -> None:
             if any(trajectory.generated_mask[end:observation_end]):
                 raise ValueError("tool observation tokens must be excluded from the loss")
             previous_end = observation_end
+        if trajectory.failure:
+            from .failure_zero import validate_trajectory
+            validate_trajectory(trajectory, max(len(trajectory.steps)+1, trajectory.failure.depth))
+            start = len(trajectory.failure.prefix_token_ids)
+            expected_mask[start:] = generation_action_mask(trajectory.failure.generation)
         if tuple(expected_mask) != trajectory.generated_mask:
             raise ValueError("generated_mask must mark exactly the recorded native generations")
 

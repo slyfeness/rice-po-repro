@@ -1,0 +1,17 @@
+{
+  "requests": 16,
+  "valid_actions": 15,
+  "invalid_actions": 1,
+  "failure_categories": {
+    "tag_structure": 1
+  },
+  "shared_model_budget": 4096,
+  "wall_seconds": 18.887473687529564,
+  "generated_tokens": 7285,
+  "tokens_per_second": 385.7053685697476,
+  "all_shared_budgets_respected": true,
+  "all_masks_aligned": true,
+  "all_environment_probabilities_none": true,
+  "rng_namespace": "vllm_ieee_two_stage_v1",
+  "numeric_mode": "tf32_pilot"
+}

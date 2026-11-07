@@ -1,0 +1,93 @@
+{
+  "kind": "unwired_sampler_candidate_record",
+  "execution": {
+    "enabled": false,
+    "runtime_validated": false,
+    "four_gpu_validated": false
+  },
+  "engine": {
+    "package": "vllm==0.19.1",
+    "model": "LOCAL_VERIFIED_FP32_CHECKPOINT",
+    "tokenizer": "SAME_CHECKPOINT_TOKENIZER",
+    "dtype": "float32",
+    "tensor_parallel_size": 1,
+    "max_model_len": 32768,
+    "max_num_seqs": 64,
+    "max_num_batched_tokens": 16384,
+    "gpu_memory_utilization": 0.8,
+    "enforce_eager": false,
+    "enable_prefix_caching": true,
+    "hf_overrides": {
+      "sliding_window": null
+    },
+    "attention_config": {
+      "backend": "TRITON_ATTN"
+    },
+    "generation_config": "vllm",
+    "trust_remote_code": false
+  },
+  "environment": {
+    "TRITON_F32_DEFAULT": "ieee",
+    "cache_root": "EXPLICIT_PRIVATE_BULK_CACHE",
+    "rpc_path": "SHORT_PRIVATE_BULK_IPC_DIRECTORY"
+  },
+  "sampling": {
+    "n": 1,
+    "temperature": 1.0,
+    "top_p": 1.0,
+    "top_k": -1,
+    "top_k_translation": "HF0 and vLLM-1 both disable top-k",
+    "presence_penalty": 0.0,
+    "frequency_penalty": 0.0,
+    "repetition_penalty": 1.0,
+    "ignore_eos": false,
+    "logprobs": 0,
+    "detokenize": false
+  },
+  "tested": {
+    "jobs": [
+      174918,
+      174919,
+      174891
+    ],
+    "raw_conditional_new_token_budget": 512,
+    "maximum_native_length": 7468,
+    "numerical_requests_passed": 80,
+    "numerical_requests_total": 80,
+    "first16_native_ids_same_across_batch_sizes": true,
+    "hf_serial16_generation_seconds": 155.7812504824251,
+    "vllm_batch16_generation_seconds": 23.30293628294021,
+    "generation_stage_speed_ratio16": 6.685048124019917,
+    "results": [
+      {
+        "actual_model_tokens": 6734,
+        "generation_seconds": 23.30293628294021,
+        "native_sha256": "d6a6fa634fc4021732c2798319e253dc25a5263082e2b46076e262049cbb5f46",
+        "requests": 16,
+        "tokens_per_second": 288.97645851307925,
+        "worker_memory": {
+          "error_type": "CalledProcessError",
+          "memory_snapshot_available": false
+        }
+      },
+      {
+        "actual_model_tokens": 28201,
+        "generation_seconds": 33.05617644544691,
+        "native_sha256": "5ddd2700f2189641cb83fe7bd16dc4a48da5a7baabc8cd766b92f743af91a976",
+        "requests": 64,
+        "tokens_per_second": 853.1234713893945,
+        "worker_memory": {
+          "error_type": "CalledProcessError",
+          "memory_snapshot_available": false
+        }
+      }
+    ]
+  },
+  "limitations": [
+    "This JSON is an evidence/candidate record, not a supported Trainer recipe.",
+    "Raw conditional continuations only; no two-stage stopping or4096-action-budget acceptance.",
+    "No actual optimizer-to-vLLM weight reload or full Trainer/memory qualification.",
+    "Batch64 repeats4 saved prefixes and follows batch16 with warmer caches.",
+    "Optional NVML worker snapshots failed; no worker memory peak claim."
+  ]
+}

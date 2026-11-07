@@ -1,0 +1,14 @@
+job_id,name,state,elapsed_seconds,exit_code,allocated_gpus
+175836,rice-gemm-kernels,COMPLETED,199,0:0,1
+175837,rice-gemm-cpu,COMPLETED,547,0:0,0
+175838,rice-gemm-traces,COMPLETED,1,0:0,0
+175839,rice-gemm-B,COMPLETED,420,0:0,1
+175840,rice-gemm-C,COMPLETED,294,0:0,1
+175841,rice-gemm-plan,COMPLETED,19,0:0,0
+175846,rice-gemm-numeric,COMPLETED,115,0:0,1
+175852,rice-gemm-preflight,COMPLETED,36,0:0,0
+175853,rice-gemm-online,COMPLETED,1143,0:0,2
+175854,rice-gemm-cost,COMPLETED,1,0:0,0
+175861,rice-gemm-export,COMPLETED,2,0:0,0
+175862,rice-gemm-restore,COMPLETED,101,0:0,1
+175863,rice-gemm-final-export,COMPLETED,3,0:0,0

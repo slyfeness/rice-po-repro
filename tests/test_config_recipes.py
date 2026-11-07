@@ -110,3 +110,42 @@ def test_holdout_and_corpus_encoding_do_not_require_a_training_budget():
     assert "document_encoding_profile" in encode["values"]
     assert "prompt_artifact" not in encode["values"]
     assert encode["issues"] == []
+
+
+def test_generated_evaluation_plan_declares_its_fixed_samples_per_query():
+    plan = resolve(configured("grpo"), "train")
+    assert plan["values"]["eval_samples_per_query"] == 1
+    assert plan["sources"]["eval_samples_per_query"]["status"] == "implementation_choice"
+    assert "eval_samples_per_query" not in resolve(configured("retrieval_only"), "baseline")["values"]
+
+
+def test_scale32_original_and_summary_configs_keep_shared_rollout_budget():
+    rice = resolve(configured("biology_scale32_ricepo"), "train")
+    grpo = resolve(configured("biology_scale32_grpo"), "train")
+    for plan in (rice, grpo):
+        assert plan["values"]["queries_per_update"] == 32
+        assert plan["values"]["trajectories_per_query"] == 4
+        assert plan["values"]["optimizer_minibatch_size"] == 128
+        assert plan["values"]["query_composition"] == {"mode": "original_and_summary", "separator": "\n"}
+        assert plan["values"]["total_updates"] == 1
+        assert plan["execution"]["enabled"] is False
+    assert rice["values"]["total_branches_including_original"] == 6
+    assert "total_branches_including_original" not in grpo["values"]
+
+
+def test_candidate128_configs_pre_register_common_budget_and_multisample_evaluation():
+    rice = resolve(configured("biology_candidate128_ricepo"), "train")
+    grpo = resolve(configured("biology_candidate128_grpo"), "train")
+    for plan in (rice, grpo):
+        assert plan["issues"] == ["unresolved: train_split_manifest", "unresolved: development_split_manifest"]
+        assert plan["values"]["queries_per_update"] == 128
+        assert plan["values"]["total_updates"] == 10
+        assert plan["values"]["eval_samples_per_query"] == 4
+        assert plan["values"]["development_every_updates"] == 4
+        assert plan["values"]["checkpoint_every_updates"] == 2
+        assert plan["values"]["optimizer_minibatch_size"] == 512
+        assert plan["values"]["gradient_accumulation"] == 512
+        assert plan["values"]["query_composition"] == {"mode": "original_and_summary", "separator": "\n"}
+        assert plan["execution"]["enabled"] is False
+    assert rice["values"]["total_branches_including_original"] == 6
+    assert "total_branches_including_original" not in grpo["values"]

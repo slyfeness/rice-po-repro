@@ -1,0 +1,81 @@
+"""Bounded FP32 vLLM conditional-history probe, NOT two-stage online training."""
+import os,sys,json,time,subprocess
+from pathlib import Path
+r=Path(os.environ['RICE_PROJECT']);root=r/'runs'/('vllm-fp32-probe-'+os.environ['SLURM_JOB_ID'])
+read=lambda p:json.loads(p.read_text())
+from ricepo.artifacts import atomic_json,file_sha256
+from ricepo.audit import fingerprint,stable_seed
+if len(sys.argv)==1:
+ root.mkdir();old=r/'runs/two-stage-online-ricepo-174610/iteration-000000/trajectories.json'
+ traces=read(old);candidates=sorted([(len(s['prefix_token_ids']),t['trajectory_id'],s['depth'],s['prefix_token_ids']) for t in traces for s in t['steps']],key=lambda x:(-x[0],x[1],x[2]));chosen=candidates[:4]
+ atomic_json(root/'selection.json',dict(prefixes=[x[3] for x in chosen],seeds=[stable_seed(42,'vllm_fp32_conditional_probe_v1',x[1],x[2]) for x in chosen],source_sha256=file_sha256(old),rule='four longest saved training native prefixes; no reward/output selection'))
+ mask=os.environ.get('CUDA_VISIBLE_DEVICES','').split(',')
+ if len(mask)!=2 or not all(mask):raise ValueError('two Slurm assigned devices required')
+ start=time.monotonic()
+ try:
+  for stage,slot in [('vllm',0),('hf',1)]:
+   subprocess.run([sys.executable,__file__,stage],check=True,env={**os.environ,'CUDA_VISIBLE_DEVICES':mask[slot]})
+  v=read(root/'vllm-metrics.json');h=read(root/'hf-metrics.json')
+  atomic_json(root/'summary.json',dict(vllm=v,hf=h,elapsed_seconds=time.monotonic()-start,
+   scope='Fixed raw conditional continuations, max512, no two-stage stopping/retrieval/reward/PPO. Different RNG implementations; not paired identical outputs or a production sampler.',
+   numerical_gate_passed=h['all_probability_checks_passed'],speed_ratio=v['tokens_per_second']/h['serial_tokens_per_second']))
+ except BaseException as exc:
+  atomic_json(root/'failure.json',dict(stage='conditional_probe',type=type(exc).__name__,elapsed_seconds=time.monotonic()-start))
+  raise
+ print('PROBE_COMPLETE',root,flush=True);sys.exit()
+selection=read(root/'selection.json');prefixes=selection['prefixes'];seeds=selection['seeds']
+parent=r/'runs/continuation-grpo-174716';cp=parent/'iteration-000001/checkpoint';binding=read(parent/'binding.json')
+from ricepo.state import verify_checkpoint
+receipt=verify_checkpoint(cp,fingerprint(binding))
+if sys.argv[1]=='vllm':
+ from vllm import LLM,SamplingParams
+ import torch
+ start=time.monotonic()
+ llm=LLM(model=str(cp/'actor'),tokenizer=str(cp/'actor'),dtype='float32',tensor_parallel_size=1,
+  max_model_len=32768,max_num_seqs=16,max_num_batched_tokens=16384,gpu_memory_utilization=.75,
+  enforce_eager=True,enable_prefix_caching=True,hf_overrides={'sliding_window':None},
+  generation_config='vllm',trust_remote_code=False,attention_config={'backend':'TRITON_ATTN'})
+ initialization=time.monotonic()-start
+ if llm.llm_engine.model_config.hf_config.vocab_size!=151936:raise ValueError('model vocabulary changed')
+ params=[SamplingParams(n=1,temperature=1.,top_p=1.,top_k=-1,max_tokens=512,seed=s,
+  logprobs=0,detokenize=False,presence_penalty=0.,frequency_penalty=0.,repetition_penalty=1.,ignore_eos=False) for s in seeds]
+ start=time.monotonic();outputs=llm.generate([{'prompt_token_ids':p} for p in prefixes],params,use_tqdm=False);torch.cuda.synchronize();seconds=time.monotonic()-start
+ records=[]
+ for p,seed,o in zip(prefixes,seeds,outputs,strict=True):
+  if list(o.prompt_token_ids)!=p or len(o.outputs)!=1:raise ValueError('request identity changed')
+  c=o.outputs[0];ids=list(c.token_ids);lp=[float(step[t].logprob) for step,t in zip(c.logprobs,ids,strict=True)]
+  records.append(dict(prefix_sha256=fingerprint(p),seed=seed,token_ids=ids,sampled_log_probs=lp,finish_reason=c.finish_reason))
+ atomic_json(root/'vllm-native.json',records);count=sum(len(x['token_ids']) for x in records)
+ atomic_json(root/'vllm-metrics.json',dict(initialization_seconds=initialization,generation_seconds=seconds,actual_model_tokens=count,tokens_per_second=count/seconds,
+  requests=len(records),prefix_lengths=list(map(len,prefixes)),policy_checkpoint=receipt['policy_version'],checkpoint_complete_sha256=file_sha256(cp/'complete.json'),
+  dtype='float32',backend='TRITON_ATTN',enforce_eager=True,prefix_cache=True,top_k_disabled_translation=-1,
+  model_vocab_size=151936,peak_allocated=torch.cuda.max_memory_allocated(),peak_reserved=torch.cuda.max_memory_reserved()))
+elif sys.argv[1]=='hf':
+ import torch
+ from transformers import AutoModelForCausalLM,AutoTokenizer,GenerationConfig
+ from ricepo.policy_identity import identify
+ from ricepo.modeling import sampled_old_log_probs
+ from ricepo.probability_check import compare_log_probs
+ model=AutoModelForCausalLM.from_pretrained(str(cp/'actor'),torch_dtype=torch.float32,local_files_only=True,trust_remote_code=False).to('cuda:0').eval();model.requires_grad_(False)
+ version,identity=identify(model,binding['behavior'])
+ if version!=receipt['policy_version']:raise ValueError('actual teacher weights differ')
+ tok=AutoTokenizer.from_pretrained(str(cp/'actor'),local_files_only=True,trust_remote_code=False)
+ checks=[]
+ for p,g in zip(prefixes,read(root/'vllm-native.json'),strict=True):
+  ids=p+g['token_ids'];mask=[False]*len(p)+[True]*len(g['token_ids'])
+  with torch.inference_mode():teacher=sampled_old_log_probs(model,ids,mask,device='cuda:0',logit_chunk_size=64,max_context_tokens=32768,policy_call_kwargs={})[0].cpu().tolist()
+  checks.append(dict(prefix_length=len(p),native_length=len(ids),**compare_log_probs([0.]*len(p)+g['sampled_log_probs'],teacher,mask)))
+ # Speed reference has the same raw continuation budget, EOS and sampling law;
+ # differing random generators may produce differing lengths/text, which is disclosed.
+ count=0;start=time.monotonic();hf_records=[]
+ for p,seed in zip(prefixes,seeds,strict=True):
+  with torch.random.fork_rng(devices=[0]),torch.inference_mode():
+   torch.manual_seed(seed);torch.cuda.manual_seed(seed)
+   config=GenerationConfig(do_sample=True,temperature=1.,top_p=1.,top_k=0,max_new_tokens=512,eos_token_id=tok.eos_token_id,pad_token_id=tok.eos_token_id,repetition_penalty=1.)
+   out=model.generate(input_ids=torch.tensor([p],device='cuda:0'),attention_mask=torch.ones((1,len(p)),dtype=torch.long,device='cuda:0'),generation_config=config,use_model_defaults=False)
+   ids=out[0,len(p):].tolist();count+=len(ids);hf_records.append(dict(prefix_sha256=fingerprint(p),seed=seed,token_ids=ids))
+ torch.cuda.synchronize();seconds=time.monotonic()-start;atomic_json(root/'hf-native.json',hf_records)
+ atomic_json(root/'hf-metrics.json',dict(checks=checks,all_probability_checks_passed=all(c['within_bf16_tolerance'] for c in checks),serial_actual_model_tokens=count,serial_generation_seconds=seconds,serial_tokens_per_second=count/seconds,
+  actual_teacher_state_dict_sha256=identity['state_dict_sha256'],peak_allocated=torch.cuda.max_memory_allocated(),peak_reserved=torch.cuda.max_memory_reserved()))
+ if not all(c['within_bf16_tolerance'] for c in checks):raise ValueError('vLLM sampled versus HF conditional probabilities failed; no BF16 fallback')
+else:raise ValueError('unknown stage')

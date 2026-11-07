@@ -1,0 +1,22 @@
+{
+  "actor_state_dict_sha256": "ee5152cac235617c34f4d83adc8f46b8e7809728a41bbe9161644333e81a1252",
+  "binding_sha256": "e034305189cafd8466ca072632592b82e12f419cf977304323e2cab458149a34",
+  "checkpoint_complete_sha256": "7be2c0711325240615c204799cc7e8161c4fddd9f337de796e540c6fe82eb776",
+  "checkpoint_modified": false,
+  "elapsed_seconds": 91.381247356534,
+  "hf_matmul_allow_tf32": false,
+  "hf_precision": "highest",
+  "newly_executed_optimizer_steps": 0,
+  "optimizer_state_sha256": "2add18c244825b078a51ace718c0cbe3372aa330aa35b327ac4ff055139f0bd4",
+  "policy_version": "db666ca3266adac514fc4351558c46c762ae3b1c96be525780e6ff98dc622ae7",
+  "restored_optimizer_steps": [
+    1
+  ],
+  "rng_probe": {
+    "cpu_draw_sha256": "9cfff269cacf9ae25730668812b39d99f0acdce510d110efb200c5122807259d",
+    "cuda_draw_sha256": "252993542d47a6a5549da857dba5a3edffc0d4abfbf014d8060b39a518a2f8d9"
+  },
+  "scope": "independent read-only checkpoint restore; zero optimizer steps",
+  "status": "PASS",
+  "training_job": 175853
+}

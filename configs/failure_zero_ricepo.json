@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "extends": "paper_reference.json",
+  "profile": "ablation",
+  "method": "ricepo",
+  "deviations": {
+    "queries_per_update": {"value": 4, "reason": "Authorized bounded online acceptance; not the paper batch of 128."},
+    "max_new_tokens_per_step": {"value": 4096, "reason": "Previously frozen functional generation capacity."},
+    "native_span_parser": {"value": "configured_native_body_coverage_v1", "reason": "Previously accepted native token body coverage; no re-encoding."},
+    "prompt_artifact": {"value": "prompts/ricepo_prefilled_think_smoke.txt", "reason": "Frozen explicitly non-paper prefilled-think compatibility prompt; no further prompt search."},
+    "format_failure_policy": {"value": "invalid_action_terminal_zero_v1", "reason": "User-authorized independent failure utility zero; last measured NDCG remains separate, no invented retrieval."},
+    "development_every_updates": {"value": 3, "reason": "Complete frozen 32-query development evaluation after three updates, also always at final update; checkpoint each update."}
+  }
+}

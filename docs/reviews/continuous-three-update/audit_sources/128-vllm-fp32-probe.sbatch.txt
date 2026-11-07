@@ -1,0 +1,19 @@
+#!/bin/bash
+#SBATCH -p ${SLURM_PARTITION}
+#SBATCH -A ${SLURM_ACCOUNT}
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH --gres=gpu:2
+#SBATCH -c 16
+#SBATCH --mem=192G
+#SBATCH -t 00:45:00
+date -u '+BATCH_ENTRY %Y-%m-%dT%H:%M:%SZ'
+set -euo pipefail
+export RICE_PROJECT=${PROJECT_ROOT}
+source ${BULK_ROOT}/envs/ricepo-retrieval-overlay-v1/bin/activate
+export PYTHONPATH="$RICE_PROJECT/releases/native-recovery-v2/src" OMP_NUM_THREADS=8
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 HF_DATASETS_OFFLINE=1
+export TMPDIR="$RICE_PROJECT/tmp/vllm-fp32-$SLURM_JOB_ID" XDG_CACHE_HOME="$RICE_PROJECT/cache/vllm-fp32-$SLURM_JOB_ID/xdg" HF_HOME="$RICE_PROJECT/cache/vllm-fp32-$SLURM_JOB_ID/hf" VLLM_CACHE_ROOT="$RICE_PROJECT/cache/vllm-fp32-$SLURM_JOB_ID/vllm" TRITON_CACHE_DIR="$RICE_PROJECT/cache/vllm-fp32-$SLURM_JOB_ID/triton"
+mkdir -p "$TMPDIR" "$XDG_CACHE_HOME" "$HF_HOME" "$VLLM_CACHE_ROOT" "$TRITON_CACHE_DIR"
+unset HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy
+python -u "$RICE_PROJECT/control/128-vllm-fp32-probe.py"

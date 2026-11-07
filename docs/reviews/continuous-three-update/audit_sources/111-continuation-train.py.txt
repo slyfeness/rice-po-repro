@@ -1,0 +1,26 @@
+"""Two additional serial-sampling updates from an immutable verified first update."""
+import os,sys,json,time
+from pathlib import Path
+from ricepo.artifacts import atomic_json
+from ricepo.hf_runtime import run
+r=Path(os.environ['RICE_PROJECT']);method=sys.argv[1]
+gate=json.loads(Path(sys.argv[2]).read_text())
+if not gate['passed']:raise ValueError('preflight did not pass')
+bound=json.loads((Path(sys.argv[2]).parent/(method+'-config.json')).read_text())
+cfg,dep=bound['config'],bound['deployment']
+tag='continuation-'+method+'-'+os.environ['SLURM_JOB_ID']
+dep.update(output_root=str(r/'runs'/tag),cache_root=str(r/'cache'/tag))
+atomic_json(r/'reports'/(tag+'-config.json'),dict(config=cfg,deployment=dep,
+    budget=dict(total_gpu_hours=32,previous_gpu_hours=10.791666444444445,gpus=2,time_limit_hours=3),
+    slurm_job_id=os.environ['SLURM_JOB_ID'],cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES')))
+import torch
+if torch.cuda.device_count()!=2:raise ValueError('exactly two assigned visible CUDA devices required')
+start=time.monotonic()
+try:
+    print('CONTINUATION_START',method,flush=True)
+    result=run(cfg,dep)
+    print('CONTINUATION_RESULT',result,flush=True)
+finally:
+    atomic_json(r/'reports'/(tag+'-resources.json'),dict(elapsed_seconds=time.monotonic()-start,
+        peak_cuda_allocated=[torch.cuda.max_memory_allocated(i) for i in range(2)],
+        peak_cuda_reserved=[torch.cuda.max_memory_reserved(i) for i in range(2)]))

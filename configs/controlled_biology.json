@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "extends": "smoke.json",
+  "profile": "ablation",
+  "deviations": {
+    "max_new_tokens_per_step": {"value": 4096, "reason": "Frozen functional capacity, independent of paper word limits."},
+    "native_span_parser": {"value": "configured_native_body_coverage_v1", "reason": "Tagged structure, whole native body overlap ownership, empty Think allowed; the deployment records each policy independently."}
+  }
+}

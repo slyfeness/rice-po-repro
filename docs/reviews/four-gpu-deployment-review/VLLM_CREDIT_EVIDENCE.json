@@ -1,0 +1,168 @@
+{
+  "source": "vllm-native-rollout-175004",
+  "source_summary_sha256": "67a45bb45c52ce071d73efd51bed02cd60b496743baab90bd3648abac7715742",
+  "originals_sha256": "b0a27749a1c66722ed278d8eaea45875063bec97311d4eb66be354fc24a5b143",
+  "advantages_sha256": "a5966e44262d9ada2414ead6c5848642948c106c44629d698cea84f7c68beaf6",
+  "branch_files": [
+    {
+      "ordinal": 0,
+      "sha256": "e329703f06da0547f11e2b7943641389fa21db0184b8aac1d302dc5a2a08672f"
+    },
+    {
+      "ordinal": 1,
+      "sha256": "21a9260be9cc35333db521cf36bd9bbd1041864011117afd7090b2b91c89b38e"
+    },
+    {
+      "ordinal": 2,
+      "sha256": "a19eb1f350a30d3ec76c8ea066c8a2029a3778a7b86c1276b97870510e4762e5"
+    },
+    {
+      "ordinal": 3,
+      "sha256": "c96ab1537b0faad381c0906b9de45ad3fdc52f64f8cb27c96039dd45e59eb670"
+    }
+  ],
+  "native_masks_verified": true,
+  "frozen_prefixes_verified": true,
+  "original_count_once_verified": true,
+  "credit_moments_recomputed": true,
+  "action_budget": 4096,
+  "max_observed_action_tokens": 4096,
+  "unique_action_records": 58,
+  "observed_budget_exhaustion": 1,
+  "failure_categories": {
+    "native_text_encoding": 1,
+    "tag_structure": 5
+  },
+  "normal_originals": 4,
+  "normal_branches": 14,
+  "records": [
+    {
+      "depth": 2,
+      "entropy": 3.1686743476639756,
+      "local_rewards": [
+        0.3562071871080222,
+        0.3010299956639812,
+        0.0,
+        0.3333333333333333,
+        0.3010299956639812,
+        0.31546487678572877
+      ],
+      "final_rewards": [
+        0.0,
+        0.0,
+        0.0,
+        0.3010299956639812,
+        0.0,
+        0.0
+      ],
+      "residuals": [
+        -0.3562071871080222,
+        -0.3010299956639812,
+        0.0,
+        -0.03230333766935212,
+        -0.3010299956639812,
+        -0.31546487678572877
+      ],
+      "influence_variance": 0.014717947079045259,
+      "residual_variance": 0.020732532709275196,
+      "propagate": false,
+      "summary_advantage": 0.08836295568218105
+    },
+    {
+      "depth": 5,
+      "entropy": 4.8568176005804995,
+      "local_rewards": [
+        0.31546487678572877,
+        0.0,
+        0.2890648263178879,
+        0.6309297535714575,
+        0.3333333333333333,
+        0.3010299956639812
+      ],
+      "final_rewards": [
+        0.31546487678572877,
+        0.0,
+        0.2890648263178879,
+        0.6309297535714575,
+        0.3333333333333333,
+        0.3010299956639812
+      ],
+      "residuals": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "influence_variance": 0.0333621462231097,
+      "residual_variance": 0.0,
+      "propagate": false,
+      "summary_advantage": 0.0038277458403306874
+    },
+    {
+      "depth": 3,
+      "entropy": 3.880015341937542,
+      "local_rewards": [
+        0.5,
+        0.3562071871080222,
+        0.5,
+        0.0,
+        0.0,
+        0.3333333333333333
+      ],
+      "final_rewards": [
+        0.31546487678572877,
+        0.0,
+        0.5,
+        0.0,
+        0.0,
+        0.5
+      ],
+      "residuals": [
+        -0.18453512321427123,
+        -0.3562071871080222,
+        0.0,
+        0.0,
+        0.0,
+        0.16666666666666669
+      ],
+      "influence_variance": 0.04370613492605215,
+      "residual_variance": 0.027565408627027502,
+      "propagate": false,
+      "summary_advantage": 0.2184099132597741
+    },
+    {
+      "depth": 5,
+      "entropy": 3.758624347048949,
+      "local_rewards": [
+        0.0,
+        0.3333333333333333,
+        0.3333333333333333,
+        0.2890648263178879,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "final_rewards": [
+        0.0,
+        0.3333333333333333,
+        0.3333333333333333,
+        0.2890648263178879,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "residuals": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "influence_variance": 0.01488449225311504,
+      "residual_variance": 0.0,
+      "propagate": false,
+      "summary_advantage": -0.2703996932752035
+    }
+  ]
+}

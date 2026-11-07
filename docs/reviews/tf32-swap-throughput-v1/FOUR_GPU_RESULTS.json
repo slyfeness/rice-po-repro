@@ -1,0 +1,2984 @@
+{
+  "status": "PASS",
+  "candidate": "S2",
+  "results": {
+    "cold": {
+      "common_wall_seconds": 131.81098699197173,
+      "generated_tokens": 227348,
+      "tokens_per_second": 1724.803107754949,
+      "requests": 1152,
+      "partition_counts": [
+        290,
+        288,
+        289,
+        285
+      ],
+      "partition_sha256": [
+        "b0391fef014f33d9084429274338853362a7480bf572eab4cc5277f93d5c0dac",
+        "ec8c62b5f37a6270e9389cfbe697cba6e4d5911dbeb0845a273c94e5eb5804cb",
+        "cbd34878b62f2734ffdecf4c85c0fa9fbb6d2bf2d012de53579a22cd8eab68b5",
+        "40324715d8390173e1b5dd66c9e4ebbf4ec9636eece73d9bcfd30750bee72ca7"
+      ],
+      "workers": [
+        {
+          "summary": {
+            "generated_tokens": 57088,
+            "requests": 290,
+            "stages": [
+              {
+                "cached_tokens": 206592,
+                "engine_metrics_delta": {
+                  "vllm:e2e_request_latency_seconds": {
+                    "count": 142,
+                    "mean": 65.41024359515015,
+                    "sum": 9288.254590511322
+                  },
+                  "vllm:external_prefix_cache_hits": 0,
+                  "vllm:external_prefix_cache_queries": 0,
+                  "vllm:generation_tokens": 40966,
+                  "vllm:inter_token_latency_seconds": {
+                    "count": 40824,
+                    "mean": 0.10680332057780834,
+                    "sum": 4360.138759268448
+                  },
+                  "vllm:iteration_tokens_total": {
+                    "count": 522,
+                    "mean": 1091.2701149425288,
+                    "sum": 569643.0
+                  },
+                  "vllm:num_preemptions": 0,
+                  "vllm:prefix_cache_hits": 206592,
+                  "vllm:prefix_cache_queries": 528677,
+                  "vllm:prompt_tokens": 528677,
+                  "vllm:prompt_tokens_by_source": "NOT_MEASURED",
+                  "vllm:prompt_tokens_cached": 206592,
+                  "vllm:prompt_tokens_recomputed": 5,
+                  "vllm:request_decode_time_seconds": {
+                    "count": 142,
+                    "mean": 30.70520253005949,
+                    "sum": 4360.138759268448
+                  },
+                  "vllm:request_generation_tokens": {
+                    "count": 142,
+                    "mean": 288.49295774647885,
+                    "sum": 40966.0
+                  },
+                  "vllm:request_inference_time_seconds": {
+                    "count": 142,
+                    "mean": 40.615879338772466,
+                    "sum": 5767.454866105691
+                  },
+                  "vllm:request_max_num_generation_tokens": {
+                    "count": 142,
+                    "mean": 288.49295774647885,
+                    "sum": 40966.0
+                  },
+                  "vllm:request_params_max_tokens": {
+                    "count": 142,
+                    "mean": 512.0,
+                    "sum": 72704.0
+                  },
+                  "vllm:request_params_n": {
+                    "count": 142,
+                    "mean": 1.0,
+                    "sum": 142.0
+                  },
+                  "vllm:request_prefill_kv_computed_tokens": {
+                    "count": 142,
+                    "mean": 2268.2042253521126,
+                    "sum": 322085.0
+                  },
+                  "vllm:request_prefill_time_seconds": {
+                    "count": 142,
+                    "mean": 9.910676808712978,
+                    "sum": 1407.3161068372428
+                  },
+                  "vllm:request_prompt_tokens": {
+                    "count": 142,
+                    "mean": 3723.0774647887324,
+                    "sum": 528677.0
+                  },
+                  "vllm:request_queue_time_seconds": {
+                    "count": 142,
+                    "mean": 21.268929164646796,
+                    "sum": 3020.187941379845
+                  },
+                  "vllm:request_time_per_output_token_seconds": {
+                    "count": 142,
+                    "mean": 0.13060141506865452,
+                    "sum": 18.545400939748944
+                  },
+                  "vllm:time_to_first_token_seconds": {
+                    "count": 142,
+                    "mean": 34.711864657805,
+                    "sum": 4929.08478140831
+                  }
+                },
+                "generated_tokens": 40966,
+                "input_tokens": 528677,
+                "observation": {
+                  "basis": "0.2s native-gauge/NVML samples; sampled peaks, not an absolute maximum",
+                  "errors": [],
+                  "gauge_peaks": {
+                    "vllm:kv_cache_usage_perc": 0.25591561609837266,
+                    "vllm:num_preemptions": 0,
+                    "vllm:num_requests_running": 127.0,
+                    "vllm:num_requests_waiting": 119.0
+                  },
+                  "observed_device_peak_mib": 76581.0,
+                  "samples": 252
+                },
+                "output_length": {
+                  "max": 512.0,
+                  "mean": 288.49295774647885,
+                  "n": 142,
+                  "p50": 310.0,
+                  "p90": 512.0,
+                  "p99": 512.0
+                },
+                "request_timing": {
+                  "core_completion": {
+                    "max": 72.20946530811489,
+                    "mean": 61.884808503419265,
+                    "n": 142,
+                    "p50": 67.05753849446774,
+                    "p90": 70.84211834706366,
+                    "p99": 70.94625316374004
+                  },
+                  "decode": {
+                    "max": 68.31789479963481,
+                    "mean": 30.70520253005949,
+                    "n": 142,
+                    "p50": 26.970768827944994,
+                    "p90": 59.82977533340454,
+                    "p99": 65.19732739590108
+                  },
+                  "prefill": {
+                    "max": 16.64713712222874,
+                    "mean": 9.910676808712978,
+                    "n": 142,
+                    "p50": 10.677120577543974,
+                    "p90": 11.17461384087801,
+                    "p99": 16.561010407283902
+                  },
+                  "queue": {
+                    "max": 43.824521355330944,
+                    "mean": 21.268929164646796,
+                    "n": 142,
+                    "p50": 22.29216697625816,
+                    "p90": 43.82446640729904,
+                    "p99": 43.8245172444731
+                  },
+                  "tpot": {
+                    "max": 4.638272799551487,
+                    "mean": 0.15201148311269624,
+                    "n": 122,
+                    "p50": 0.09741535494158492,
+                    "p90": 0.20192459664201434,
+                    "p99": 0.32660750639680997
+                  },
+                  "ttft": {
+                    "max": 55.2390341758728,
+                    "mean": 34.711864657805,
+                    "n": 142,
+                    "p50": 36.734883069992065,
+                    "p90": 55.227832317352295,
+                    "p99": 55.23855948448181
+                  }
+                },
+                "requests": 142,
+                "stage": "think",
+                "timing_basis": "native per-request intervals overlap across requests, not exclusive GPU-kernel time",
+                "tokens_per_second": 543.6287229945998,
+                "wall_seconds": 75.35657750815153
+              },
+              {
+                "cached_tokens": 384640,
+                "engine_metrics_delta": {
+                  "vllm:e2e_request_latency_seconds": {
+                    "count": 148,
+                    "mean": 44.52670266660484,
+                    "sum": 6589.9519946575165
+                  },
+                  "vllm:external_prefix_cache_hits": 0,
+                  "vllm:external_prefix_cache_queries": 0,
+                  "vllm:generation_tokens": 16122,
+                  "vllm:inter_token_latency_seconds": {
+                    "count": 15974,
+                    "mean": 0.14840483065791119,
+                    "sum": 2370.6187649294734
+                  },
+                  "vllm:iteration_tokens_total": {
+                    "count": 517,
+                    "mean": 1236.6731141199227,
+                    "sum": 639360.0
+                  },
+                  "vllm:num_preemptions": 0,
+                  "vllm:prefix_cache_hits": 384640,
+                  "vllm:prefix_cache_queries": 623238,
+                  "vllm:prompt_tokens": 623238,
+                  "vllm:prompt_tokens_by_source": "NOT_MEASURED",
+                  "vllm:prompt_tokens_cached": 384640,
+                  "vllm:prompt_tokens_recomputed": 1,
+                  "vllm:request_decode_time_seconds": {
+                    "count": 148,
+                    "mean": 16.017694357631576,
+                    "sum": 2370.6187649294734
+                  },
+                  "vllm:request_generation_tokens": {
+                    "count": 148,
+                    "mean": 108.93243243243244,
+                    "sum": 16122.0
+                  },
+                  "vllm:request_inference_time_seconds": {
+                    "count": 148,
+                    "mean": 25.624517333215557,
+                    "sum": 3792.4285653159022
+                  },
+                  "vllm:request_max_num_generation_tokens": {
+                    "count": 148,
+                    "mean": 108.93243243243244,
+                    "sum": 16122.0
+                  },
+                  "vllm:request_params_max_tokens": {
+                    "count": 148,
+                    "mean": 512.0,
+                    "sum": 75776.0
+                  },
+                  "vllm:request_params_n": {
+                    "count": 148,
+                    "mean": 1.0,
+                    "sum": 148.0
+                  },
+                  "vllm:request_prefill_kv_computed_tokens": {
+                    "count": 148,
+                    "mean": 1612.1486486486488,
+                    "sum": 238598.0
+                  },
+                  "vllm:request_prefill_time_seconds": {
+                    "count": 148,
+                    "mean": 9.60682297558398,
+                    "sum": 1421.8098003864288
+                  },
+                  "vllm:request_prompt_tokens": {
+                    "count": 148,
+                    "mean": 4211.0675675675675,
+                    "sum": 623238.0
+                  },
+                  "vllm:request_queue_time_seconds": {
+                    "count": 148,
+                    "mean": 18.715142906051934,
+                    "sum": 2769.8411500956863
+                  },
+                  "vllm:request_time_per_output_token_seconds": {
+                    "count": 148,
+                    "mean": 0.26135393901859894,
+                    "sum": 38.680382974752646
+                  },
+                  "vllm:time_to_first_token_seconds": {
+                    "count": 148,
+                    "mean": 28.490873594541807,
+                    "sum": 4216.6492919921875
+                  }
+                },
+                "generated_tokens": 16122,
+                "input_tokens": 623238,
+                "observation": {
+                  "basis": "0.2s native-gauge/NVML samples; sampled peaks, not an absolute maximum",
+                  "errors": [],
+                  "gauge_peaks": {
+                    "vllm:kv_cache_usage_perc": 0.3198099105959331,
+                    "vllm:num_preemptions": 0,
+                    "vllm:num_requests_running": 144.0,
+                    "vllm:num_requests_waiting": 132.0
+                  },
+                  "observed_device_peak_mib": 76581.0,
+                  "samples": 173
+                },
+                "output_length": {
+                  "max": 512.0,
+                  "mean": 108.93243243243244,
+                  "n": 148,
+                  "p50": 68.0,
+                  "p90": 287.0,
+                  "p99": 512.0
+                },
+                "request_timing": {
+                  "core_completion": {
+                    "max": 51.88706224411726,
+                    "mean": 44.33966023926749,
+                    "n": 148,
+                    "p50": 43.91262852214277,
+                    "p90": 48.066155137494206,
+                    "p99": 51.88653237000108
+                  },
+                  "decode": {
+                    "max": 47.84145225584507,
+                    "mean": 16.017694357631576,
+                    "n": 148,
+                    "p50": 11.959078745916486,
+                    "p90": 35.40348694846034,
+                    "p99": 44.62806414626539
+                  },
+                  "prefill": {
+                    "max": 17.24380825832486,
+                    "mean": 9.60682297558398,
+                    "n": 148,
+                    "p50": 10.890819888561964,
+                    "p90": 11.698996018618345,
+                    "p99": 16.803193863481283
+                  },
+                  "queue": {
+                    "max": 40.59897297993302,
+                    "mean": 18.715142906051934,
+                    "n": 148,
+                    "p50": 22.766088327392936,
+                    "p90": 33.656731344759464,
+                    "p99": 40.54012785665691
+                  },
+                  "tpot": {
+                    "max": 2.8787105007097127,
+                    "mean": 0.26313185697110675,
+                    "n": 147,
+                    "p50": 0.12651026728663514,
+                    "p90": 0.5707682007641504,
+                    "p99": 1.8482215075116408
+                  },
+                  "ttft": {
+                    "max": 40.92623281478882,
+                    "mean": 28.490873594541807,
+                    "n": 148,
+                    "p50": 33.8224196434021,
+                    "p90": 40.40794849395752,
+                    "p99": 40.83393144607544
+                  }
+                },
+                "requests": 148,
+                "stage": "summary",
+                "timing_basis": "native per-request intervals overlap across requests, not exclusive GPU-kernel time",
+                "tokens_per_second": 305.70352754325955,
+                "wall_seconds": 52.73736986145377
+              }
+            ],
+            "tokens_per_second": 444.741158751598,
+            "wall_seconds": 128.3623044025153
+          },
+          "policy": "972c28b609f0a8f8b16d47c488d9f46da6292f50c1ad2936186b1c74716eedaf",
+          "seconds": 128.40247169695795
+        },
+        {
+          "summary": {
+            "generated_tokens": 59183,
+            "requests": 288,
+            "stages": [
+              {
+                "cached_tokens": 295968,
+                "engine_metrics_delta": {
+                  "vllm:e2e_request_latency_seconds": {
+                    "count": 154,
+                    "mean": 64.00002571669492,
+                    "sum": 9856.003960371017
+                  },
+                  "vllm:external_prefix_cache_hits": 0,
+                  "vllm:external_prefix_cache_queries": 0,
+                  "vllm:generation_tokens": 42568,
+                  "vllm:inter_token_latency_seconds": {
+                    "count": 42414,
+                    "mean": 0.11048042965958822,
+                    "sum": 4685.916943581775
+                  },
+                  "vllm:iteration_tokens_total": {
+                    "count": 522,
+                    "mean": 1254.8716475095785,
+                    "sum": 655043.0
+                  },
+                  "vllm:num_preemptions": 0,
+                  "vllm:prefix_cache_hits": 295968,
+                  "vllm:prefix_cache_queries": 612475,
+                  "vllm:prompt_tokens": 612475,
+                  "vllm:prompt_tokens_by_source": "NOT_MEASURED",
+                  "vllm:prompt_tokens_cached": 295968,
+                  "vllm:prompt_tokens_recomputed": 5,
+                  "vllm:request_decode_time_seconds": {
+                    "count": 154,
+                    "mean": 30.428032101180357,
+                    "sum": 4685.916943581775
+                  },
+                  "vllm:request_generation_tokens": {
+                    "count": 154,
+                    "mean": 276.4155844155844,
+                    "sum": 42568.0
+                  },
+                  "vllm:request_inference_time_seconds": {
+                    "count": 154,
+                    "mean": 39.587325250270304,
+                    "sum": 6096.448088541627
+                  },
+                  "vllm:request_max_num_generation_tokens": {
+                    "count": 154,
+                    "mean": 276.4155844155844,
+                    "sum": 42568.0
+                  },
+                  "vllm:request_params_max_tokens": {
+                    "count": 154,
+                    "mean": 512.0,
+                    "sum": 78848.0
+                  },
+                  "vllm:request_params_n": {
+                    "count": 154,
+                    "mean": 1.0,
+                    "sum": 154.0
+                  },
+                  "vllm:request_prefill_kv_computed_tokens": {
+                    "count": 154,
+                    "mean": 2055.2402597402597,
+                    "sum": 316507.0
+                  },
+                  "vllm:request_prefill_time_seconds": {
+                    "count": 154,
+                    "mean": 9.15929314908995,
+                    "sum": 1410.531144959852
+                  },
+                  "vllm:request_prompt_tokens": {
+                    "count": 154,
+                    "mean": 3977.1103896103896,
+                    "sum": 612475.0
+                  },
+                  "vllm:request_queue_time_seconds": {
+                    "count": 154,
+                    "mean": 20.77457209501125,
+                    "sum": 3199.284102631733
+                  },
+                  "vllm:request_time_per_output_token_seconds": {
+                    "count": 154,
+                    "mean": 0.10155334423069681,
+                    "sum": 15.639215011527309
+                  },
+                  "vllm:time_to_first_token_seconds": {
+                    "count": 154,
+                    "mean": 33.576679025377544,
+                    "sum": 5170.808569908142
+                  }
+                },
+                "generated_tokens": 42568,
+                "input_tokens": 612475,
+                "observation": {
+                  "basis": "0.2s native-gauge/NVML samples; sampled peaks, not an absolute maximum",
+                  "errors": [],
+                  "gauge_peaks": {
+                    "vllm:kv_cache_usage_perc": 0.24199734890148628,
+                    "vllm:num_preemptions": 0,
+                    "vllm:num_requests_running": 134.0,
+                    "vllm:num_requests_waiting": 104.0
+                  },
+                  "observed_device_peak_mib": 76293.0,
+                  "samples": 249
+                },
+                "output_length": {
+                  "max": 512.0,
+                  "mean": 276.4155844155844,
+                  "n": 154,
+                  "p50": 288.0,
+                  "p90": 505.0,
+                  "p99": 512.0
+                },
+                "request_timing": {
+                  "core_completion": {
+                    "max": 72.49389281496406,
+                    "mean": 60.361897345281555,
+                    "n": 154,
+                    "p50": 65.13364238105714,
+                    "p90": 70.0116164945066,
+                    "p99": 70.18136492371559
+                  },
+                  "decode": {
+                    "max": 63.45419078320265,
+                    "mean": 30.428032101180357,
+                    "n": 154,
+                    "p50": 28.26077101752162,
+                    "p90": 57.85948207043111,
+                    "p99": 63.45419078320265
+                  },
+                  "prefill": {
+                    "max": 16.567333484068513,
+                    "mean": 9.15929314908995,
+                    "n": 154,
+                    "p50": 10.40736399590969,
+                    "p90": 11.04573574848473,
+                    "p99": 16.41534014046192
+                  },
+                  "queue": {
+                    "max": 44.38740612193942,
+                    "mean": 20.77457209501125,
+                    "n": 154,
+                    "p50": 17.623534634709358,
+                    "p90": 39.13728971593082,
+                    "p99": 44.38740262761712
+                  },
+                  "tpot": {
+                    "max": 0.43738434152069067,
+                    "mean": 0.12314342528761667,
+                    "n": 127,
+                    "p50": 0.10424220398697373,
+                    "p90": 0.228839767638654,
+                    "p99": 0.3492690287530422
+                  },
+                  "ttft": {
+                    "max": 55.26237750053406,
+                    "mean": 33.576679025377544,
+                    "n": 154,
+                    "p50": 37.47407603263855,
+                    "p90": 55.25396251678467,
+                    "p99": 55.26206398010254
+                  }
+                },
+                "requests": 154,
+                "stage": "think",
+                "timing_basis": "native per-request intervals overlap across requests, not exclusive GPU-kernel time",
+                "tokens_per_second": 569.40360582293,
+                "wall_seconds": 74.75892243161798
+              },
+              {
+                "cached_tokens": 320560,
+                "engine_metrics_delta": {
+                  "vllm:e2e_request_latency_seconds": {
+                    "count": 134,
+                    "mean": 41.075502845778395,
+                    "sum": 5504.117381334305
+                  },
+                  "vllm:external_prefix_cache_hits": 0,
+                  "vllm:external_prefix_cache_queries": 0,
+                  "vllm:generation_tokens": 16615,
+                  "vllm:inter_token_latency_seconds": {
+                    "count": 16481,
+                    "mean": 0.10438778475987055,
+                    "sum": 1720.4150806274265
+                  },
+                  "vllm:iteration_tokens_total": {
+                    "count": 519,
+                    "mean": 1073.450867052023,
+                    "sum": 557121.0
+                  },
+                  "vllm:num_preemptions": 0,
+                  "vllm:prefix_cache_hits": 320560,
+                  "vllm:prefix_cache_queries": 540506,
+                  "vllm:prompt_tokens": 540506,
+                  "vllm:prompt_tokens_by_source": "NOT_MEASURED",
+                  "vllm:prompt_tokens_cached": 320560,
+                  "vllm:prompt_tokens_recomputed": 2,
+                  "vllm:request_decode_time_seconds": {
+                    "count": 134,
+                    "mean": 12.838918512144973,
+                    "sum": 1720.4150806274265
+                  },
+                  "vllm:request_generation_tokens": {
+                    "count": 134,
+                    "mean": 123.99253731343283,
+                    "sum": 16615.0
+                  },
+                  "vllm:request_inference_time_seconds": {
+                    "count": 134,
+                    "mean": 22.844947033172556,
+                    "sum": 3061.2229024451226
+                  },
+                  "vllm:request_max_num_generation_tokens": {
+                    "count": 134,
+                    "mean": 123.99253731343283,
+                    "sum": 16615.0
+                  },
+                  "vllm:request_params_max_tokens": {
+                    "count": 134,
+                    "mean": 512.0,
+                    "sum": 68608.0
+                  },
+                  "vllm:request_params_n": {
+                    "count": 134,
+                    "mean": 1.0,
+                    "sum": 134.0
+                  },
+                  "vllm:request_prefill_kv_computed_tokens": {
+                    "count": 134,
+                    "mean": 1641.3880597014925,
+                    "sum": 219946.0
+                  },
+                  "vllm:request_prefill_time_seconds": {
+                    "count": 134,
+                    "mean": 10.006028521027583,
+                    "sum": 1340.807821817696
+                  },
+                  "vllm:request_prompt_tokens": {
+                    "count": 134,
+                    "mean": 4033.626865671642,
+                    "sum": 540506.0
+                  },
+                  "vllm:request_queue_time_seconds": {
+                    "count": 134,
+                    "mean": 17.971933569675727,
+                    "sum": 2408.2390983365476
+                  },
+                  "vllm:request_time_per_output_token_seconds": {
+                    "count": 134,
+                    "mean": 0.21034682746899414,
+                    "sum": 28.186474880845214
+                  },
+                  "vllm:time_to_first_token_seconds": {
+                    "count": 134,
+                    "mean": 28.238742275024528,
+                    "sum": 3783.9914648532867
+                  }
+                },
+                "generated_tokens": 16615,
+                "input_tokens": 540506,
+                "observation": {
+                  "basis": "0.2s native-gauge/NVML samples; sampled peaks, not an absolute maximum",
+                  "errors": [],
+                  "gauge_peaks": {
+                    "vllm:kv_cache_usage_perc": 0.29858702089855316,
+                    "vllm:num_preemptions": 0,
+                    "vllm:num_requests_running": 134.0,
+                    "vllm:num_requests_waiting": 123.0
+                  },
+                  "observed_device_peak_mib": 76293.0,
+                  "samples": 159
+                },
+                "output_length": {
+                  "max": 512.0,
+                  "mean": 123.99253731343283,
+                  "n": 134,
+                  "p50": 74.0,
+                  "p90": 359.0,
+                  "p99": 512.0
+                },
+                "request_timing": {
+                  "core_completion": {
+                    "max": 47.28339250385761,
+                    "mean": 40.816880602848286,
+                    "n": 134,
+                    "p50": 40.34553471393883,
+                    "p90": 44.88496782258153,
+                    "p99": 47.274134224280715
+                  },
+                  "decode": {
+                    "max": 40.85255818627775,
+                    "mean": 12.838918512144973,
+                    "n": 134,
+                    "p50": 8.416080575436354,
+                    "p90": 30.20123299024999,
+                    "p99": 39.32915139384568
+                  },
+                  "prefill": {
+                    "max": 16.913990965113044,
+                    "mean": 10.006028521027583,
+                    "n": 134,
+                    "p50": 10.726805694401264,
+                    "p90": 11.33124146796763,
+                    "p99": 16.732457656413317
+                  },
+                  "queue": {
+                    "max": 27.904931826516986,
+                    "mean": 17.971933569675727,
+                    "n": 134,
+                    "p50": 22.51009007357061,
+                    "p90": 27.904755348339677,
+                    "p99": 27.904918510466814
+                  },
+                  "tpot": {
+                    "max": 3.6237086481414735,
+                    "mean": 0.21034682746899425,
+                    "n": 134,
+                    "p50": 0.07085045721307767,
+                    "p90": 0.4001895491851539,
+                    "p99": 2.8632420549790063
+                  },
+                  "ttft": {
+                    "max": 37.21083068847656,
+                    "mean": 28.238742275024528,
+                    "n": 134,
+                    "p50": 33.48171782493591,
+                    "p90": 37.20651435852051,
+                    "p99": 37.21049499511719
+                  }
+                },
+                "requests": 134,
+                "stage": "summary",
+                "timing_basis": "native per-request intervals overlap across requests, not exclusive GPU-kernel time",
+                "tokens_per_second": 344.66169731523644,
+                "wall_seconds": 48.20669116824865
+              }
+            ],
+            "tokens_per_second": 480.1550536730511,
+            "wall_seconds": 123.25810078904033
+          },
+          "policy": "972c28b609f0a8f8b16d47c488d9f46da6292f50c1ad2936186b1c74716eedaf",
+          "seconds": 123.27996930480003
+        },
+        {
+          "summary": {
+            "generated_tokens": 56410,
+            "requests": 289,
+            "stages": [
+              {
+                "cached_tokens": 227232,
+                "engine_metrics_delta": {
+                  "vllm:e2e_request_latency_seconds": {
+                    "count": 148,
+                    "mean": 72.4766144156456,
+                    "sum": 10726.538933515549
+                  },
+                  "vllm:external_prefix_cache_hits": 0,
+                  "vllm:external_prefix_cache_queries": 0,
+                  "vllm:generation_tokens": 41477,
+                  "vllm:inter_token_latency_seconds": {
+                    "count": 41329,
+                    "mean": 0.11255813881229554,
+                    "sum": 4651.915318973362
+                  },
+                  "vllm:iteration_tokens_total": {
+                    "count": 523,
+                    "mean": 1190.3326959847036,
+                    "sum": 622544.0
+                  },
+                  "vllm:num_preemptions": 0,
+                  "vllm:prefix_cache_hits": 227232,
+                  "vllm:prefix_cache_queries": 581067,
+                  "vllm:prompt_tokens": 581067,
+                  "vllm:prompt_tokens_by_source": "NOT_MEASURED",
+                  "vllm:prompt_tokens_cached": 227232,
+                  "vllm:prompt_tokens_recomputed": 0,
+                  "vllm:request_decode_time_seconds": {
+                    "count": 148,
+                    "mean": 31.43186026333353,
+                    "sum": 4651.915318973362
+                  },
+                  "vllm:request_generation_tokens": {
+                    "count": 148,
+                    "mean": 280.25,
+                    "sum": 41477.0
+                  },
+                  "vllm:request_inference_time_seconds": {
+                    "count": 148,
+                    "mean": 41.402150031959486,
+                    "sum": 6127.518204730004
+                  },
+                  "vllm:request_max_num_generation_tokens": {
+                    "count": 148,
+                    "mean": 280.25,
+                    "sum": 41477.0
+                  },
+                  "vllm:request_params_max_tokens": {
+                    "count": 148,
+                    "mean": 512.0,
+                    "sum": 75776.0
+                  },
+                  "vllm:request_params_n": {
+                    "count": 148,
+                    "mean": 1.0,
+                    "sum": 148.0
+                  },
+                  "vllm:request_prefill_kv_computed_tokens": {
+                    "count": 148,
+                    "mean": 2390.777027027027,
+                    "sum": 353835.0
+                  },
+                  "vllm:request_prefill_time_seconds": {
+                    "count": 148,
+                    "mean": 9.970289768625957,
+                    "sum": 1475.6028857566416
+                  },
+                  "vllm:request_prompt_tokens": {
+                    "count": 148,
+                    "mean": 3926.1283783783783,
+                    "sum": 581067.0
+                  },
+                  "vllm:request_queue_time_seconds": {
+                    "count": 148,
+                    "mean": 28.016949135143108,
+                    "sum": 4146.50847200118
+                  },
+                  "vllm:request_time_per_output_token_seconds": {
+                    "count": 148,
+                    "mean": 0.16550299231875587,
+                    "sum": 24.49444286317587
+                  },
+                  "vllm:time_to_first_token_seconds": {
+                    "count": 148,
+                    "mean": 41.051146934161316,
+                    "sum": 6075.569746255875
+                  }
+                },
+                "generated_tokens": 41477,
+                "input_tokens": 581067,
+                "observation": {
+                  "basis": "0.2s native-gauge/NVML samples; sampled peaks, not an absolute maximum",
+                  "errors": [],
+                  "gauge_peaks": {
+                    "vllm:kv_cache_usage_perc": 0.2835406266745636,
+                    "vllm:num_preemptions": 0,
+                    "vllm:num_requests_running": 134.0,
+                    "vllm:num_requests_waiting": 122.0
+                  },
+                  "observed_device_peak_mib": 75887.0,
+                  "samples": 278
+                },
+                "output_length": {
+                  "max": 512.0,
+                  "mean": 280.25,
+                  "n": 148,
+                  "p50": 290.0,
+                  "p90": 512.0,
+                  "p99": 512.0
+                },
+                "request_timing": {
+                  "core_completion": {
+                    "max": 79.63972565717995,
+                    "mean": 69.4190991671026,
+                    "n": 148,
+                    "p50": 74.04215410351753,
+                    "p90": 79.54334144480526,
+                    "p99": 79.6396997962147
+                  },
+                  "decode": {
+                    "max": 72.8144331779331,
+                    "mean": 31.43186026333353,
+                    "n": 148,
+                    "p50": 26.80345020443201,
+                    "p90": 61.5948339831084,
+                    "p99": 72.8144331779331
+                  },
+                  "prefill": {
+                    "max": 16.895457964390516,
+                    "mean": 9.970289768625957,
+                    "n": 148,
+                    "p50": 10.660811588168144,
+                    "p90": 11.403012961149216,
+                    "p99": 16.62973041459918
+                  },
+                  "queue": {
+                    "max": 50.51581957191229,
+                    "mean": 28.016949135143108,
+                    "n": 148,
+                    "p50": 29.07717066258192,
+                    "p90": 50.51576638035476,
+                    "p99": 50.51581577770412
+                  },
+                  "tpot": {
+                    "max": 5.731192925944924,
+                    "mean": 0.1944003401839354,
+                    "n": 126,
+                    "p50": 0.10952874974378635,
+                    "p90": 0.2836104007767497,
+                    "p99": 2.4062431199814784
+                  },
+                  "ttft": {
+                    "max": 62.03480315208435,
+                    "mean": 41.051146934161316,
+                    "n": 148,
+                    "p50": 48.29017162322998,
+                    "p90": 62.022618770599365,
+                    "p99": 62.0342915058136
+                  }
+                },
+                "requests": 148,
+                "stage": "think",
+                "timing_basis": "native per-request intervals overlap across requests, not exclusive GPU-kernel time",
+                "tokens_per_second": 496.2703692961972,
+                "wall_seconds": 83.5774258673191
+              },
+              {
+                "cached_tokens": 350768,
+                "engine_metrics_delta": {
+                  "vllm:e2e_request_latency_seconds": {
+                    "count": 141,
+                    "mean": 40.42678750998585,
+                    "sum": 5700.177038908005
+                  },
+                  "vllm:external_prefix_cache_hits": 0,
+                  "vllm:external_prefix_cache_queries": 0,
+                  "vllm:generation_tokens": 14933,
+                  "vllm:inter_token_latency_seconds": {
+                    "count": 14792,
+                    "mean": 0.13876585525323537,
+                    "sum": 2052.6245309058577
+                  },
+                  "vllm:iteration_tokens_total": {
+                    "count": 519,
+                    "mean": 1126.460500963391,
+                    "sum": 584633.0
+                  },
+                  "vllm:num_preemptions": 0,
+                  "vllm:prefix_cache_hits": 350768,
+                  "vllm:prefix_cache_queries": 569700,
+                  "vllm:prompt_tokens": 569700,
+                  "vllm:prompt_tokens_by_source": "NOT_MEASURED",
+                  "vllm:prompt_tokens_cached": 350768,
+                  "vllm:prompt_tokens_recomputed": 0,
+                  "vllm:request_decode_time_seconds": {
+                    "count": 141,
+                    "mean": 14.557620786566366,
+                    "sum": 2052.6245309058577
+                  },
+                  "vllm:request_generation_tokens": {
+                    "count": 141,
+                    "mean": 105.90780141843972,
+                    "sum": 14933.0
+                  },
+                  "vllm:request_inference_time_seconds": {
+                    "count": 141,
+                    "mean": 24.402256072730037,
+                    "sum": 3440.7181062549353
+                  },
+                  "vllm:request_max_num_generation_tokens": {
+                    "count": 141,
+                    "mean": 105.90780141843972,
+                    "sum": 14933.0
+                  },
+                  "vllm:request_params_max_tokens": {
+                    "count": 141,
+                    "mean": 512.0,
+                    "sum": 72192.0
+                  },
+                  "vllm:request_params_n": {
+                    "count": 141,
+                    "mean": 1.0,
+                    "sum": 141.0
+                  },
+                  "vllm:request_prefill_kv_computed_tokens": {
+                    "count": 141,
+                    "mean": 1552.709219858156,
+                    "sum": 218932.0
+                  },
+                  "vllm:request_prefill_time_seconds": {
+                    "count": 141,
+                    "mean": 9.84463528616367,
+                    "sum": 1388.0935753490776
+                  },
+                  "vllm:request_prompt_tokens": {
+                    "count": 141,
+                    "mean": 4040.425531914894,
+                    "sum": 569700.0
+                  },
+                  "vllm:request_queue_time_seconds": {
+                    "count": 141,
+                    "mean": 15.769645681142384,
+                    "sum": 2223.520041041076
+                  },
+                  "vllm:request_time_per_output_token_seconds": {
+                    "count": 141,
+                    "mean": 0.366880205984152,
+                    "sum": 51.73010904376543
+                  },
+                  "vllm:time_to_first_token_seconds": {
+                    "count": 141,
+                    "mean": 25.87403533475619,
+                    "sum": 3648.2389822006226
+                  }
+                },
+                "generated_tokens": 14933,
+                "input_tokens": 569700,
+                "observation": {
+                  "basis": "0.2s native-gauge/NVML samples; sampled peaks, not an absolute maximum",
+                  "errors": [],
+                  "gauge_peaks": {
+                    "vllm:kv_cache_usage_perc": 0.3020701130947344,
+                    "vllm:num_preemptions": 0,
+                    "vllm:num_requests_running": 140.0,
+                    "vllm:num_requests_waiting": 122.0
+                  },
+                  "observed_device_peak_mib": 75889.0,
+                  "samples": 159
+                },
+                "output_length": {
+                  "max": 512.0,
+                  "mean": 105.90780141843972,
+                  "n": 141,
+                  "p50": 70.0,
+                  "p90": 212.0,
+                  "p99": 512.0
+                },
+                "request_timing": {
+                  "core_completion": {
+                    "max": 47.13894946500659,
+                    "mean": 40.17190175387242,
+                    "n": 141,
+                    "p50": 40.1235442366451,
+                    "p90": 42.914840534329414,
+                    "p99": 47.1303168926388
+                  },
+                  "decode": {
+                    "max": 40.67701873742044,
+                    "mean": 14.557620786566366,
+                    "n": 141,
+                    "p50": 10.912253793329,
+                    "p90": 32.46074090898037,
+                    "p99": 40.67701873742044
+                  },
+                  "prefill": {
+                    "max": 16.986908603459597,
+                    "mean": 9.84463528616367,
+                    "n": 141,
+                    "p50": 10.683097396045923,
+                    "p90": 11.482849683612585,
+                    "p99": 16.718982949852943
+                  },
+                  "queue": {
+                    "max": 27.97712543606758,
+                    "mean": 15.769645681142384,
+                    "n": 141,
+                    "p50": 17.06678932905197,
+                    "p90": 27.976945532485843,
+                    "p99": 27.977112140506506
+                  },
+                  "tpot": {
+                    "max": 5.480453692004085,
+                    "mean": 0.3695007788840392,
+                    "n": 140,
+                    "p50": 0.12602533564831203,
+                    "p90": 0.9154190529651683,
+                    "p99": 5.049968264624477
+                  },
+                  "ttft": {
+                    "max": 37.06045460700989,
+                    "mean": 25.87403533475619,
+                    "n": 141,
+                    "p50": 28.246443033218384,
+                    "p90": 37.055938720703125,
+                    "p99": 37.060120820999146
+                  }
+                },
+                "requests": 141,
+                "stage": "summary",
+                "timing_basis": "native per-request intervals overlap across requests, not exclusive GPU-kernel time",
+                "tokens_per_second": 311.2004191653235,
+                "wall_seconds": 47.98515387624502
+              }
+            ],
+            "tokens_per_second": 428.0443652618144,
+            "wall_seconds": 131.785404920578
+          },
+          "policy": "972c28b609f0a8f8b16d47c488d9f46da6292f50c1ad2936186b1c74716eedaf",
+          "seconds": 131.8061463199556
+        },
+        {
+          "summary": {
+            "generated_tokens": 54667,
+            "requests": 285,
+            "stages": [
+              {
+                "cached_tokens": 198160,
+                "engine_metrics_delta": {
+                  "vllm:e2e_request_latency_seconds": {
+                    "count": 132,
+                    "mean": 64.31547118136378,
+                    "sum": 8489.642195940018
+                  },
+                  "vllm:external_prefix_cache_hits": 0,
+                  "vllm:external_prefix_cache_queries": 0,
+                  "vllm:generation_tokens": 38701,
+                  "vllm:inter_token_latency_seconds": {
+                    "count": 38569,
+                    "mean": 0.09583028226077824,
+                    "sum": 3696.078156515956
+                  },
+                  "vllm:iteration_tokens_total": {
+                    "count": 522,
+                    "mean": 1081.3984674329502,
+                    "sum": 564490.0
+                  },
+                  "vllm:num_preemptions": 0,
+                  "vllm:prefix_cache_hits": 198160,
+                  "vllm:prefix_cache_queries": 525789,
+                  "vllm:prompt_tokens": 525789,
+                  "vllm:prompt_tokens_by_source": "NOT_MEASURED",
+                  "vllm:prompt_tokens_cached": 198160,
+                  "vllm:prompt_tokens_recomputed": 3,
+                  "vllm:request_decode_time_seconds": {
+                    "count": 132,
+                    "mean": 28.000592094817847,
+                    "sum": 3696.078156515956
+                  },
+                  "vllm:request_generation_tokens": {
+                    "count": 132,
+                    "mean": 293.18939393939394,
+                    "sum": 38701.0
+                  },
+                  "vllm:request_inference_time_seconds": {
+                    "count": 132,
+                    "mean": 38.411535321269184,
+                    "sum": 5070.322662407532
+                  },
+                  "vllm:request_max_num_generation_tokens": {
+                    "count": 132,
+                    "mean": 293.18939393939394,
+                    "sum": 38701.0
+                  },
+                  "vllm:request_params_max_tokens": {
+                    "count": 132,
+                    "mean": 512.0,
+                    "sum": 67584.0
+                  },
+                  "vllm:request_params_n": {
+                    "count": 132,
+                    "mean": 1.0,
+                    "sum": 132.0
+                  },
+                  "vllm:request_prefill_kv_computed_tokens": {
+                    "count": 132,
+                    "mean": 2482.037878787879,
+                    "sum": 327629.0
+                  },
+                  "vllm:request_prefill_time_seconds": {
+                    "count": 132,
+                    "mean": 10.410943226451337,
+                    "sum": 1374.2445058915764
+                  },
+                  "vllm:request_prompt_tokens": {
+                    "count": 132,
+                    "mean": 3983.25,
+                    "sum": 525789.0
+                  },
+                  "vllm:request_queue_time_seconds": {
+                    "count": 132,
+                    "mean": 23.227689894480687,
+                    "sum": 3066.0550660714507
+                  },
+                  "vllm:request_time_per_output_token_seconds": {
+                    "count": 132,
+                    "mean": 0.08833487831827806,
+                    "sum": 11.660203938012705
+                  },
+                  "vllm:time_to_first_token_seconds": {
+                    "count": 132,
+                    "mean": 36.32284712249582,
+                    "sum": 4794.615820169449
+                  }
+                },
+                "generated_tokens": 38701,
+                "input_tokens": 525789,
+                "observation": {
+                  "basis": "0.2s native-gauge/NVML samples; sampled peaks, not an absolute maximum",
+                  "errors": [],
+                  "gauge_peaks": {
+                    "vllm:kv_cache_usage_perc": 0.25227740643596464,
+                    "vllm:num_preemptions": 0,
+                    "vllm:num_requests_running": 114.0,
+                    "vllm:num_requests_waiting": 120.0
+                  },
+                  "observed_device_peak_mib": 75933.0,
+                  "samples": 251
+                },
+                "output_length": {
+                  "max": 512.0,
+                  "mean": 293.18939393939394,
+                  "n": 132,
+                  "p50": 303.0,
+                  "p90": 512.0,
+                  "p99": 512.0
+                },
+                "request_timing": {
+                  "core_completion": {
+                    "max": 71.4048176202923,
+                    "mean": 61.639225215749875,
+                    "n": 132,
+                    "p50": 67.55768837966025,
+                    "p90": 71.35592008754611,
+                    "p99": 71.40479793585837
+                  },
+                  "decode": {
+                    "max": 66.36186505667865,
+                    "mean": 28.000592094817847,
+                    "n": 132,
+                    "p50": 25.527069840580225,
+                    "p90": 54.32850304804742,
+                    "p99": 65.67217303439975
+                  },
+                  "prefill": {
+                    "max": 16.743642495945096,
+                    "mean": 10.410943226451337,
+                    "n": 132,
+                    "p50": 10.703522872179747,
+                    "p90": 11.369401583448052,
+                    "p99": 16.732605192810297
+                  },
+                  "queue": {
+                    "max": 43.81615602783859,
+                    "mean": 23.227689894480687,
+                    "n": 132,
+                    "p50": 22.364709615707397,
+                    "p90": 43.816104501485825,
+                    "p99": 43.81615216843784
+                  },
+                  "tpot": {
+                    "max": 0.3742665091079885,
+                    "mean": 0.10410896373225628,
+                    "n": 112,
+                    "p50": 0.08699759839340872,
+                    "p90": 0.191153299860483,
+                    "p99": 0.2788002546316475
+                  },
+                  "ttft": {
+                    "max": 55.91745328903198,
+                    "mean": 36.32284712249582,
+                    "n": 132,
+                    "p50": 35.93254208564758,
+                    "p90": 55.91014218330383,
+                    "p99": 55.916879653930664
+                  }
+                },
+                "requests": 132,
+                "stage": "think",
+                "timing_basis": "native per-request intervals overlap across requests, not exclusive GPU-kernel time",
+                "tokens_per_second": 515.7629919367901,
+                "wall_seconds": 75.03640355169773
+              },
+              {
+                "cached_tokens": 365952,
+                "engine_metrics_delta": {
+                  "vllm:e2e_request_latency_seconds": {
+                    "count": 153,
+                    "mean": 48.54947437024584,
+                    "sum": 7428.0695786476135
+                  },
+                  "vllm:external_prefix_cache_hits": 0,
+                  "vllm:external_prefix_cache_queries": 0,
+                  "vllm:generation_tokens": 15966,
+                  "vllm:inter_token_latency_seconds": {
+                    "count": 15813,
+                    "mean": 0.1596310704097002,
+                    "sum": 2524.246116388589
+                  },
+                  "vllm:iteration_tokens_total": {
+                    "count": 520,
+                    "mean": 1239.7038461538461,
+                    "sum": 644646.0
+                  },
+                  "vllm:num_preemptions": 0,
+                  "vllm:prefix_cache_hits": 365952,
+                  "vllm:prefix_cache_queries": 628680,
+                  "vllm:prompt_tokens": 628680,
+                  "vllm:prompt_tokens_by_source": "NOT_MEASURED",
+                  "vllm:prompt_tokens_cached": 365952,
+                  "vllm:prompt_tokens_recomputed": 3,
+                  "vllm:request_decode_time_seconds": {
+                    "count": 153,
+                    "mean": 16.49834062999078,
+                    "sum": 2524.246116388589
+                  },
+                  "vllm:request_generation_tokens": {
+                    "count": 153,
+                    "mean": 104.3529411764706,
+                    "sum": 15966.0
+                  },
+                  "vllm:request_inference_time_seconds": {
+                    "count": 153,
+                    "mean": 26.36140819200698,
+                    "sum": 4033.295453377068
+                  },
+                  "vllm:request_max_num_generation_tokens": {
+                    "count": 153,
+                    "mean": 104.3529411764706,
+                    "sum": 15966.0
+                  },
+                  "vllm:request_params_max_tokens": {
+                    "count": 153,
+                    "mean": 512.0,
+                    "sum": 78336.0
+                  },
+                  "vllm:request_params_n": {
+                    "count": 153,
+                    "mean": 1.0,
+                    "sum": 153.0
+                  },
+                  "vllm:request_prefill_kv_computed_tokens": {
+                    "count": 153,
+                    "mean": 1717.1764705882354,
+                    "sum": 262728.0
+                  },
+                  "vllm:request_prefill_time_seconds": {
+                    "count": 153,
+                    "mean": 9.863067562016202,
+                    "sum": 1509.049336988479
+                  },
+                  "vllm:request_prompt_tokens": {
+                    "count": 153,
+                    "mean": 4109.019607843137,
+                    "sum": 628680.0
+                  },
+                  "vllm:request_queue_time_seconds": {
+                    "count": 153,
+                    "mean": 21.913196910124004,
+                    "sum": 3352.7191272489727
+                  },
+                  "vllm:request_time_per_output_token_seconds": {
+                    "count": 153,
+                    "mean": 0.2948216075204282,
+                    "sum": 45.10770595062551
+                  },
+                  "vllm:time_to_first_token_seconds": {
+                    "count": 153,
+                    "mean": 32.02850967295029,
+                    "sum": 4900.361979961395
+                  }
+                },
+                "generated_tokens": 15966,
+                "input_tokens": 628680,
+                "observation": {
+                  "basis": "0.2s native-gauge/NVML samples; sampled peaks, not an absolute maximum",
+                  "errors": [],
+                  "gauge_peaks": {
+                    "vllm:kv_cache_usage_perc": 0.32884902840059793,
+                    "vllm:num_preemptions": 0,
+                    "vllm:num_requests_running": 144.0,
+                    "vllm:num_requests_waiting": 136.0
+                  },
+                  "observed_device_peak_mib": 75933.0,
+                  "samples": 184
+                },
+                "output_length": {
+                  "max": 512.0,
+                  "mean": 104.3529411764706,
+                  "n": 153,
+                  "p50": 74.0,
+                  "p90": 202.0,
+                  "p99": 512.0
+                },
+                "request_timing": {
+                  "core_completion": {
+                    "max": 54.7341288253665,
+                    "mean": 48.274605102130984,
+                    "n": 153,
+                    "p50": 48.256598053500056,
+                    "p90": 50.91287335380912,
+                    "p99": 54.733943816274405
+                  },
+                  "decode": {
+                    "max": 48.41862109862268,
+                    "mean": 16.49834062999078,
+                    "n": 153,
+                    "p50": 10.568936040624976,
+                    "p90": 40.4556018281728,
+                    "p99": 48.17011765576899
+                  },
+                  "prefill": {
+                    "max": 17.45176607184112,
+                    "mean": 9.863067562016202,
+                    "n": 153,
+                    "p50": 10.713224904611707,
+                    "p90": 11.900520777329803,
+                    "p99": 16.897156244143844
+                  },
+                  "queue": {
+                    "max": 45.66771045140922,
+                    "mean": 21.913196910124004,
+                    "n": 153,
+                    "p50": 28.828095948323607,
+                    "p90": 34.22537306137383,
+                    "p99": 45.66770136542618
+                  },
+                  "tpot": {
+                    "max": 5.497528078655402,
+                    "mean": 0.2948216075204284,
+                    "n": 153,
+                    "p50": 0.12318240524832366,
+                    "p90": 0.5622967495708853,
+                    "p99": 5.446219886963566
+                  },
+                  "ttft": {
+                    "max": 46.048048973083496,
+                    "mean": 32.02850967295029,
+                    "n": 153,
+                    "p50": 39.78042244911194,
+                    "p90": 44.59637141227722,
+                    "p99": 46.04777431488037
+                  }
+                },
+                "requests": 153,
+                "stage": "summary",
+                "timing_basis": "native per-request intervals overlap across requests, not exclusive GPU-kernel time",
+                "tokens_per_second": 286.3024207699525,
+                "wall_seconds": 55.76620678603649
+              }
+            ],
+            "tokens_per_second": 417.1426722399753,
+            "wall_seconds": 131.0510854870081
+          },
+          "policy": "972c28b609f0a8f8b16d47c488d9f46da6292f50c1ad2936186b1c74716eedaf",
+          "seconds": 131.08457271568477
+        }
+      ],
+      "retrieval": null,
+      "optimizer_steps": 0,
+      "same_pool_single_wall_seconds": 366.440751247108,
+      "makespan_speedup": 2.7800470932626196,
+      "token_rate_speedup": 2.799788019929877,
+      "token_rate_scaling_efficiency": 0.6999470049824692
+    },
+    "hot": {
+      "common_wall_seconds": 33.435989337041974,
+      "generated_tokens": 226845,
+      "tokens_per_second": 6784.456045650498,
+      "requests": 1152,
+      "partition_counts": [
+        290,
+        288,
+        289,
+        285
+      ],
+      "partition_sha256": [
+        "b0391fef014f33d9084429274338853362a7480bf572eab4cc5277f93d5c0dac",
+        "ec8c62b5f37a6270e9389cfbe697cba6e4d5911dbeb0845a273c94e5eb5804cb",
+        "cbd34878b62f2734ffdecf4c85c0fa9fbb6d2bf2d012de53579a22cd8eab68b5",
+        "40324715d8390173e1b5dd66c9e4ebbf4ec9636eece73d9bcfd30750bee72ca7"
+      ],
+      "workers": [
+        {
+          "summary": {
+            "generated_tokens": 57689,
+            "requests": 290,
+            "stages": [
+              {
+                "cached_tokens": 527488,
+                "engine_metrics_delta": {
+                  "vllm:e2e_request_latency_seconds": {
+                    "count": 142,
+                    "mean": 14.305665998391703,
+                    "sum": 2031.4045717716217
+                  },
+                  "vllm:external_prefix_cache_hits": 0,
+                  "vllm:external_prefix_cache_queries": 0,
+                  "vllm:generation_tokens": 41348,
+                  "vllm:inter_token_latency_seconds": {
+                    "count": 41206,
+                    "mean": 0.0455036973579814,
+                    "sum": 1875.0253533329815
+                  },
+                  "vllm:iteration_tokens_total": {
+                    "count": 513,
+                    "mean": 1111.1598440545808,
+                    "sum": 570025.0
+                  },
+                  "vllm:num_preemptions": 0,
+                  "vllm:prefix_cache_hits": 527488,
+                  "vllm:prefix_cache_queries": 528677,
+                  "vllm:prompt_tokens": 528677,
+                  "vllm:prompt_tokens_by_source": "NOT_MEASURED",
+                  "vllm:prompt_tokens_cached": 527488,
+                  "vllm:prompt_tokens_recomputed": 10,
+                  "vllm:request_decode_time_seconds": {
+                    "count": 142,
+                    "mean": 13.204403896711137,
+                    "sum": 1875.0253533329815
+                  },
+                  "vllm:request_generation_tokens": {
+                    "count": 142,
+                    "mean": 291.1830985915493,
+                    "sum": 41348.0
+                  },
+                  "vllm:request_inference_time_seconds": {
+                    "count": 142,
+                    "mean": 13.53194396239771,
+                    "sum": 1921.5360426604748
+                  },
+                  "vllm:request_max_num_generation_tokens": {
+                    "count": 142,
+                    "mean": 291.1830985915493,
+                    "sum": 41348.0
+                  },
+                  "vllm:request_params_max_tokens": {
+                    "count": 142,
+                    "mean": 512.0,
+                    "sum": 72704.0
+                  },
+                  "vllm:request_params_n": {
+                    "count": 142,
+                    "mean": 1.0,
+                    "sum": 142.0
+                  },
+                  "vllm:request_prefill_kv_computed_tokens": {
+                    "count": 142,
+                    "mean": 8.373239436619718,
+                    "sum": 1189.0
+                  },
+                  "vllm:request_prefill_time_seconds": {
+                    "count": 142,
+                    "mean": 0.3275400656865726,
+                    "sum": 46.51068932749331
+                  },
+                  "vllm:request_prompt_tokens": {
+                    "count": 142,
+                    "mean": 3723.0774647887324,
+                    "sum": 528677.0
+                  },
+                  "vllm:request_queue_time_seconds": {
+                    "count": 142,
+                    "mean": 0.0002857047775891465,
+                    "sum": 0.040570078417658806
+                  },
+                  "vllm:request_time_per_output_token_seconds": {
+                    "count": 142,
+                    "mean": 0.0404819625975137,
+                    "sum": 5.748438688846946
+                  },
+                  "vllm:time_to_first_token_seconds": {
+                    "count": 142,
+                    "mean": 1.1029233445583935,
+                    "sum": 156.61511492729187
+                  }
+                },
+                "generated_tokens": 41348,
+                "input_tokens": 528677,
+                "observation": {
+                  "basis": "0.2s native-gauge/NVML samples; sampled peaks, not an absolute maximum",
+                  "errors": [],
+                  "gauge_peaks": {
+                    "vllm:kv_cache_usage_perc": 0.2848379727557323,
+                    "vllm:num_preemptions": 0,
+                    "vllm:num_requests_running": 142.0,
+                    "vllm:num_requests_waiting": 0.0
+                  },
+                  "observed_device_peak_mib": 76583.0,
+                  "samples": 68
+                },
+                "output_length": {
+                  "max": 512.0,
+                  "mean": 291.1830985915493,
+                  "n": 142,
+                  "p50": 314.0,
+                  "p90": 512.0,
+                  "p99": 512.0
+                },
+                "request_timing": {
+                  "core_completion": {
+                    "max": 19.766914557665586,
+                    "mean": 13.532229667175299,
+                    "n": 142,
+                    "p50": 15.98723421804607,
+                    "p90": 19.76643373630941,
+                    "p99": 19.766906252130866
+                  },
+                  "decode": {
+                    "max": 19.4428866840899,
+                    "mean": 13.204403896711137,
+                    "n": 142,
+                    "p50": 15.66362464427948,
+                    "p90": 19.4428866840899,
+                    "p99": 19.4428866840899
+                  },
+                  "prefill": {
+                    "max": 0.8995401635766029,
+                    "mean": 0.3275400656865726,
+                    "n": 142,
+                    "p50": 0.3234833274036646,
+                    "p90": 0.3234833274036646,
+                    "p99": 0.3234833274036646
+                  },
+                  "queue": {
+                    "max": 0.0005752444267272949,
+                    "mean": 0.0002857047775891465,
+                    "n": 142,
+                    "p50": 0.0002841483801603317,
+                    "p90": 0.000512460246682167,
+                    "p99": 0.0005669556558132172
+                  },
+                  "tpot": {
+                    "max": 0.05743629904463887,
+                    "mean": 0.047118349908581464,
+                    "n": 122,
+                    "p50": 0.049747740028929927,
+                    "p90": 0.05188650432704152,
+                    "p99": 0.051900222647174074
+                  },
+                  "ttft": {
+                    "max": 1.1563818454742432,
+                    "mean": 1.1029233445583935,
+                    "n": 142,
+                    "p50": 1.0992634296417236,
+                    "p90": 1.1421170234680176,
+                    "p99": 1.1543867588043213
+                  }
+                },
+                "requests": 142,
+                "stage": "think",
+                "timing_basis": "native per-request intervals overlap across requests, not exclusive GPU-kernel time",
+                "tokens_per_second": 1939.8507311402707,
+                "wall_seconds": 21.315042098984122
+              },
+              {
+                "cached_tokens": 622048,
+                "engine_metrics_delta": {
+                  "vllm:e2e_request_latency_seconds": {
+                    "count": 148,
+                    "mean": 4.705568175058107,
+                    "sum": 696.4240899085999
+                  },
+                  "vllm:external_prefix_cache_hits": 0,
+                  "vllm:external_prefix_cache_queries": 0,
+                  "vllm:generation_tokens": 16341,
+                  "vllm:inter_token_latency_seconds": {
+                    "count": 16193,
+                    "mean": 0.03831675133215194,
+                    "sum": 620.4631543215364
+                  },
+                  "vllm:iteration_tokens_total": {
+                    "count": 513,
+                    "mean": 1246.7426900584796,
+                    "sum": 639579.0
+                  },
+                  "vllm:num_preemptions": 0,
+                  "vllm:prefix_cache_hits": 622048,
+                  "vllm:prefix_cache_queries": 623238,
+                  "vllm:prompt_tokens": 623238,
+                  "vllm:prompt_tokens_by_source": "NOT_MEASURED",
+                  "vllm:prompt_tokens_cached": 622048,
+                  "vllm:prompt_tokens_recomputed": 11,
+                  "vllm:request_decode_time_seconds": {
+                    "count": 148,
+                    "mean": 4.192318610280651,
+                    "sum": 620.4631543215364
+                  },
+                  "vllm:request_generation_tokens": {
+                    "count": 148,
+                    "mean": 110.41216216216216,
+                    "sum": 16341.0
+                  },
+                  "vllm:request_inference_time_seconds": {
+                    "count": 148,
+                    "mean": 4.52635544011168,
+                    "sum": 669.9006051365286
+                  },
+                  "vllm:request_max_num_generation_tokens": {
+                    "count": 148,
+                    "mean": 110.41216216216216,
+                    "sum": 16341.0
+                  },
+                  "vllm:request_params_max_tokens": {
+                    "count": 148,
+                    "mean": 512.0,
+                    "sum": 75776.0
+                  },
+                  "vllm:request_params_n": {
+                    "count": 148,
+                    "mean": 1.0,
+                    "sum": 148.0
+                  },
+                  "vllm:request_prefill_kv_computed_tokens": {
+                    "count": 148,
+                    "mean": 8.04054054054054,
+                    "sum": 1190.0
+                  },
+                  "vllm:request_prefill_time_seconds": {
+                    "count": 148,
+                    "mean": 0.3340368298310283,
+                    "sum": 49.43745081499219
+                  },
+                  "vllm:request_prompt_tokens": {
+                    "count": 148,
+                    "mean": 4211.0675675675675,
+                    "sum": 623238.0
+                  },
+                  "vllm:request_queue_time_seconds": {
+                    "count": 148,
+                    "mean": 0.01816316434761157,
+                    "sum": 2.6881483234465122
+                  },
+                  "vllm:request_time_per_output_token_seconds": {
+                    "count": 148,
+                    "mean": 0.04915898752913308,
+                    "sum": 7.275530154311696
+                  },
+                  "vllm:time_to_first_token_seconds": {
+                    "count": 148,
+                    "mean": 0.47980508449915293,
+                    "sum": 71.01115250587463
+                  }
+                },
+                "generated_tokens": 16341,
+                "input_tokens": 623238,
+                "observation": {
+                  "basis": "0.2s native-gauge/NVML samples; sampled peaks, not an absolute maximum",
+                  "errors": [],
+                  "gauge_peaks": {
+                    "vllm:kv_cache_usage_perc": 0.32131878049468365,
+                    "vllm:num_preemptions": 0,
+                    "vllm:num_requests_running": 144.0,
+                    "vllm:num_requests_waiting": 4.0
+                  },
+                  "observed_device_peak_mib": 76583.0,
+                  "samples": 36
+                },
+                "output_length": {
+                  "max": 512.0,
+                  "mean": 110.41216216216216,
+                  "n": 148,
+                  "p50": 70.0,
+                  "p90": 287.0,
+                  "p99": 512.0
+                },
+                "request_timing": {
+                  "core_completion": {
+                    "max": 10.936472969129682,
+                    "mean": 4.544518604459292,
+                    "n": 148,
+                    "p50": 4.120969967916608,
+                    "p90": 8.322595162317157,
+                    "p99": 10.93642245233059
+                  },
+                  "decode": {
+                    "max": 10.593270631507039,
+                    "mean": 4.192318610280651,
+                    "n": 148,
+                    "p50": 3.7783474307507277,
+                    "p90": 7.980347350239754,
+                    "p99": 10.593270631507039
+                  },
+                  "prefill": {
+                    "max": 0.3414253778755665,
+                    "mean": 0.3340368298310283,
+                    "n": 148,
+                    "p50": 0.3414253778755665,
+                    "p90": 0.3414253778755665,
+                    "p99": 0.3414253778755665
+                  },
+                  "queue": {
+                    "max": 0.9974606446921825,
+                    "mean": 0.01816316434761157,
+                    "n": 148,
+                    "p50": 0.0009247902780771255,
+                    "p90": 0.0017018187791109085,
+                    "p99": 0.6974192038178444
+                  },
+                  "tpot": {
+                    "max": 0.06680980622768402,
+                    "mean": 0.04949340241028353,
+                    "n": 147,
+                    "p50": 0.054758658416677215,
+                    "p90": 0.05966452574357391,
+                    "p99": 0.0643136942338559
+                  },
+                  "ttft": {
+                    "max": 1.22727632522583,
+                    "mean": 0.47980508449915293,
+                    "n": 148,
+                    "p50": 0.4709751605987549,
+                    "p90": 0.49912285804748535,
+                    "p99": 0.9276118278503418
+                  }
+                },
+                "requests": 148,
+                "stage": "summary",
+                "timing_basis": "native per-request intervals overlap across requests, not exclusive GPU-kernel time",
+                "tokens_per_second": 1385.8836854080203,
+                "wall_seconds": 11.791032806038857
+              }
+            ],
+            "tokens_per_second": 1728.9972474878139,
+            "wall_seconds": 33.36558232456446
+          },
+          "policy": "972c28b609f0a8f8b16d47c488d9f46da6292f50c1ad2936186b1c74716eedaf",
+          "seconds": 33.387027360498905
+        },
+        {
+          "summary": {
+            "generated_tokens": 59456,
+            "requests": 288,
+            "stages": [
+              {
+                "cached_tokens": 611216,
+                "engine_metrics_delta": {
+                  "vllm:e2e_request_latency_seconds": {
+                    "count": 154,
+                    "mean": 12.706894756911638,
+                    "sum": 1956.861792564392
+                  },
+                  "vllm:external_prefix_cache_hits": 0,
+                  "vllm:external_prefix_cache_queries": 0,
+                  "vllm:generation_tokens": 43096,
+                  "vllm:inter_token_latency_seconds": {
+                    "count": 42942,
+                    "mean": 0.043640006479202235,
+                    "sum": 1873.9891582299024
+                  },
+                  "vllm:iteration_tokens_total": {
+                    "count": 520,
+                    "mean": 1260.7134615384616,
+                    "sum": 655571.0
+                  },
+                  "vllm:num_preemptions": 0,
+                  "vllm:prefix_cache_hits": 611216,
+                  "vllm:prefix_cache_queries": 612475,
+                  "vllm:prompt_tokens": 612475,
+                  "vllm:prompt_tokens_by_source": "NOT_MEASURED",
+                  "vllm:prompt_tokens_cached": 611216,
+                  "vllm:prompt_tokens_recomputed": 12,
+                  "vllm:request_decode_time_seconds": {
+                    "count": 154,
+                    "mean": 12.168760767726639,
+                    "sum": 1873.9891582299024
+                  },
+                  "vllm:request_generation_tokens": {
+                    "count": 154,
+                    "mean": 279.84415584415586,
+                    "sum": 43096.0
+                  },
+                  "vllm:request_inference_time_seconds": {
+                    "count": 154,
+                    "mean": 12.508924101660778,
+                    "sum": 1926.3743116557598
+                  },
+                  "vllm:request_max_num_generation_tokens": {
+                    "count": 154,
+                    "mean": 279.84415584415586,
+                    "sum": 43096.0
+                  },
+                  "vllm:request_params_max_tokens": {
+                    "count": 154,
+                    "mean": 512.0,
+                    "sum": 78848.0
+                  },
+                  "vllm:request_params_n": {
+                    "count": 154,
+                    "mean": 1.0,
+                    "sum": 154.0
+                  },
+                  "vllm:request_prefill_kv_computed_tokens": {
+                    "count": 154,
+                    "mean": 8.175324675324676,
+                    "sum": 1259.0
+                  },
+                  "vllm:request_prefill_time_seconds": {
+                    "count": 154,
+                    "mean": 0.3401633339341391,
+                    "sum": 52.385153425857425
+                  },
+                  "vllm:request_prompt_tokens": {
+                    "count": 154,
+                    "mean": 3977.1103896103896,
+                    "sum": 612475.0
+                  },
+                  "vllm:request_queue_time_seconds": {
+                    "count": 154,
+                    "mean": 0.042592701054625696,
+                    "sum": 6.559275962412357
+                  },
+                  "vllm:request_time_per_output_token_seconds": {
+                    "count": 154,
+                    "mean": 0.03717736491575949,
+                    "sum": 5.725314197026961
+                  },
+                  "vllm:time_to_first_token_seconds": {
+                    "count": 154,
+                    "mean": 0.5414822117074743,
+                    "sum": 83.38826060295105
+                  }
+                },
+                "generated_tokens": 43096,
+                "input_tokens": 612475,
+                "observation": {
+                  "basis": "0.2s native-gauge/NVML samples; sampled peaks, not an absolute maximum",
+                  "errors": [],
+                  "gauge_peaks": {
+                    "vllm:kv_cache_usage_perc": 0.27261189609950076,
+                    "vllm:num_preemptions": 0,
+                    "vllm:num_requests_running": 144.0,
+                    "vllm:num_requests_waiting": 10.0
+                  },
+                  "observed_device_peak_mib": 76293.0,
+                  "samples": 64
+                },
+                "output_length": {
+                  "max": 512.0,
+                  "mean": 279.84415584415586,
+                  "n": 154,
+                  "p50": 290.0,
+                  "p90": 507.0,
+                  "p99": 512.0
+                },
+                "request_timing": {
+                  "core_completion": {
+                    "max": 19.433469792827964,
+                    "mean": 12.551516802715403,
+                    "n": 154,
+                    "p50": 14.448792204260826,
+                    "p90": 19.316944668069482,
+                    "p99": 19.433458225801587
+                  },
+                  "decode": {
+                    "max": 19.024298910051584,
+                    "mean": 12.168760767726639,
+                    "n": 154,
+                    "p50": 13.768029948696494,
+                    "p90": 18.733522329479456,
+                    "p99": 19.024298910051584
+                  },
+                  "prefill": {
+                    "max": 0.355798726901412,
+                    "mean": 0.3401633339341391,
+                    "n": 154,
+                    "p50": 0.355798726901412,
+                    "p90": 0.355798726901412,
+                    "p99": 0.355798726901412
+                  },
+                  "queue": {
+                    "max": 0.6514277458190918,
+                    "mean": 0.042592701054625696,
+                    "n": 154,
+                    "p50": 0.0003289710730314255,
+                    "p90": 0.0005824454128742218,
+                    "p99": 0.6514237765222788
+                  },
+                  "tpot": {
+                    "max": 0.05100372868279616,
+                    "mean": 0.045081214149818465,
+                    "n": 127,
+                    "p50": 0.04653328189059444,
+                    "p90": 0.049849424227748226,
+                    "p99": 0.05029542338435013
+                  },
+                  "ttft": {
+                    "max": 0.895132303237915,
+                    "mean": 0.5414822117074743,
+                    "n": 154,
+                    "p50": 0.5155282020568848,
+                    "p90": 0.5655965805053711,
+                    "p99": 0.8947978019714355
+                  }
+                },
+                "requests": 154,
+                "stage": "think",
+                "timing_basis": "native per-request intervals overlap across requests, not exclusive GPU-kernel time",
+                "tokens_per_second": 2115.657066854418,
+                "wall_seconds": 20.37003098241985
+              },
+              {
+                "cached_tokens": 539424,
+                "engine_metrics_delta": {
+                  "vllm:e2e_request_latency_seconds": {
+                    "count": 134,
+                    "mean": 4.478276822104383,
+                    "sum": 600.0890941619873
+                  },
+                  "vllm:external_prefix_cache_hits": 0,
+                  "vllm:external_prefix_cache_queries": 0,
+                  "vllm:generation_tokens": 16360,
+                  "vllm:inter_token_latency_seconds": {
+                    "count": 16226,
+                    "mean": 0.032485165806140755,
+                    "sum": 527.1043003704399
+                  },
+                  "vllm:iteration_tokens_total": {
+                    "count": 513,
+                    "mean": 1085.5087719298247,
+                    "sum": 556866.0
+                  },
+                  "vllm:num_preemptions": 0,
+                  "vllm:prefix_cache_hits": 539424,
+                  "vllm:prefix_cache_queries": 540506,
+                  "vllm:prompt_tokens": 540506,
+                  "vllm:prompt_tokens_by_source": "NOT_MEASURED",
+                  "vllm:prompt_tokens_cached": 539424,
+                  "vllm:prompt_tokens_recomputed": 6,
+                  "vllm:request_decode_time_seconds": {
+                    "count": 134,
+                    "mean": 3.9336141818689545,
+                    "sum": 527.1043003704399
+                  },
+                  "vllm:request_generation_tokens": {
+                    "count": 134,
+                    "mean": 122.08955223880596,
+                    "sum": 16360.0
+                  },
+                  "vllm:request_inference_time_seconds": {
+                    "count": 134,
+                    "mean": 4.2694365535654235,
+                    "sum": 572.1044981777668
+                  },
+                  "vllm:request_max_num_generation_tokens": {
+                    "count": 134,
+                    "mean": 122.08955223880596,
+                    "sum": 16360.0
+                  },
+                  "vllm:request_params_max_tokens": {
+                    "count": 134,
+                    "mean": 512.0,
+                    "sum": 68608.0
+                  },
+                  "vllm:request_params_n": {
+                    "count": 134,
+                    "mean": 1.0,
+                    "sum": 134.0
+                  },
+                  "vllm:request_prefill_kv_computed_tokens": {
+                    "count": 134,
+                    "mean": 8.074626865671641,
+                    "sum": 1082.0
+                  },
+                  "vllm:request_prefill_time_seconds": {
+                    "count": 134,
+                    "mean": 0.3358223716964695,
+                    "sum": 45.00019780732691
+                  },
+                  "vllm:request_prompt_tokens": {
+                    "count": 134,
+                    "mean": 4033.626865671642,
+                    "sum": 540506.0
+                  },
+                  "vllm:request_queue_time_seconds": {
+                    "count": 134,
+                    "mean": 0.0008770489592605563,
+                    "sum": 0.11752456054091454
+                  },
+                  "vllm:request_time_per_output_token_seconds": {
+                    "count": 134,
+                    "mean": 0.04307703410196908,
+                    "sum": 5.7723225696638565
+                  },
+                  "vllm:time_to_first_token_seconds": {
+                    "count": 134,
+                    "mean": 0.5227373553745782,
+                    "sum": 70.04680562019348
+                  }
+                },
+                "generated_tokens": 16360,
+                "input_tokens": 540506,
+                "observation": {
+                  "basis": "0.2s native-gauge/NVML samples; sampled peaks, not an absolute maximum",
+                  "errors": [],
+                  "gauge_peaks": {
+                    "vllm:kv_cache_usage_perc": 0.2986152240742308,
+                    "vllm:num_preemptions": 0,
+                    "vllm:num_requests_running": 134.0,
+                    "vllm:num_requests_waiting": 0.0
+                  },
+                  "observed_device_peak_mib": 76293.0,
+                  "samples": 34
+                },
+                "output_length": {
+                  "max": 512.0,
+                  "mean": 122.08955223880596,
+                  "n": 134,
+                  "p50": 74.0,
+                  "p90": 322.0,
+                  "p99": 512.0
+                },
+                "request_timing": {
+                  "core_completion": {
+                    "max": 10.14511537924409,
+                    "mean": 4.270313602524684,
+                    "n": 134,
+                    "p50": 3.7753215227276087,
+                    "p90": 7.962615482509136,
+                    "p99": 10.144916702061892
+                  },
+                  "decode": {
+                    "max": 9.807714307680726,
+                    "mean": 3.9336141818689545,
+                    "n": 134,
+                    "p50": 3.4382640849798918,
+                    "p90": 7.625293152406812,
+                    "p99": 9.807714307680726
+                  },
+                  "prefill": {
+                    "max": 0.3491017781198025,
+                    "mean": 0.3358223716964695,
+                    "n": 134,
+                    "p50": 0.3357225265353918,
+                    "p90": 0.3357225265353918,
+                    "p99": 0.3357225265353918
+                  },
+                  "queue": {
+                    "max": 0.0018046088516712189,
+                    "mean": 0.0008770489592605563,
+                    "n": 134,
+                    "p50": 0.0008676722645759583,
+                    "p90": 0.0016123689711093903,
+                    "p99": 0.0017803143709897995
+                  },
+                  "tpot": {
+                    "max": 0.05590101579825083,
+                    "mean": 0.043077034101969,
+                    "n": 134,
+                    "p50": 0.04686834891637166,
+                    "p90": 0.05419748373053692,
+                    "p99": 0.05584726808592677
+                  },
+                  "ttft": {
+                    "max": 0.5525901317596436,
+                    "mean": 0.5227373553745782,
+                    "n": 134,
+                    "p50": 0.5233972072601318,
+                    "p90": 0.5469305515289307,
+                    "p99": 0.5522000789642334
+                  }
+                },
+                "requests": 134,
+                "stage": "summary",
+                "timing_basis": "native per-request intervals overlap across requests, not exclusive GPU-kernel time",
+                "tokens_per_second": 1492.047403748168,
+                "wall_seconds": 10.964799080044031
+              }
+            ],
+            "tokens_per_second": 1879.585045949706,
+            "wall_seconds": 31.632513850927353
+          },
+          "policy": "972c28b609f0a8f8b16d47c488d9f46da6292f50c1ad2936186b1c74716eedaf",
+          "seconds": 31.6523668281734
+        },
+        {
+          "summary": {
+            "generated_tokens": 55381,
+            "requests": 289,
+            "stages": [
+              {
+                "cached_tokens": 579904,
+                "engine_metrics_delta": {
+                  "vllm:e2e_request_latency_seconds": {
+                    "count": 148,
+                    "mean": 13.582043800805065,
+                    "sum": 2010.1424825191498
+                  },
+                  "vllm:external_prefix_cache_hits": 0,
+                  "vllm:external_prefix_cache_queries": 0,
+                  "vllm:generation_tokens": 40905,
+                  "vllm:inter_token_latency_seconds": {
+                    "count": 40757,
+                    "mean": 0.047126651379679065,
+                    "sum": 1920.7409302815795
+                  },
+                  "vllm:iteration_tokens_total": {
+                    "count": 513,
+                    "mean": 1212.421052631579,
+                    "sum": 621972.0
+                  },
+                  "vllm:num_preemptions": 0,
+                  "vllm:prefix_cache_hits": 579904,
+                  "vllm:prefix_cache_queries": 581067,
+                  "vllm:prompt_tokens": 581067,
+                  "vllm:prompt_tokens_by_source": "NOT_MEASURED",
+                  "vllm:prompt_tokens_cached": 579904,
+                  "vllm:prompt_tokens_recomputed": 9,
+                  "vllm:request_decode_time_seconds": {
+                    "count": 148,
+                    "mean": 12.977979258659321,
+                    "sum": 1920.7409302815795
+                  },
+                  "vllm:request_generation_tokens": {
+                    "count": 148,
+                    "mean": 276.38513513513516,
+                    "sum": 40905.0
+                  },
+                  "vllm:request_inference_time_seconds": {
+                    "count": 148,
+                    "mean": 13.316744658114338,
+                    "sum": 1970.878209400922
+                  },
+                  "vllm:request_max_num_generation_tokens": {
+                    "count": 148,
+                    "mean": 276.38513513513516,
+                    "sum": 40905.0
+                  },
+                  "vllm:request_params_max_tokens": {
+                    "count": 148,
+                    "mean": 512.0,
+                    "sum": 75776.0
+                  },
+                  "vllm:request_params_n": {
+                    "count": 148,
+                    "mean": 1.0,
+                    "sum": 148.0
+                  },
+                  "vllm:request_prefill_kv_computed_tokens": {
+                    "count": 148,
+                    "mean": 7.858108108108108,
+                    "sum": 1163.0
+                  },
+                  "vllm:request_prefill_time_seconds": {
+                    "count": 148,
+                    "mean": 0.3387653994550173,
+                    "sum": 50.137279119342566
+                  },
+                  "vllm:request_prompt_tokens": {
+                    "count": 148,
+                    "mean": 3926.1283783783783,
+                    "sum": 581067.0
+                  },
+                  "vllm:request_queue_time_seconds": {
+                    "count": 148,
+                    "mean": 0.017059634917893925,
+                    "sum": 2.524825967848301
+                  },
+                  "vllm:request_time_per_output_token_seconds": {
+                    "count": 148,
+                    "mean": 0.04193184057214233,
+                    "sum": 6.205912404677065
+                  },
+                  "vllm:time_to_first_token_seconds": {
+                    "count": 148,
+                    "mean": 0.6048310431274208,
+                    "sum": 89.51499438285828
+                  }
+                },
+                "generated_tokens": 40905,
+                "input_tokens": 581067,
+                "observation": {
+                  "basis": "0.2s native-gauge/NVML samples; sampled peaks, not an absolute maximum",
+                  "errors": [],
+                  "gauge_peaks": {
+                    "vllm:kv_cache_usage_perc": 0.31039004991962094,
+                    "vllm:num_preemptions": 0,
+                    "vllm:num_requests_running": 144.0,
+                    "vllm:num_requests_waiting": 4.0
+                  },
+                  "observed_device_peak_mib": 75889.0,
+                  "samples": 70
+                },
+                "output_length": {
+                  "max": 512.0,
+                  "mean": 276.38513513513516,
+                  "n": 148,
+                  "p50": 284.0,
+                  "p90": 512.0,
+                  "p99": 512.0
+                },
+                "request_timing": {
+                  "core_completion": {
+                    "max": 20.628596970811486,
+                    "mean": 13.333804293032232,
+                    "n": 148,
+                    "p50": 15.2741120159626,
+                    "p90": 20.626903988420963,
+                    "p99": 20.628495037555695
+                  },
+                  "decode": {
+                    "max": 20.282354539260268,
+                    "mean": 12.977979258659321,
+                    "n": 148,
+                    "p50": 14.840564362704754,
+                    "p90": 20.282354539260268,
+                    "p99": 20.282354539260268
+                  },
+                  "prefill": {
+                    "max": 0.41492760181427,
+                    "mean": 0.3387653994550173,
+                    "n": 148,
+                    "p50": 0.34436908923089504,
+                    "p90": 0.34436908923089504,
+                    "p99": 0.34436908923089504
+                  },
+                  "queue": {
+                    "max": 0.6590576283633709,
+                    "mean": 0.017059634917893925,
+                    "n": 148,
+                    "p50": 0.000995023176074028,
+                    "p90": 0.001784374937415123,
+                    "p99": 0.6590445041656494
+                  },
+                  "tpot": {
+                    "max": 0.06292076967656612,
+                    "mean": 0.04925327305299268,
+                    "n": 126,
+                    "p50": 0.050983542974768994,
+                    "p90": 0.05475992772897536,
+                    "p99": 0.060811972012743354
+                  },
+                  "ttft": {
+                    "max": 1.0054128170013428,
+                    "mean": 0.6048310431274208,
+                    "n": 148,
+                    "p50": 0.5955665111541748,
+                    "p90": 0.6221170425415039,
+                    "p99": 1.0051147937774658
+                  }
+                },
+                "requests": 148,
+                "stage": "think",
+                "timing_basis": "native per-request intervals overlap across requests, not exclusive GPU-kernel time",
+                "tokens_per_second": 1894.7399369287716,
+                "wall_seconds": 21.588714737445116
+              },
+              {
+                "cached_tokens": 568432,
+                "engine_metrics_delta": {
+                  "vllm:e2e_request_latency_seconds": {
+                    "count": 141,
+                    "mean": 4.1866613685662015,
+                    "sum": 590.3192529678345
+                  },
+                  "vllm:external_prefix_cache_hits": 0,
+                  "vllm:external_prefix_cache_queries": 0,
+                  "vllm:generation_tokens": 14476,
+                  "vllm:inter_token_latency_seconds": {
+                    "count": 14335,
+                    "mean": 0.03495147053488859,
+                    "sum": 501.029330117628
+                  },
+                  "vllm:iteration_tokens_total": {
+                    "count": 513,
+                    "mean": 1138.7446393762184,
+                    "sum": 584176.0
+                  },
+                  "vllm:num_preemptions": 0,
+                  "vllm:prefix_cache_hits": 568432,
+                  "vllm:prefix_cache_queries": 569700,
+                  "vllm:prompt_tokens": 569700,
+                  "vllm:prompt_tokens_by_source": "NOT_MEASURED",
+                  "vllm:prompt_tokens_cached": 568432,
+                  "vllm:prompt_tokens_recomputed": 2,
+                  "vllm:request_decode_time_seconds": {
+                    "count": 141,
+                    "mean": 3.5533995043803404,
+                    "sum": 501.029330117628
+                  },
+                  "vllm:request_generation_tokens": {
+                    "count": 141,
+                    "mean": 102.66666666666667,
+                    "sum": 14476.0
+                  },
+                  "vllm:request_inference_time_seconds": {
+                    "count": 141,
+                    "mean": 3.9276355313176805,
+                    "sum": 553.7966099157929
+                  },
+                  "vllm:request_max_num_generation_tokens": {
+                    "count": 141,
+                    "mean": 102.66666666666667,
+                    "sum": 14476.0
+                  },
+                  "vllm:request_params_max_tokens": {
+                    "count": 141,
+                    "mean": 512.0,
+                    "sum": 72192.0
+                  },
+                  "vllm:request_params_n": {
+                    "count": 141,
+                    "mean": 1.0,
+                    "sum": 141.0
+                  },
+                  "vllm:request_prefill_kv_computed_tokens": {
+                    "count": 141,
+                    "mean": 8.99290780141844,
+                    "sum": 1268.0
+                  },
+                  "vllm:request_prefill_time_seconds": {
+                    "count": 141,
+                    "mean": 0.37423602693734015,
+                    "sum": 52.767279798164964
+                  },
+                  "vllm:request_prompt_tokens": {
+                    "count": 141,
+                    "mean": 4040.425531914894,
+                    "sum": 569700.0
+                  },
+                  "vllm:request_queue_time_seconds": {
+                    "count": 141,
+                    "mean": 0.0008722666571749018,
+                    "sum": 0.12298959866166115
+                  },
+                  "vllm:request_time_per_output_token_seconds": {
+                    "count": 141,
+                    "mean": 0.04473672483221533,
+                    "sum": 6.307878201342362
+                  },
+                  "vllm:time_to_first_token_seconds": {
+                    "count": 141,
+                    "mean": 0.6168463449951604,
+                    "sum": 86.97533464431763
+                  }
+                },
+                "generated_tokens": 14476,
+                "input_tokens": 569700,
+                "observation": {
+                  "basis": "0.2s native-gauge/NVML samples; sampled peaks, not an absolute maximum",
+                  "errors": [],
+                  "gauge_peaks": {
+                    "vllm:kv_cache_usage_perc": 0.3042417576219082,
+                    "vllm:num_preemptions": 0,
+                    "vllm:num_requests_running": 141.0,
+                    "vllm:num_requests_waiting": 0.0
+                  },
+                  "observed_device_peak_mib": 75889.0,
+                  "samples": 34
+                },
+                "output_length": {
+                  "max": 512.0,
+                  "mean": 102.66666666666667,
+                  "n": 141,
+                  "p50": 70.0,
+                  "p90": 209.0,
+                  "p99": 512.0
+                },
+                "request_timing": {
+                  "core_completion": {
+                    "max": 10.219506345689297,
+                    "mean": 3.9285077979748553,
+                    "n": 141,
+                    "p50": 3.6997644007205963,
+                    "p90": 6.534094640985131,
+                    "p99": 10.219468168914318
+                  },
+                  "decode": {
+                    "max": 9.843834981322289,
+                    "mean": 3.5533995043803404,
+                    "n": 141,
+                    "p50": 3.325364461168647,
+                    "p90": 6.159103965386748,
+                    "p99": 9.843834981322289
+                  },
+                  "prefill": {
+                    "max": 0.40403427369892597,
+                    "mean": 0.37423602693734015,
+                    "n": 141,
+                    "p50": 0.37402318231761456,
+                    "p90": 0.37402318231761456,
+                    "p99": 0.37402318231761456
+                  },
+                  "queue": {
+                    "max": 0.0017902180552482605,
+                    "mean": 0.0008722666571749018,
+                    "n": 141,
+                    "p50": 0.0008698701858520508,
+                    "p90": 0.0015973225235939026,
+                    "p99": 0.0017668697983026505
+                  },
+                  "tpot": {
+                    "max": 0.05702263178924719,
+                    "mean": 0.04505627286673107,
+                    "n": 140,
+                    "p50": 0.04810773650450366,
+                    "p90": 0.05622647961394654,
+                    "p99": 0.05702263178924719
+                  },
+                  "ttft": {
+                    "max": 0.6470434665679932,
+                    "mean": 0.6168463449951604,
+                    "n": 141,
+                    "p50": 0.6164882183074951,
+                    "p90": 0.6416287422180176,
+                    "p99": 0.6467115879058838
+                  }
+                },
+                "requests": 141,
+                "stage": "summary",
+                "timing_basis": "native per-request intervals overlap across requests, not exclusive GPU-kernel time",
+                "tokens_per_second": 1296.952786523258,
+                "wall_seconds": 11.16154739819467
+              }
+            ],
+            "tokens_per_second": 1680.10778219021,
+            "wall_seconds": 32.962766190990806
+          },
+          "policy": "972c28b609f0a8f8b16d47c488d9f46da6292f50c1ad2936186b1c74716eedaf",
+          "seconds": 32.979555590078235
+        },
+        {
+          "summary": {
+            "generated_tokens": 54319,
+            "requests": 285,
+            "stages": [
+              {
+                "cached_tokens": 524608,
+                "engine_metrics_delta": {
+                  "vllm:e2e_request_latency_seconds": {
+                    "count": 132,
+                    "mean": 13.665590764898242,
+                    "sum": 1803.857980966568
+                  },
+                  "vllm:external_prefix_cache_hits": 0,
+                  "vllm:external_prefix_cache_queries": 0,
+                  "vllm:generation_tokens": 38113,
+                  "vllm:inter_token_latency_seconds": {
+                    "count": 37981,
+                    "mean": 0.04153872143780964,
+                    "sum": 1577.6821789294481
+                  },
+                  "vllm:iteration_tokens_total": {
+                    "count": 513,
+                    "mean": 1099.224171539961,
+                    "sum": 563902.0
+                  },
+                  "vllm:num_preemptions": 0,
+                  "vllm:prefix_cache_hits": 524608,
+                  "vllm:prefix_cache_queries": 525789,
+                  "vllm:prompt_tokens": 525789,
+                  "vllm:prompt_tokens_by_source": "NOT_MEASURED",
+                  "vllm:prompt_tokens_cached": 524608,
+                  "vllm:prompt_tokens_recomputed": 8,
+                  "vllm:request_decode_time_seconds": {
+                    "count": 132,
+                    "mean": 11.952137719162486,
+                    "sum": 1577.6821789294481
+                  },
+                  "vllm:request_generation_tokens": {
+                    "count": 132,
+                    "mean": 288.7348484848485,
+                    "sum": 38113.0
+                  },
+                  "vllm:request_inference_time_seconds": {
+                    "count": 132,
+                    "mean": 12.29500365804768,
+                    "sum": 1622.9404828622937
+                  },
+                  "vllm:request_max_num_generation_tokens": {
+                    "count": 132,
+                    "mean": 288.7348484848485,
+                    "sum": 38113.0
+                  },
+                  "vllm:request_params_max_tokens": {
+                    "count": 132,
+                    "mean": 512.0,
+                    "sum": 67584.0
+                  },
+                  "vllm:request_params_n": {
+                    "count": 132,
+                    "mean": 1.0,
+                    "sum": 132.0
+                  },
+                  "vllm:request_prefill_kv_computed_tokens": {
+                    "count": 132,
+                    "mean": 8.946969696969697,
+                    "sum": 1181.0
+                  },
+                  "vllm:request_prefill_time_seconds": {
+                    "count": 132,
+                    "mean": 0.3428659388851939,
+                    "sum": 45.25830393284559
+                  },
+                  "vllm:request_prompt_tokens": {
+                    "count": 132,
+                    "mean": 3983.25,
+                    "sum": 525789.0
+                  },
+                  "vllm:request_queue_time_seconds": {
+                    "count": 132,
+                    "mean": 0.00028385865417393774,
+                    "sum": 0.03746934235095978
+                  },
+                  "vllm:request_time_per_output_token_seconds": {
+                    "count": 132,
+                    "mean": 0.03659552828377045,
+                    "sum": 4.830609733457699
+                  },
+                  "vllm:time_to_first_token_seconds": {
+                    "count": 132,
+                    "mean": 1.7144224734017344,
+                    "sum": 226.30376648902893
+                  }
+                },
+                "generated_tokens": 38113,
+                "input_tokens": 525789,
+                "observation": {
+                  "basis": "0.2s native-gauge/NVML samples; sampled peaks, not an absolute maximum",
+                  "errors": [],
+                  "gauge_peaks": {
+                    "vllm:kv_cache_usage_perc": 0.289576106269566,
+                    "vllm:num_preemptions": 0,
+                    "vllm:num_requests_running": 132.0,
+                    "vllm:num_requests_waiting": 0.0
+                  },
+                  "observed_device_peak_mib": 75935.0,
+                  "samples": 64
+                },
+                "output_length": {
+                  "max": 512.0,
+                  "mean": 288.7348484848485,
+                  "n": 132,
+                  "p50": 288.0,
+                  "p90": 512.0,
+                  "p99": 512.0
+                },
+                "request_timing": {
+                  "core_completion": {
+                    "max": 18.15675839409232,
+                    "mean": 12.295287516701853,
+                    "n": 132,
+                    "p50": 13.813031865283847,
+                    "p90": 18.15640800446272,
+                    "p99": 18.15674390643835
+                  },
+                  "decode": {
+                    "max": 17.822250617668033,
+                    "mean": 11.952137719162486,
+                    "n": 132,
+                    "p50": 13.478991685435176,
+                    "p90": 17.822250617668033,
+                    "p99": 17.822250617668033
+                  },
+                  "prefill": {
+                    "max": 1.5079790633171797,
+                    "mean": 0.3428659388851939,
+                    "n": 132,
+                    "p50": 0.3339719455689192,
+                    "p90": 0.3339719455689192,
+                    "p99": 0.3339719455689192
+                  },
+                  "queue": {
+                    "max": 0.0005834512412548065,
+                    "mean": 0.00028385865417393774,
+                    "n": 132,
+                    "p50": 0.000274142250418663,
+                    "p90": 0.0005171652883291245,
+                    "p99": 0.0005755182355642319
+                  },
+                  "tpot": {
+                    "max": 0.04827424528246576,
+                    "mean": 0.04313044404872895,
+                    "n": 112,
+                    "p50": 0.044972436433160526,
+                    "p90": 0.0480744872113754,
+                    "p99": 0.04821078010678831
+                  },
+                  "ttft": {
+                    "max": 1.7745170593261719,
+                    "mean": 1.7144224734017344,
+                    "n": 132,
+                    "p50": 1.7109532356262207,
+                    "p90": 1.754518747329712,
+                    "p99": 1.7727513313293457
+                  }
+                },
+                "requests": 132,
+                "stage": "think",
+                "timing_basis": "native per-request intervals overlap across requests, not exclusive GPU-kernel time",
+                "tokens_per_second": 1878.886887640547,
+                "wall_seconds": 20.28488263487816
+              },
+              {
+                "cached_tokens": 627216,
+                "engine_metrics_delta": {
+                  "vllm:e2e_request_latency_seconds": {
+                    "count": 153,
+                    "mean": 4.898066509782878,
+                    "sum": 749.4041759967804
+                  },
+                  "vllm:external_prefix_cache_hits": 0,
+                  "vllm:external_prefix_cache_queries": 0,
+                  "vllm:generation_tokens": 16206,
+                  "vllm:inter_token_latency_seconds": {
+                    "count": 16053,
+                    "mean": 0.03969741673438224,
+                    "sum": 637.2626308370382
+                  },
+                  "vllm:iteration_tokens_total": {
+                    "count": 519,
+                    "mean": 1242.5549132947976,
+                    "sum": 644886.0
+                  },
+                  "vllm:num_preemptions": 0,
+                  "vllm:prefix_cache_hits": 627216,
+                  "vllm:prefix_cache_queries": 628680,
+                  "vllm:prompt_tokens": 628680,
+                  "vllm:prompt_tokens_by_source": "NOT_MEASURED",
+                  "vllm:prompt_tokens_cached": 627216,
+                  "vllm:prompt_tokens_recomputed": 9,
+                  "vllm:request_decode_time_seconds": {
+                    "count": 153,
+                    "mean": 4.165115234229008,
+                    "sum": 637.2626308370382
+                  },
+                  "vllm:request_generation_tokens": {
+                    "count": 153,
+                    "mean": 105.92156862745098,
+                    "sum": 16206.0
+                  },
+                  "vllm:request_inference_time_seconds": {
+                    "count": 153,
+                    "mean": 4.553940737644345,
+                    "sum": 696.7529328595847
+                  },
+                  "vllm:request_max_num_generation_tokens": {
+                    "count": 153,
+                    "mean": 105.92156862745098,
+                    "sum": 16206.0
+                  },
+                  "vllm:request_params_max_tokens": {
+                    "count": 153,
+                    "mean": 512.0,
+                    "sum": 78336.0
+                  },
+                  "vllm:request_params_n": {
+                    "count": 153,
+                    "mean": 1.0,
+                    "sum": 153.0
+                  },
+                  "vllm:request_prefill_kv_computed_tokens": {
+                    "count": 153,
+                    "mean": 9.568627450980392,
+                    "sum": 1464.0
+                  },
+                  "vllm:request_prefill_time_seconds": {
+                    "count": 153,
+                    "mean": 0.3888255034153368,
+                    "sum": 59.49030202254653
+                  },
+                  "vllm:request_prompt_tokens": {
+                    "count": 153,
+                    "mean": 4109.019607843137,
+                    "sum": 628680.0
+                  },
+                  "vllm:request_queue_time_seconds": {
+                    "count": 153,
+                    "mean": 0.07575731888851699,
+                    "sum": 11.590869789943099
+                  },
+                  "vllm:request_time_per_output_token_seconds": {
+                    "count": 153,
+                    "mean": 0.051396528551842076,
+                    "sum": 7.863668868431837
+                  },
+                  "vllm:time_to_first_token_seconds": {
+                    "count": 153,
+                    "mean": 0.745156880297692,
+                    "sum": 114.00900268554688
+                  }
+                },
+                "generated_tokens": 16206,
+                "input_tokens": 628680,
+                "observation": {
+                  "basis": "0.2s native-gauge/NVML samples; sampled peaks, not an absolute maximum",
+                  "errors": [],
+                  "gauge_peaks": {
+                    "vllm:kv_cache_usage_perc": 0.33275516823194295,
+                    "vllm:num_preemptions": 0,
+                    "vllm:num_requests_running": 144.0,
+                    "vllm:num_requests_waiting": 9.0
+                  },
+                  "observed_device_peak_mib": 75935.0,
+                  "samples": 39
+                },
+                "output_length": {
+                  "max": 512.0,
+                  "mean": 105.92156862745098,
+                  "n": 153,
+                  "p50": 74.0,
+                  "p90": 202.0,
+                  "p99": 512.0
+                },
+                "request_timing": {
+                  "core_completion": {
+                    "max": 11.537503583356738,
+                    "mean": 4.629698056532861,
+                    "n": 153,
+                    "p50": 4.402464358136058,
+                    "p90": 7.06009766459465,
+                    "p99": 11.507023680955172
+                  },
+                  "decode": {
+                    "max": 11.100172713398933,
+                    "mean": 4.165115234229008,
+                    "n": 153,
+                    "p50": 3.9512340892106295,
+                    "p90": 6.654990473762155,
+                    "p99": 11.100172713398933
+                  },
+                  "prefill": {
+                    "max": 0.4414224997162819,
+                    "mean": 0.3888255034153368,
+                    "n": 153,
+                    "p50": 0.40483970008790493,
+                    "p90": 0.40483970008790493,
+                    "p99": 0.4414224997162819
+                  },
+                  "queue": {
+                    "max": 1.7959693726152182,
+                    "mean": 0.07575731888851699,
+                    "n": 153,
+                    "p50": 0.001109221950173378,
+                    "p90": 0.0019556470215320587,
+                    "p99": 1.6724390536546707
+                  },
+                  "tpot": {
+                    "max": 0.07027233005673797,
+                    "mean": 0.05139652855184215,
+                    "n": 153,
+                    "p50": 0.054601531249244474,
+                    "p90": 0.06329877402943869,
+                    "p99": 0.06390674660603206
+                  },
+                  "ttft": {
+                    "max": 2.17411732673645,
+                    "mean": 0.745156880297692,
+                    "n": 153,
+                    "p50": 0.6921420097351074,
+                    "p90": 0.7203381061553955,
+                    "p99": 2.045987844467163
+                  }
+                },
+                "requests": 153,
+                "stage": "summary",
+                "timing_basis": "native per-request intervals overlap across requests, not exclusive GPU-kernel time",
+                "tokens_per_second": 1258.26459606437,
+                "wall_seconds": 12.879643956199288
+              }
+            ],
+            "tokens_per_second": 1625.7271776279003,
+            "wall_seconds": 33.41212520003319
+          },
+          "policy": "972c28b609f0a8f8b16d47c488d9f46da6292f50c1ad2936186b1c74716eedaf",
+          "seconds": 33.435241935774684
+        }
+      ],
+      "retrieval": null,
+      "optimizer_steps": 0,
+      "same_pool_single_wall_seconds": 287.60041731595993,
+      "makespan_speedup": 8.601522581458134,
+      "token_rate_speedup": 8.653901105196523,
+      "token_rate_scaling_efficiency": 2.1634752762991307
+    }
+  },
+  "workers": [
+    {
+      "policy": "972c28b609f0a8f8b16d47c488d9f46da6292f50c1ad2936186b1c74716eedaf",
+      "runtime": {
+        "attention_backend": "TRITON_ATTN",
+        "enable_chunked_prefill": true,
+        "enable_prefix_caching": true,
+        "enforce_eager": false,
+        "gpu_memory_utilization": 0.9,
+        "max_num_batched_tokens": 32768,
+        "max_num_seqs": 144
+      },
+      "gpu_name": "NVIDIA A800-SXM4-80GB",
+      "gpu_bytes": 85094825984,
+      "initialization_seconds": 132.0428714081645,
+      "observation": {
+        "basis": "0.2s native-gauge/NVML samples; sampled peaks, not an absolute maximum",
+        "errors": [],
+        "gauge_peaks": {},
+        "observed_device_peak_mib": 70535.0,
+        "samples": 432
+      },
+      "local_asset_identity": {
+        "file_sha256": {
+          ".gitattributes": "11ad7efa24975ee4b0c3c3a38ed18737f0658a5f75a0a96787b576a78a023361",
+          "LICENSE": "1c8f573e830ca9b3ebfeb7ace1823146e22b66f99ee223840e7637c9e745e1c7",
+          "README.md": "d26d26ddb518fee60c6c6bf7a708bd751b1619d93a4944f188143693d956c77f",
+          "config.json": "37bd455e9679d2959536270fed49d25cc7c290a64f6e52abb97c71345a9cee41",
+          "figures/benchmark.jpg": "96fa3297b31b53a21a283886d9f6d5759433e7523bd63b09d5ac43e9422dae97",
+          "generation_config.json": "72cbec1015da9ed03ad025483005cbf6481403abf947adfd54e504d1a66a2126",
+          "model.safetensors": "58858233513d76b8703e72eed6ce16807b523328188e13329257fb9594462945",
+          "tokenizer.json": "88145e3c3249adc2546ede277e9819d6e405e19072456e4b521cbc724bd60773",
+          "tokenizer_config.json": "8ac8c85fb242563c2260baec0909debd69d718af6a0b3d90e6cab62b4d341cd5"
+        },
+        "payload_sha256": "972c28b609f0a8f8b16d47c488d9f46da6292f50c1ad2936186b1c74716eedaf",
+        "schema_version": 1,
+        "upstream_verification": "not_verified"
+      }
+    },
+    {
+      "policy": "972c28b609f0a8f8b16d47c488d9f46da6292f50c1ad2936186b1c74716eedaf",
+      "runtime": {
+        "attention_backend": "TRITON_ATTN",
+        "enable_chunked_prefill": true,
+        "enable_prefix_caching": true,
+        "enforce_eager": false,
+        "gpu_memory_utilization": 0.9,
+        "max_num_batched_tokens": 32768,
+        "max_num_seqs": 144
+      },
+      "gpu_name": "NVIDIA A800-SXM4-80GB",
+      "gpu_bytes": 85094825984,
+      "initialization_seconds": 132.8266390170902,
+      "observation": {
+        "basis": "0.2s native-gauge/NVML samples; sampled peaks, not an absolute maximum",
+        "errors": [],
+        "gauge_peaks": {},
+        "observed_device_peak_mib": 70535.0,
+        "samples": 439
+      },
+      "local_asset_identity": {
+        "file_sha256": {
+          ".gitattributes": "11ad7efa24975ee4b0c3c3a38ed18737f0658a5f75a0a96787b576a78a023361",
+          "LICENSE": "1c8f573e830ca9b3ebfeb7ace1823146e22b66f99ee223840e7637c9e745e1c7",
+          "README.md": "d26d26ddb518fee60c6c6bf7a708bd751b1619d93a4944f188143693d956c77f",
+          "config.json": "37bd455e9679d2959536270fed49d25cc7c290a64f6e52abb97c71345a9cee41",
+          "figures/benchmark.jpg": "96fa3297b31b53a21a283886d9f6d5759433e7523bd63b09d5ac43e9422dae97",
+          "generation_config.json": "72cbec1015da9ed03ad025483005cbf6481403abf947adfd54e504d1a66a2126",
+          "model.safetensors": "58858233513d76b8703e72eed6ce16807b523328188e13329257fb9594462945",
+          "tokenizer.json": "88145e3c3249adc2546ede277e9819d6e405e19072456e4b521cbc724bd60773",
+          "tokenizer_config.json": "8ac8c85fb242563c2260baec0909debd69d718af6a0b3d90e6cab62b4d341cd5"
+        },
+        "payload_sha256": "972c28b609f0a8f8b16d47c488d9f46da6292f50c1ad2936186b1c74716eedaf",
+        "schema_version": 1,
+        "upstream_verification": "not_verified"
+      }
+    },
+    {
+      "policy": "972c28b609f0a8f8b16d47c488d9f46da6292f50c1ad2936186b1c74716eedaf",
+      "runtime": {
+        "attention_backend": "TRITON_ATTN",
+        "enable_chunked_prefill": true,
+        "enable_prefix_caching": true,
+        "enforce_eager": false,
+        "gpu_memory_utilization": 0.9,
+        "max_num_batched_tokens": 32768,
+        "max_num_seqs": 144
+      },
+      "gpu_name": "NVIDIA A800-SXM4-80GB",
+      "gpu_bytes": 85094825984,
+      "initialization_seconds": 133.2565719652921,
+      "observation": {
+        "basis": "0.2s native-gauge/NVML samples; sampled peaks, not an absolute maximum",
+        "errors": [],
+        "gauge_peaks": {},
+        "observed_device_peak_mib": 70535.0,
+        "samples": 438
+      },
+      "local_asset_identity": {
+        "file_sha256": {
+          ".gitattributes": "11ad7efa24975ee4b0c3c3a38ed18737f0658a5f75a0a96787b576a78a023361",
+          "LICENSE": "1c8f573e830ca9b3ebfeb7ace1823146e22b66f99ee223840e7637c9e745e1c7",
+          "README.md": "d26d26ddb518fee60c6c6bf7a708bd751b1619d93a4944f188143693d956c77f",
+          "config.json": "37bd455e9679d2959536270fed49d25cc7c290a64f6e52abb97c71345a9cee41",
+          "figures/benchmark.jpg": "96fa3297b31b53a21a283886d9f6d5759433e7523bd63b09d5ac43e9422dae97",
+          "generation_config.json": "72cbec1015da9ed03ad025483005cbf6481403abf947adfd54e504d1a66a2126",
+          "model.safetensors": "58858233513d76b8703e72eed6ce16807b523328188e13329257fb9594462945",
+          "tokenizer.json": "88145e3c3249adc2546ede277e9819d6e405e19072456e4b521cbc724bd60773",
+          "tokenizer_config.json": "8ac8c85fb242563c2260baec0909debd69d718af6a0b3d90e6cab62b4d341cd5"
+        },
+        "payload_sha256": "972c28b609f0a8f8b16d47c488d9f46da6292f50c1ad2936186b1c74716eedaf",
+        "schema_version": 1,
+        "upstream_verification": "not_verified"
+      }
+    },
+    {
+      "policy": "972c28b609f0a8f8b16d47c488d9f46da6292f50c1ad2936186b1c74716eedaf",
+      "runtime": {
+        "attention_backend": "TRITON_ATTN",
+        "enable_chunked_prefill": true,
+        "enable_prefix_caching": true,
+        "enforce_eager": false,
+        "gpu_memory_utilization": 0.9,
+        "max_num_batched_tokens": 32768,
+        "max_num_seqs": 144
+      },
+      "gpu_name": "NVIDIA A800-SXM4-80GB",
+      "gpu_bytes": 85094825984,
+      "initialization_seconds": 133.25964220799506,
+      "observation": {
+        "basis": "0.2s native-gauge/NVML samples; sampled peaks, not an absolute maximum",
+        "errors": [],
+        "gauge_peaks": {},
+        "observed_device_peak_mib": 70535.0,
+        "samples": 439
+      },
+      "local_asset_identity": {
+        "file_sha256": {
+          ".gitattributes": "11ad7efa24975ee4b0c3c3a38ed18737f0658a5f75a0a96787b576a78a023361",
+          "LICENSE": "1c8f573e830ca9b3ebfeb7ace1823146e22b66f99ee223840e7637c9e745e1c7",
+          "README.md": "d26d26ddb518fee60c6c6bf7a708bd751b1619d93a4944f188143693d956c77f",
+          "config.json": "37bd455e9679d2959536270fed49d25cc7c290a64f6e52abb97c71345a9cee41",
+          "figures/benchmark.jpg": "96fa3297b31b53a21a283886d9f6d5759433e7523bd63b09d5ac43e9422dae97",
+          "generation_config.json": "72cbec1015da9ed03ad025483005cbf6481403abf947adfd54e504d1a66a2126",
+          "model.safetensors": "58858233513d76b8703e72eed6ce16807b523328188e13329257fb9594462945",
+          "tokenizer.json": "88145e3c3249adc2546ede277e9819d6e405e19072456e4b521cbc724bd60773",
+          "tokenizer_config.json": "8ac8c85fb242563c2260baec0909debd69d718af6a0b3d90e6cab62b4d341cd5"
+        },
+        "payload_sha256": "972c28b609f0a8f8b16d47c488d9f46da6292f50c1ad2936186b1c74716eedaf",
+        "schema_version": 1,
+        "upstream_verification": "not_verified"
+      }
+    }
+  ],
+  "initialization_seconds": 187.6392854359001,
+  "initialization_plus_cold_seconds": 319.4502724278718,
+  "optimizer_steps": 0,
+  "scope": "pure inference, not four-GPU training"
+}

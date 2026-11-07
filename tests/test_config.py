@@ -95,6 +95,26 @@ def test_unresolved_settings_fail_before_execution_can_be_enabled():
         require_execution(config)
 
 
+def test_runtime_bindings_only_supply_intentionally_unresolved_execution_inputs():
+    config = load_config(ROOT / "configs" / "smoke.json")
+    config["runtime_bindings"] = {
+        "total_updates": 1,
+        "train_split_manifest": "fixture-train-manifest.jsonl",
+        "development_split_manifest": "fixture-development-manifest.jsonl",
+    }
+    config["execution"] = {
+        "enabled": True, "runtime_validated": False, "four_gpu_validated": False,
+    }
+    require_execution(config)
+    assert not fidelity_issues(config)
+
+
+def test_runtime_bindings_reject_algorithm_knobs():
+    config = load_config(ROOT / "configs" / "smoke.json")
+    config["runtime_bindings"] = {"total_branches_including_original": 3}
+    assert "unsupported runtime binding: total_branches_including_original" in fidelity_issues(config)
+
+
 def test_complete_recipe_still_cannot_execute_when_execution_is_disabled():
     config = configured_recipe()
     require_fidelity(config)

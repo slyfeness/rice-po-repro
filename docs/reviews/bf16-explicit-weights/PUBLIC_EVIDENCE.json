@@ -1,0 +1,154 @@
+{
+  "status": "FAIL",
+  "job_id": 175561,
+  "failed_attempt": 175560,
+  "native_input_and_mask_checks": [
+    {
+      "configuration": "B",
+      "requests": 16,
+      "tokens": 2591,
+      "independent_recomputation_matches": true
+    },
+    {
+      "configuration": "C",
+      "requests": 16,
+      "tokens": 2591,
+      "independent_recomputation_matches": true
+    }
+  ],
+  "B_vs_A_mean_error_ratio": 1.5663194045635265,
+  "B_vs_A_requests_mean_better": 2,
+  "B_vs_A_requests_mean_worse": 14,
+  "B_stage_diagnostics": {
+    "think": {
+      "requests": 9,
+      "tokens": 2219,
+      "mean_abs_log_error": 0.04544835542024896,
+      "max_abs_log_error": 0.8413143157958984
+    },
+    "summary": {
+      "requests": 7,
+      "tokens": 372,
+      "mean_abs_log_error": 0.03092210744691857,
+      "max_abs_log_error": 0.24932098388671875
+    }
+  },
+  "B_worst_requests": [
+    {
+      "clip_fraction": 1.0,
+      "configuration": "B",
+      "forward_seconds": 0.13750741630792618,
+      "historical_fp32_gate": false,
+      "max_abs_log_error": 0.8413143157958984,
+      "mean_abs_log_error": 0.8413143157958984,
+      "p99_abs_log_error": 0.8413143157958984,
+      "prefix_tokens": 6366,
+      "ratio_max": 2.3194134160408515,
+      "ratio_mean": 2.3194134160408515,
+      "ratio_min": 2.3194134160408515,
+      "request_id": "cb0d44b4ece642cf725973d4d1c848152389fd552b4d41b9eaa8a9b22a6305f7",
+      "stage": "think",
+      "tokens": 1
+    },
+    {
+      "clip_fraction": 0.13746630727762804,
+      "configuration": "B",
+      "forward_seconds": 0.8935088217258453,
+      "historical_fp32_gate": false,
+      "max_abs_log_error": 0.7781705856323242,
+      "mean_abs_log_error": 0.09814237099202228,
+      "p99_abs_log_error": 0.4670379161834717,
+      "prefix_tokens": 9133,
+      "ratio_max": 1.8478036135162978,
+      "ratio_mean": 0.9917660501462167,
+      "ratio_min": 0.4592453934032687,
+      "request_id": "7099a1180860bf59fab18eb226dd1264b6eab033e67d248428ef6b55d6e06f4d",
+      "stage": "think",
+      "tokens": 371
+    },
+    {
+      "clip_fraction": 0.016181229773462782,
+      "configuration": "B",
+      "forward_seconds": 0.04470980912446976,
+      "historical_fp32_gate": false,
+      "max_abs_log_error": 0.6175577640533447,
+      "mean_abs_log_error": 0.040267725126990624,
+      "p99_abs_log_error": 0.2065942883491516,
+      "prefix_tokens": 1615,
+      "ratio_max": 1.2405108157194442,
+      "ratio_mean": 1.0001678815520476,
+      "ratio_min": 0.5392598304335021,
+      "request_id": "9eba09682f7cd311760cec1f45ec55b132bebb5f00694423e5d7f4c0d8d6e807",
+      "stage": "think",
+      "tokens": 309
+    },
+    {
+      "clip_fraction": 0.01179245283018868,
+      "configuration": "B",
+      "forward_seconds": 0.04023543745279312,
+      "historical_fp32_gate": false,
+      "max_abs_log_error": 0.5965538024902344,
+      "mean_abs_log_error": 0.03460435285072684,
+      "p99_abs_log_error": 0.20979785919189453,
+      "prefix_tokens": 1133,
+      "ratio_max": 1.254544036628286,
+      "ratio_mean": 0.9983352350025848,
+      "ratio_min": 0.5507062120540999,
+      "request_id": "de645645f849d31a92200ffd0a0631f22e1a6f735917043f9d48cc7c8b0ce162",
+      "stage": "think",
+      "tokens": 424
+    }
+  ],
+  "checkpoint_stored_dtype_elements": {
+    "BF16": 1777088000
+  },
+  "hf_bf16_weight_identity": {
+    "all_parameters_equal": true,
+    "compared_parameter_elements": 1777088000,
+    "historical_vllm_device_weights_not_extracted": true,
+    "named_parameter_bf16_sha256": "ce66378ef5bdd4cb708d6a433a2ee40cb24c416c0fafb3671e4ab517e327bcac",
+    "routes": [
+      "FP32 load then explicit model.to(torch.bfloat16)",
+      "independent dtype=torch.bfloat16 load"
+    ]
+  },
+  "environment": {
+    "attention_class": "Qwen2Attention",
+    "causal_position": "prefix_length-1 through full_length-2",
+    "cuda": "12.8",
+    "dropout_mode": "eval",
+    "gpu": "NVIDIA A800-SXM4-80GB",
+    "hf_attention": "sdpa",
+    "log_softmax_dtype": "float32",
+    "mask": "all native prefix is context only; each saved output token incl EOS is an action",
+    "model_init_seconds": 3.647289142012596,
+    "packages": {
+      "flash-attn": null,
+      "safetensors": "0.8.0",
+      "torch": "2.10.0",
+      "transformers": "5.5.1",
+      "vllm": "0.19.1"
+    },
+    "tf32": false,
+    "vllm_attention": "FLASH_ATTN"
+  },
+  "artifact_sha256": {
+    "RESULT.json": "574b2bcadfa3bb09f21209032bb0671029ac0d394848297969534ba0295d3710",
+    "PREREGISTRATION.json": "8b109c79b8a67c552fbad9b7dc8205daa6ad0e5b34a466394304e183374859ff",
+    "INPUT_BINDING.json": "d22bf0dd145d434481dc19819762d3b1ade20d29a92742b9f1ffa3b1a5adae96",
+    "BF16_WEIGHT_COMPARISON.csv": "a153252c0c5a99a56a9e900ec58703c4bb6e68402ed1394e27a5a450f3ac35c0",
+    "PER_REQUEST.json": "993e2e87b3933416b512c2e38722b0ae96b07542928a2a2c51ff6e49d7f1821b",
+    "ENVIRONMENT.json": "6450f7cb37d6f7ae2bff284f3c8370922110730e183846cf517228e692280def",
+    "BF16_WEIGHT_IDENTITY.json": "e2281ff2978df69b2f2bc9820f2b660858928e6b0e75fcbf5b020244a764e874"
+  },
+  "probe_source_sha256": "a4d93cd90394273688db599db23246c8cc3eec1fe2004d5c034739dbd1c7a1af",
+  "source_archive_sha256": "32b4bc474a2a0acb35c01f1102f5e5d79e7fbe7e309f4e90c1e102918ad0bc91",
+  "input_snapshot_model_payload_sha256": "972c28b609f0a8f8b16d47c488d9f46da6292f50c1ad2936186b1c74716eedaf",
+  "saved_selection_sha256": "4bf93fae11ce2360a095bfa3814f64bd053146c151e260016103287a8526aad1",
+  "limitations": [
+    "historical engine resident weights not exported",
+    "HF SDPA dispatch and vLLM FLASH_ATTN are different execution paths; no operator-level causal attribution",
+    "BF16 rounding during optimizer update not measured: required probability gate failed",
+    "no new generation, optimizer update or speed benchmark"
+  ]
+}

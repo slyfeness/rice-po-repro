@@ -90,6 +90,8 @@ def operation(phase, **identity):
     fields = {**(_request.get() or {}), **identity, "phase": phase, "operation_id": operation_id}
     if phase in {"branch_generation","original_generation"} and _attempt.get() is not None:
         fields.update(_register_request(fields))
+        if fields.get("saved_native_replay") or fields.get('recovery_reexecution'):
+            fields.update(recovery_replay=True,independent_sample=False)
     token = _request.set(fields)
     try:
         event("started")
@@ -108,10 +110,13 @@ def operation(phase, **identity):
         _request.reset(token)
 
 
-def raw_completion(ids, reason, prefix, seed, version, preview=None):
+def raw_completion(ids, reason, prefix, seed, version, preview=None, replay_source=None):
+    extra = (dict(recovery_replay=True,independent_sample=False,replay_source=replay_source,
+                  returned_completion_tokens=len(ids),returned_prefix_tokens=len(prefix)) if replay_source else {})
     event("raw_completion", token_ids=tuple(ids), finish_reason=reason, seed=seed,
           policy_version=version, prefix_token_ids=tuple(prefix), prefix_sha256=fingerprint(tuple(prefix)),
-          input_tokens=len(prefix), generated_tokens=len(ids), decoded_preview=preview)
+          input_tokens=0 if replay_source else len(prefix), generated_tokens=0 if replay_source else len(ids),
+          decoded_preview=preview,**extra)
 
 
 def saved_item(kind, identity, item):
@@ -140,7 +145,7 @@ def cost_report(run):
             row[kind] += 1
             row["elapsed_seconds"] += item.get("elapsed_seconds", 0)
         if kind == "started":
-            row["submitted_input_tokens"] += item.get("input_tokens",0)
+            row["submitted_input_tokens"] += 0 if item.get("saved_native_replay") else item.get("input_tokens",0)
             row["scored_input_positions"] += item.get("input_tokens",0)*item.get("model_passes",0)
             row["recovery_replays"] += int(item.get("recovery_replay",False))
         if kind == "raw_completion":
@@ -154,6 +159,25 @@ def cost_report(run):
 def logical_request_id(version, query, trajectory, depth, seed):
     parent = _request.get() or {}
     return fingerprint([version, query, trajectory, depth, seed, parent.get("split"), parent.get("iteration")])
+
+
+def check_scheduled_request(fields):
+    """Single-writer batch preflight; normal atomic registration still follows.
+
+    Reject even one already-paid row before generating a differently arranged
+    batch. A matching recovery request retains the existing recovery semantics.
+    This check is used inside the run's exclusive writer lock, not as a lock.
+    """
+    root=_attempt.get()
+    if root is None:return
+    key=logical_request_id(fields['policy_version'],fields['query_id'],fields['trajectory_id'],
+                           fields['depth'],fields['seed'])
+    path=root.parent.parent/'requests'/key/'first.json'
+    if path.exists():
+        prior=json.loads(path.read_text(encoding='utf8'))
+        identity={k:fields[k] for k in ('seed','query_id','trajectory_id','depth','policy_version','prefix_sha256')}
+        if not _recovery.get() or prior['identity']!=identity or prior['attempt']==root.name:
+            raise ValueError('duplicate or inconsistent generation request')
 
 
 def _register_request(fields):

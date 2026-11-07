@@ -18,6 +18,7 @@ def main(argv=None) -> int:
     baseline.add_argument("--config",required=True)
     baseline.add_argument("--deployment",required=True)
     baseline.add_argument("--output-root",required=True)
+    baseline.add_argument("--split",choices=("development","test"),default="test")
     check = sub.add_parser("preflight",help="explicit future Slurm environment inventory")
     for key in ("config","deployment","output"):
         check.add_argument("--"+key,required=True)
@@ -60,7 +61,7 @@ def main(argv=None) -> int:
             result = preflight(config,deployment,args.output)
         elif args.command == "baseline":
             from .holdout import evaluate_baseline
-            result = evaluate_baseline(config,deployment,output_root=args.output_root)
+            result = evaluate_baseline(config,deployment,output_root=args.output_root,split=args.split)
         elif args.command == "evaluate":
             require_enabled(config)
             from .holdout import evaluate_checkpoint

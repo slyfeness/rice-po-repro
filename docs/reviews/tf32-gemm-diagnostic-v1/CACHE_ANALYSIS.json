@@ -1,0 +1,41 @@
+{
+  "manifest_sha256": "deffef839ce8f181db69b1a0fa5b109529a814500d62ae243a7013fe946bc9ac",
+  "requests": 1152,
+  "groups": 998,
+  "partition_counts": [
+    290,
+    288,
+    289,
+    285
+  ],
+  "group_never_split": true,
+  "estimates": [
+    {
+      "block_size_assumption": 16,
+      "input_tokens": 4610132,
+      "full_block_occurrence_tokens": 4601552,
+      "unique_global_prefix_tokens": 1393360,
+      "sum_unique_per_worker_prefix_tokens": 2267520,
+      "unique_cross_group_shared_prefix_tokens": 665456,
+      "extra_replicated_prefix_tokens": 874160,
+      "ideal_cold_single_hit_fraction": 0.695900247541719,
+      "ideal_cold_four_hit_fraction": 0.5062831172729978,
+      "ideal_hit_loss_percentage_points": 18.961713026872115,
+      "basis": "ESTIMATED unbounded sequential input-prefix reuse; not actual concurrent/evicting KV cache simulation"
+    },
+    {
+      "block_size_assumption": 32,
+      "input_tokens": 4610132,
+      "full_block_occurrence_tokens": 4591968,
+      "unique_global_prefix_tokens": 1393280,
+      "sum_unique_per_worker_prefix_tokens": 2267232,
+      "unique_cross_group_shared_prefix_tokens": 664864,
+      "extra_replicated_prefix_tokens": 873952,
+      "ideal_cold_single_hit_fraction": 0.6938387013647331,
+      "ideal_cold_four_hit_fraction": 0.5042666891099864,
+      "ideal_hit_loss_percentage_points": 18.957201225474673,
+      "basis": "ESTIMATED unbounded sequential input-prefix reuse; not actual concurrent/evicting KV cache simulation"
+    }
+  ],
+  "original_call": "partition_requests unchanged; input group IDs preserved"
+}

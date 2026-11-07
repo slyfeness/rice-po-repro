@@ -1,0 +1,182 @@
+[
+  {
+    "alias": "111-continuation-train.py",
+    "original_private_source_sha256": "c1c76614418f27b49400d745f1cd2b46e74f9f654ccde9367f96d51c7c38d614",
+    "published_sha256": "c1c76614418f27b49400d745f1cd2b46e74f9f654ccde9367f96d51c7c38d614",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "111-continuation-train.sbatch",
+    "original_private_source_sha256": "3c0b19e6714728a3ac3b66ddcb2cd434111e35ecdfeb6e9156d5a764b35d7b09",
+    "published_sha256": "dda45d31d21f623b1793e7588ad5e6cd5c7288b0bf8fa2a70755fb6b70227a6d",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "112-roundwise-analysis.py",
+    "original_private_source_sha256": "9d0a83dc989e6839d0d0bd832089316088f4d5ade3569ed2cbcb94092cac1e57",
+    "published_sha256": "9d0a83dc989e6839d0d0bd832089316088f4d5ade3569ed2cbcb94092cac1e57",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "114-wavefront-benchmark.py",
+    "original_private_source_sha256": "dfe6336cde1a56e8481db507b6c72ccc027e147bdec693bde5969aa33a50af1d",
+    "published_sha256": "dfe6336cde1a56e8481db507b6c72ccc027e147bdec693bde5969aa33a50af1d",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "114-wavefront-benchmark.sbatch",
+    "original_private_source_sha256": "6d00d0032f8cb131825b7bb546945b630e8c55df6fbdeacb4cc6c6bb5cc2e7ed",
+    "published_sha256": "b630a9f9f450868e9369831ce68213e4a43a20a0c92ecc963aced46e9748b8c7",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "119-continuation-evidence.py",
+    "original_private_source_sha256": "bba5bf879e088a94e34f8a08a1ed10cb85a46d9c289fa1a1f0f17a2f0b29015f",
+    "published_sha256": "bba5bf879e088a94e34f8a08a1ed10cb85a46d9c289fa1a1f0f17a2f0b29015f",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "119-continuation-evidence.sbatch",
+    "original_private_source_sha256": "0a80c4cd680adb7716ed0dd90bd2faccef25ce4ff86d664b6d867188e2456d8c",
+    "published_sha256": "6d41edebdbc50430ea4cae3f3f8323486aae91c9314ed28beb86b4d0b3d5db60",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "122-long-policy-switch.py",
+    "original_private_source_sha256": "fb756f0f7363de3a985c3c22be1d1548d134a7bc102e9510c55b6f7262e61309",
+    "published_sha256": "fb756f0f7363de3a985c3c22be1d1548d134a7bc102e9510c55b6f7262e61309",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "122-long-policy-switch.sbatch",
+    "original_private_source_sha256": "a17f84a23584e7297bbde3d046aa38b0baca7c440ba3ed50b0eaf311a05b8382",
+    "published_sha256": "7b11d03084a6017917b02d850c3b713c12b4877c753760c13a57918f4b5ce7ec",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "123-native-recovery-preflight.py",
+    "original_private_source_sha256": "5b89a18bf6f9e20c3977e3aa26427a5211758ce50949bf24185a61ec8e7b75b6",
+    "published_sha256": "5b89a18bf6f9e20c3977e3aa26427a5211758ce50949bf24185a61ec8e7b75b6",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "124-native-recovery-train.py",
+    "original_private_source_sha256": "f161b64fbb8d906d6e7314b371de04ce4234c517b1fe523f1cf4fd928b1423ee",
+    "published_sha256": "f161b64fbb8d906d6e7314b371de04ce4234c517b1fe523f1cf4fd928b1423ee",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "124-native-recovery-train.sbatch",
+    "original_private_source_sha256": "cdac3b93c79a37842645af06e3b4f455a52df78160598bceb4f15c4bfcf22dbe",
+    "published_sha256": "76ba9f52612566781a09678bef4c95297b5f6081abddbd0cf4fc765f01011d3e",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "125-native-recovery-final-preflight.sbatch",
+    "original_private_source_sha256": "321bac72aaf034c9ab122a941fc26306e15c139c540a54f26eecf99988d7a7c4",
+    "published_sha256": "c521b2376e2cf5c8bf34fdccf6450092b463eb35c439736bd6b014b85ded2aa7",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "127-vllm-compatibility.py",
+    "original_private_source_sha256": "da1c9ea2a751084ba9343ed134256a9c9c2976b5111e5bb7d5dcb3385c5f5c78",
+    "published_sha256": "da1c9ea2a751084ba9343ed134256a9c9c2976b5111e5bb7d5dcb3385c5f5c78",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "127-vllm-compatibility.sbatch",
+    "original_private_source_sha256": "079cd7af70c7ddfa6609494a0017da618356c70d8057592d35aeba71b22ae23c",
+    "published_sha256": "9eaf9662dfd0c8eb4a66cf2b008fb53e1ffcdc6187fc56f5c448961c4b0dd860",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "128-vllm-fp32-probe.py",
+    "original_private_source_sha256": "413b1c5466b68435478cbb897c2896412aae0092d37eb72f779d6ef107a5eee3",
+    "published_sha256": "413b1c5466b68435478cbb897c2896412aae0092d37eb72f779d6ef107a5eee3",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "128-vllm-fp32-probe.sbatch",
+    "original_private_source_sha256": "02d8726a0df6b2002e72d5bc1690627f9b571616a9718aa21311aef67ab8c0ff",
+    "published_sha256": "56ba24bb4c8e3de741ce8a19bac0cbabdcd4828bb30a7382b089f90e3d8575c3",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "129-vllm-fp32-ipc.sbatch",
+    "original_private_source_sha256": "acb3050c3bc3743c4e06723adf7b8e9337a7e7de99d9c1862c25ca15de6aeb71",
+    "published_sha256": "3c1257ec50a3dd4bbd3a2e55de872dbb77c72d8c0b62023c04296a36203fc413",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "130-vllm-hf-recovery.py",
+    "original_private_source_sha256": "e975a593fd9c417a82fcd8fbaa61166bf34bedd7922b2c1b9a798776d4c5c57a",
+    "published_sha256": "e975a593fd9c417a82fcd8fbaa61166bf34bedd7922b2c1b9a798776d4c5c57a",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "130-vllm-hf-recovery.sbatch",
+    "original_private_source_sha256": "dc308935e81d703a9c77ac3100fc4d7241bdf8b6c4324096df92784477e0a82d",
+    "published_sha256": "bf0029633b7156acfdcb4d5ec13a57920f32a45b1973c84ba3cbc26a5f77143c",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "134-vllm-graph-batch-safe.py",
+    "original_private_source_sha256": "671448000b47e950a82f206bc5fdc2f927268526c1ee15ac2a4750cc700bc6eb",
+    "published_sha256": "9efc56da65af5f628e6a23f7b87bb2e332b650ebdbe9daefa8ef49844b6e4710",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "134-vllm-graph-batch-safe.sbatch",
+    "original_private_source_sha256": "17041d4cd937bd952af16e09beb924cabca1a6135d878c6fa2ca5686abb19268",
+    "published_sha256": "a4d13eaf061073e5546392421eb65ac8af33aa47a4117ee8f00ec59575f6f637",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "135-vllm-graph-score.py",
+    "original_private_source_sha256": "5e0009312f37c555bdd293c6bbe57747ef0a77dc4a8a441937787c0b68de8c39",
+    "published_sha256": "5e0009312f37c555bdd293c6bbe57747ef0a77dc4a8a441937787c0b68de8c39",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "135-vllm-graph-score.sbatch",
+    "original_private_source_sha256": "6879cecb4fd489af53bb8ddc0a6186ea3f84285066fcd24bf398b92b7e360955",
+    "published_sha256": "e2499331ba20260df0394f13840bc47284367e96457fe00b7329475eda766cdb",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "137-hf-serial16.py",
+    "original_private_source_sha256": "6ffeb66c2c8c5030dc2cf1320d61b689affe7a12ad1f9990b27bf09505caa23e",
+    "published_sha256": "6ffeb66c2c8c5030dc2cf1320d61b689affe7a12ad1f9990b27bf09505caa23e",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "137-hf-serial16.sbatch",
+    "original_private_source_sha256": "793765c39cfc5b1fedff24f2f4c1601b6121ec49a76dd951cea6e466468b18eb",
+    "published_sha256": "ebb816bab8fa4c6dc2bbcfa29b2344df770e2444350d73ca0a7e99de85a704c8",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "138-vllm-graph-ieee.py",
+    "original_private_source_sha256": "a5af8b631aea9c297610025923f693f4034b6e8793e29c06ebb6ab8372546348",
+    "published_sha256": "113ac7e52f95a3995c8becba860750344ca225150fb57d5938a583706e7e96f1",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "138-vllm-graph-ieee.sbatch",
+    "original_private_source_sha256": "1a91cce6a82307c371a036e63e4c9a87d251a80cfb8ca44b8b65e73172462580",
+    "published_sha256": "cb6827d7592b16c21b20ae2df7be4e0a016695b7c38801ce0ba459b8b31cdb13",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "139-vllm-ieee-score.py",
+    "original_private_source_sha256": "44b1f955d123b1e36ba6f2caa1fbe41a8958ebb29bae26613d90c05a5e2cb69f",
+    "published_sha256": "44b1f955d123b1e36ba6f2caa1fbe41a8958ebb29bae26613d90c05a5e2cb69f",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  },
+  {
+    "alias": "139-vllm-ieee-score.sbatch",
+    "original_private_source_sha256": "29e46b6facdca71ae28bb587c00be7e24b8141fb98fe1fb773ed684b321eb9d3",
+    "published_sha256": "48241f2e9734c8fe1d988a1b31b74aac86e2ea57feef4cca41cc84c25a591c97",
+    "substitutions": "Private root/account/partition placeholders and LF newlines; evidence specimen, not an executable deployment."
+  }
+]

@@ -1,0 +1,50 @@
+{
+  "task": "A_retrieval_acceleration",
+  "safe_recommendation": {
+    "retrieval_ranking_impl": "array_minmax_v1",
+    "retrieval_query_batch_size": 1,
+    "reason": "Diver BF16 batched encoding changed rankings; preserve singleton encoder behavior and original per-query float32 norm/GEMV reduction order."
+  },
+  "complete_retriever_measurement": {
+    "requests": 906,
+    "old_seconds": 221.49504505470395,
+    "new_seconds": 50.98170609585941,
+    "observed_speedup": 4.34459852399277,
+    "historical_full_rankings_checked": 900,
+    "historical_hash_rankings_checked": 4,
+    "d0_rankings_checked": 32,
+    "ranking_mismatches": 0,
+    "max_fused_score_delta": 0.0,
+    "ndcg": "exact for comparable saved ranked IDs",
+    "peak_torch_allocated_bytes": 8151457280,
+    "peak_torch_reserved_bytes": 8420065280,
+    "memory_scope": "Diver process on one assigned GPU; not a sampled whole-device peak",
+    "caveat": "Baseline and optimized runs were separate sequential Slurm jobs over the same frozen request set; initialization excluded, no stable causal speedup confidence interval."
+  },
+  "rejected_batches": {
+    "fixed_screen_requests": 32,
+    "batch2_rank_changes": 4,
+    "batch4_rank_changes": 2,
+    "batch8_rank_changes": 2,
+    "valid_encoding_token_ids_identical": true,
+    "max_embedding_abs_delta_single_vs_batch4": 0.002681136131286621,
+    "differing_embedding_entries": 81912,
+    "query_token_length_range": [34, 512],
+    "encoder_dtype": "bfloat16",
+    "diagnosis": "Effective token sequences and last-nonpadding pooling are unchanged. Batch/padding shapes change the BF16 model numerical path. Same-input vector cosine arithmetic is separately tested exact. Do not accept changed rankings."
+  },
+  "implementation": {
+    "wave": "batched_rollout.continue_many batches only ready legal actions; failed actions retain their existing terminal semantics",
+    "scoring": "DenseVectorScorer.score_many preserves individual float32 norms and GEMV; avoids GEMM reduction-order changes",
+    "arrays": "Dense and BM25 raw arrays are reordered by one cached ID permutation; no per-query full-corpus score dictionaries in the accepted path",
+    "exclusions": "each request keeps its own fixed excluded_ids",
+    "observations": "rendered separately from each query's own ranked documents"
+  },
+  "verification": {
+    "focused_cpu_tests": "11 passed locally; 4 retrieval tests passed in Slurm175512",
+    "raw_evidence_job_ids": [175512, 175522],
+    "safe_summary_sha256": "0dfeb78f5fa7afec7e47a9ac1c48c17034a854b619137209b47c1eef47a40da1",
+    "new_generation_requests": 0,
+    "optimizer_steps": 0
+  }
+}

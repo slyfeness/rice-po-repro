@@ -1,0 +1,5 @@
+scheme,status,cohort,correctness_passed,small_passed,logprob_mean_abs,logprob_p99_abs,logprob_max_abs,KL_mean_abs,KL_max_abs,ratio_min,ratio_max,ratio_outside_clip_fraction,loss,baseline_loss,loss_scaled_error
+S0,BENCHMARK_COMPLETE,full6,True,True,,,,,,,,,,,
+S1,REJECTED_SMALL,small2,False,False,0.015053598427068318,0.12626985073089603,0.41322052478790283,0.000269491883780333,0.04726119339466095,0.7579020103130566,1.511678351727235,0.0032324419629738465,2392.904754638672,2360.6519775390625,0.01366265650612011
+S2,BENCHMARK_COMPLETE,full6,True,True,0.0,0.0,0.0,0.0,0.0,1.0,1.0,0.0,1972.2888084259575,1972.2888084259575,0.0
+S3,NOT_RUN_PREREQUISITE,NOT_RUN,False,False,,,,,,,,,,,

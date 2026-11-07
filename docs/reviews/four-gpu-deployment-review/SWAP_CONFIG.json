@@ -1,0 +1,66 @@
+{
+  "status": "MEASURED_BOUNDED_GENERATION_CANDIDATE_NOT_TRAINING_RELEASE",
+  "measured_job": "169532",
+  "measured_date": "2026-11-02",
+  "resources": {
+    "partition": "AUTHORIZED_PARTITION",
+    "account": "AUTHORIZED_ACCOUNT",
+    "nodes": 1,
+    "tasks": 1,
+    "gpus": 4,
+    "cpus_per_task": 24,
+    "host_memory": "384G",
+    "time": "48:00:00",
+    "node_or_gpu_model_constraints": null
+  },
+  "generation": {
+    "replicas": 4,
+    "tensor_parallel_size": 1,
+    "dtype": "bfloat16",
+    "concurrency_per_gpu": 144,
+    "gpu_memory_utilization": 0.9,
+    "max_model_len": 16384,
+    "max_num_batched_tokens": 32768,
+    "full_attention": true,
+    "enable_prefix_caching": true,
+    "chunked_prefill": true,
+    "async_scheduling": true,
+    "enforce_eager": false,
+    "cuda_graphs": "FULL_AND_PIECEWISE; actual capture required",
+    "compilation": "torch.compile/Inductor; actual runtime evidence required"
+  },
+  "sampling": {
+    "max_tokens": 12000,
+    "temperature": 0.6,
+    "top_p": 0.95,
+    "top_k": 50,
+    "group_size": 16,
+    "unchanged_from_frozen_project_policy": true
+  },
+  "measured_selection": {
+    "median_tokens_per_second_per_gpu": 6338.6613645974885,
+    "arithmetic_four_replica_tokens_per_second": 25354.645458389954,
+    "median_speedup_over_concurrency_128": 1.0314335270174584,
+    "repeat_count": 4,
+    "all_runs_pass": true,
+    "preemption_count": 0,
+    "optimizer_steps": 0,
+    "source_unchanged": true
+  },
+  "near_tie": {
+    "setting": "144 concurrency, 0.90 memory, 16384 batched tokens",
+    "median_tokens_per_second_per_gpu": 6333.077747138871,
+    "observed_gap_from_selected": "0.088%; not material"
+  },
+  "rejected_for_speed": {
+    "setting": "160 concurrency, 0.90 memory, 32768 batched tokens",
+    "reason": "median throughput was lower than both 144-concurrency settings"
+  },
+  "activation": {
+    "active_legacy_deployment_changed": false,
+    "training_authorized": false,
+    "full_623_authorized": false,
+    "note": "Documentation-only candidate. Do not implicitly replace configs/deployment.json or resume a dual-rank checkpoint as four-rank training."
+  },
+  "evidence": "outputs/zhurong-four-gpu-generation-config2-169532/RESULTS.json"
+}

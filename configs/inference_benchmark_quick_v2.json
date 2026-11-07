@@ -1,0 +1,63 @@
+{
+  "kind": "rice_inference_quick_benchmark_v2",
+  "execution": {
+    "enabled": false,
+    "purpose": "inference-only throughput screening; never a PPO compatibility result"
+  },
+  "frozen_behavior": {
+    "model": "DeepSeek-R1-Distill-Qwen-1.5B",
+    "max_model_len": 32768,
+    "temperature": 1.0,
+    "top_p": 1.0,
+    "top_k": 0,
+    "two_stage_protocol": true,
+    "native_token_ids": true,
+    "prefix_cache": true,
+    "cuda_graphs": true
+  },
+  "request_set": {
+    "count_per_candidate": 144,
+    "output_budget_range": [256, 512],
+    "selection": "fixed before generation; saved real RICE prefixes; no retry or success filtering",
+    "loads": ["short_prefix_high_concurrency", "longest_available_real_rice_history"]
+  },
+  "candidates": {
+    "A": {
+      "numeric_mode": "bf16_fast",
+      "attention_backend": "FLASH_ATTN",
+      "max_num_seqs": 128,
+      "max_num_batched_tokens": 32768,
+      "gpu_memory_utilization": 0.9,
+      "ppo_compatibility": "unvalidated"
+    },
+    "B": {
+      "numeric_mode": "bf16_fast",
+      "attention_backend": "FLASH_ATTN",
+      "max_num_seqs": 144,
+      "max_num_batched_tokens": 32768,
+      "gpu_memory_utilization": 0.9,
+      "ppo_compatibility": "unvalidated"
+    },
+    "C": {
+      "numeric_mode": "ieee_fp32",
+      "attention_backend": "TRITON_ATTN",
+      "max_num_seqs": 64,
+      "max_num_batched_tokens": 16384,
+      "gpu_memory_utilization": 0.8,
+      "ppo_compatibility": "previously validated baseline"
+    },
+    "D": {
+      "numeric_mode": "ieee_fp32",
+      "attention_backend": "TRITON_ATTN",
+      "max_num_seqs": 128,
+      "max_num_batched_tokens": 32768,
+      "gpu_memory_utilization": 0.8,
+      "ppo_compatibility": "previously validated baseline"
+    }
+  },
+  "selection": {
+    "retest_top_k": 2,
+    "four_gpu_confirmation": "four independent TP1 winner instances; shared-wall-clock measurement",
+    "probability_check": "required for BF16 recommendation; failure does not erase throughput record"
+  }
+}
