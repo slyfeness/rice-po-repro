@@ -1,3 +1,7 @@
+## 2026-11-07 TF32 推理调度
+
+[实测结果](reviews/tf32-swap-throughput-v1/SUMMARY.md)及[检查范围](reviews/tf32-swap-throughput-v1/CORRECTNESS_CHECKS.md)：8项针对性纯Python测试实际通过；单/双引擎、真实检索闭环、已有更新后快照切换及四个独立TP1纯推理实际执行。原生失败动作保留，首次同进程共存的原生崩溃也保留。没有新PPO、熵/信用计算或开发评估；不升级全局验证布尔字段，不代表多引擎Trainer、四rank或论文性能验收。
+
 ## 2026-11-06 完整vLLM受限验收
 
 [真实结果](reviews/four-gpu-deployment-review/SUMMARY.md)、[执行/失败记录](reviews/four-gpu-deployment-review/TEST_RESULTS.md)：完整五轮原生rollout/反事实/4096预算、24完整历史概率、RICE与GRPO各两个真实更新、实际权重切换、完整32题开发及独立模型/优化器/RNG恢复均已执行。独立失败环境、新后端RNG、小查询预算均显式标记；不代表严格论文性能、最大上下文容量或四rank程序通过。全局验证布尔字段不升级，历史声明保留其原时间范围。

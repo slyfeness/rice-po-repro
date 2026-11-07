@@ -1,0 +1,6 @@
+{
+  "accounting_query": "TZ=UTC sacct -j175698 -X -P --format=JobID,JobName,State,Elapsed,ElapsedRaw,ExitCode,AllocTRES,Submit,Start,End",
+  "accounting_capture_sha256": "5a808aaaa25b008f786e53524ee9aed7714f3ae1b41d4f8ea57e4428c2a7b25c",
+  "pytrec_distribution_check": "Name/Version read from existing overlay METADATA; pytrec_eval-terrier0.5.11",
+  "phase_gpu_hours": 2.4025
+}

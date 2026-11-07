@@ -2,13 +2,15 @@
 
 交付规则（2026-11-07更新）：之后仅同步GitHub审核分支和现有PR，不再生成交付、备份或临时源码传输压缩包。已生成的项目交付包与源码归档按用户要求清理；历史报告中的ZIP路径和SHA-256保留为历史记录，不代表文件目前仍可下载，也不会据此重新打包。已展开执行源码及私有实验原始产物保留。
 
-最新[混合后端受限验收](docs/reviews/precision-pilot-v1/DECISION.md)：TF32 rollout＋IEEE FP32训练完成两题真实RICE更新，5/8锚点可估计、2个非零局部优势，实际权重变化、新权重采样及独立Actor/Adam/RNG恢复通过。结论仅为`QUALIFIED_FOR_PILOT`；BF16 autocast A按优先级未新增验收，旧一致性FAIL不改写，未启动32/128查询训练。
+最新[TF32 推理调度实测](docs/reviews/tf32-swap-throughput-v1/SUMMARY.md)：独占卡选 S2（144/32768/0.90）；双引擎与 Diver 共存采用独立进程、S0 的0.80/0.45布局，同负载完成时间约快1.57倍。四卡纯推理1152请求冷/热实测1725/6784 token/s，热缓存收益不能当作在线训练速度。[可选配置](docs/reviews/tf32-swap-throughput-v1/BEST_RUNTIME_CONFIG.json)保持禁执行；本轮没有PPO或32/128查询训练，未自动替换训练配方。
+
+此前[混合后端受限验收](docs/reviews/precision-pilot-v1/DECISION.md)：TF32 rollout＋IEEE FP32训练完成两题真实RICE更新，5/8锚点可估计、2个非零局部优势，实际权重变化、新权重采样及独立Actor/Adam/RNG恢复通过。结论仅为`QUALIFIED_FOR_PILOT`；BF16 autocast A按优先级未新增验收，旧一致性FAIL不改写，未启动32/128查询训练。
 
 此前[显式BF16权重验收：FAIL](docs/reviews/bf16-explicit-weights/BF16_TRAINING_DECISION.md)：同一16条原生历史、2591个采样token上，显式BF16比FP32权重/BF16 autocast误差更大，三项冻结门限均未通过。该阶段按停止规则未执行后续PPO或测速，保留IEEE FP32主线。
 
 面向祝融，目标为 DeepSeek-R1-Distill-Qwen-1.5B 和 BRIGHT。最初源码审查基准为 `d4b490a96f8ceb31392ca55abf31325bedb7078c`。[论文 v3](https://arxiv.org/html/2605.26352v3) · [逐项修改表](docs/REVISION_MATRIX.csv) · [验证状态](docs/VALIDATION.md)
 
-最新结果：[并行优化最终决策](docs/reviews/parallel-optimization-v1/DECISION_REPORT.md) · [推荐配置](docs/reviews/parallel-optimization-v1/BEST_RUNTIME_CONFIG.json)。匹配BF16方案未通过行为概率门槛，继续采用IEEE FP32。数组检索/batch1的完整906请求计时约快4.34倍，批量Diver编码2/4/8因排名变化被拒绝。四查询旧/新RICE与GRPO均完成更新、检查点和新权重采样，原生轨迹与奖励相同；整轮耗时仅约±1%变化，尚未证明明显端到端提速。128查询候选具备已记录的正确性/容量准备，但本轮未启动128查询连续训练；所有公开模板继续禁执行。
+此前结果：[并行优化最终决策](docs/reviews/parallel-optimization-v1/DECISION_REPORT.md) · [推荐配置](docs/reviews/parallel-optimization-v1/BEST_RUNTIME_CONFIG.json)。匹配BF16方案未通过行为概率门槛，继续采用IEEE FP32。数组检索/batch1的完整906请求计时约快4.34倍，批量Diver编码2/4/8因排名变化被拒绝。四查询旧/新RICE与GRPO均完成更新、检查点和新权重采样，原生轨迹与奖励相同；整轮耗时仅约±1%变化，尚未证明明显端到端提速。128查询候选具备已记录的正确性/容量准备，但本轮未启动128查询连续训练；所有公开模板继续禁执行。
 
 此前[检索协议、四卡部署与完整vLLM验收](docs/reviews/four-gpu-deployment-review/SUMMARY.md)保留原实验谱系：IEEE FP32 vLLM已完成两阶段五轮rollout、真实反事实信用、两次PPO更新、更新后权重切换和独立检查点/优化器/RNG恢复。该阶段完整32题失败调整分数RICE0.10583、GRPO0.11130，没有RICE性能优越性证据，不能与新协议/新评估口径直接拼接。
 

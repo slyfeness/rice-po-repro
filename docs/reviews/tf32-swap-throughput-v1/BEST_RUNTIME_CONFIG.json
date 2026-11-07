@@ -1,0 +1,114 @@
+{
+  "kind": "optional_tf32_inference_deployment_v1",
+  "execution": {
+    "enabled": false
+  },
+  "selection": "S2: fastest repeated hot screen on dedicated cards; S0 retained for measured Diver co-residency",
+  "model_id": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+  "revision": "ad9f0ae0864d7fbcd1cd905e3c6c5b069cc8b562",
+  "initial_local_payload_sha256": "972c28b609f0a8f8b16d47c488d9f46da6292f50c1ad2936186b1c74716eedaf",
+  "actor_weights": "float32",
+  "vllm_dtype": "float32",
+  "numeric_mode": "tf32_pilot",
+  "HF_PPO": "IEEE FP32, unchanged; not run this phase",
+  "environment": {
+    "TRITON_F32_DEFAULT": "tf32",
+    "VLLM_WORKER_MULTIPROC_METHOD": "spawn",
+    "HF_HUB_OFFLINE": "1"
+  },
+  "tensor_parallel_size": 1,
+  "max_model_len": 32768,
+  "hf_overrides": {
+    "sliding_window": null
+  },
+  "runtime": {
+    "max_num_seqs": 144,
+    "max_num_batched_tokens": 32768,
+    "gpu_memory_utilization": 0.9,
+    "enforce_eager": false,
+    "enable_prefix_caching": true,
+    "enable_chunked_prefill": true,
+    "attention_backend": "TRITON_ATTN"
+  },
+  "sampling": {
+    "temperature": 1.0,
+    "top_p": 1.0,
+    "top_k": -1,
+    "ignore_eos": false,
+    "presence_penalty": 0.0,
+    "frequency_penalty": 0.0,
+    "repetition_penalty": 1.0
+  },
+  "protocol": "two_stage_env_summary_v1",
+  "shared_model_action_budget": 4096,
+  "prompt_variant": "frozen prompts/ricepo_prefilled_think_smoke.txt; no prompt search",
+  "failure_semantics": "invalid_action_terminal_zero_v1; existing independently defined environment variant",
+  "implementation_choices": "two-stage environment Summary prefill and original+LF+Summary are not author-confirmed unique recipes",
+  "stop": {
+    "think": "</think>",
+    "summary": "</summary>",
+    "include_stop_str_in_output": true,
+    "retain_native_stop_and_EOS_tokens": true
+  },
+  "query_composition": {
+    "mode": "original_and_summary",
+    "separator": "\n"
+  },
+  "retriever": "fixed Diver-4B + BM25; unchanged",
+  "native_history": "raw prompt/output IDs; inserted environment tokens have no direct policy loss",
+  "hardware_scope": "measured fixed source prefixes 1057–11689 tokens; not a 32768-token capacity certificate",
+  "optional_co_resident_worker": {
+    "runtime": {
+      "max_num_seqs": 64,
+      "max_num_batched_tokens": 16384,
+      "gpu_memory_utilization": 0.45,
+      "enforce_eager": false,
+      "enable_prefix_caching": true,
+      "enable_chunked_prefill": true,
+      "attention_backend": "TRITON_ATTN"
+    },
+    "co_resident": true,
+    "frontend": "separate spawned process",
+    "retriever_and_JVM": "coordinator process",
+    "device_binding": "second actual Slurm device slot"
+  },
+  "measured_dual_layout": {
+    "first_worker": {
+      "runtime": {
+        "max_num_seqs": 64,
+        "max_num_batched_tokens": 16384,
+        "gpu_memory_utilization": 0.8,
+        "enforce_eager": false,
+        "enable_prefix_caching": true,
+        "enable_chunked_prefill": true,
+        "attention_backend": "TRITON_ATTN"
+      },
+      "co_resident": false
+    },
+    "second_worker": {
+      "runtime": {
+        "max_num_seqs": 64,
+        "max_num_batched_tokens": 16384,
+        "gpu_memory_utilization": 0.45,
+        "enforce_eager": false,
+        "enable_prefix_caching": true,
+        "enable_chunked_prefill": true,
+        "attention_backend": "TRITON_ATTN"
+      },
+      "co_resident": true
+    },
+    "device_binding": "two distinct actual Slurm slots; fixed Diver on second slot"
+  },
+  "optional_four_workers": {
+    "workers": 4,
+    "layout": "independent TP1, inference only",
+    "request_affinity": "sticky frozen query/group identity"
+  },
+  "validation": {
+    "previous_tf32_qualification": "restricted pilot only, reused; not backend equivalence",
+    "new_dual_engine_trainer_integration": "NOT_VALIDATED; do not automatically replace training recipe",
+    "optimizer_steps_this_phase": 0,
+    "formal_paper_performance": false,
+    "four_rank_training": false
+  }
+}

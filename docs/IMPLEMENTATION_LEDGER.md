@@ -1,3 +1,7 @@
+## 2026-11-07 TF32 throughput stage
+
+Added optional native latency/cache/memory observations, deterministic sticky request partitioning and isolated immutable TP1 workers in `inference_*`; `VLLMEngine` metrics and low-memory co-residency require explicit opt-in. Default runtime and mathematical training modules remain unchanged. The benchmark Retriever loader explicitly overrides historical cache bindings. A labelled-counter ambiguity is marked unknown, and the original manifest API is retained. These are engineering capabilities/diagnostic fixes and optional deployment choices, not a change to credit, sampling temperature or PPO. [Actual measurements, failures and limits](reviews/tf32-swap-throughput-v1/CORRECTNESS_CHECKS.md).
+
 ## 2026-11-06 retrieval/vLLM stage
 
 - Retained: original prompts/strict parser, native token histories/masks, fixed initial Reference, per-query entropy/advantages, population variance, thresholds, replacement/PPO and all historical artifacts.

@@ -45,7 +45,7 @@ def vllm_numeric_options(mode='ieee_fp32'):
     return dict(NUMERIC_MODES[mode])
 
 
-def vllm_runtime_options(options=None, *, numeric_mode='ieee_fp32'):
+def vllm_runtime_options(options=None, *, numeric_mode='ieee_fp32',allow_low_memory=False):
     """Validate benchmarkable scheduler settings without relaxing fidelity.
 
     ``None`` is the previously verified FP32 baseline.  Unknown keys are
@@ -66,8 +66,9 @@ def vllm_runtime_options(options=None, *, numeric_mode='ieee_fp32'):
     if type(resolved['max_num_batched_tokens']) is not int or resolved['max_num_batched_tokens'] <= 0:
         raise ValueError('max_num_batched_tokens must be a positive integer')
     memory = resolved['gpu_memory_utilization']
-    if isinstance(memory, bool) or not isinstance(memory, (int, float)) or not .5 <= float(memory) <= .95:
-        raise ValueError('gpu_memory_utilization must be within [0.5, 0.95]')
+    minimum=.30 if allow_low_memory else .50
+    if isinstance(memory, bool) or not isinstance(memory, (int, float)) or not minimum <= float(memory) <= .95:
+        raise ValueError('gpu_memory_utilization outside the explicit deployment range')
     if (resolved['enforce_eager'] is not False or resolved['enable_prefix_caching'] is not True
             or resolved['enable_chunked_prefill'] is not True):
         raise ValueError('RICE benchmark requires CUDA Graphs, prefix caching and chunked prefill')
@@ -142,7 +143,7 @@ class VLLMEngine:
     Unrepresentable rows are stop IDs, never masked out of the distribution.
     """
     def __init__(self,model_path,tokenizer,policy_version,*,max_context_tokens=32768,runtime_options=None,
-                 numeric_mode='ieee_fp32'):
+                 numeric_mode='ieee_fp32',collect_metrics=False,co_resident=False):
         import os
         self.numeric=vllm_numeric_options(numeric_mode)
         if self.numeric['requires_triton_ieee'] and os.environ.get('TRITON_F32_DEFAULT')!='ieee':
@@ -151,7 +152,9 @@ class VLLMEngine:
             raise ValueError('TF32 pilot requires explicit pre-import Triton precision')
         from vllm import LLM
         self.version=policy_version
-        self.runtime_options=vllm_runtime_options(runtime_options,numeric_mode=numeric_mode)
+        self.collect_metrics=collect_metrics
+        self.runtime_options=vllm_runtime_options(runtime_options,numeric_mode=numeric_mode,allow_low_memory=co_resident)
+        metrics_kwargs={'disable_log_stats':False} if collect_metrics else {}
         self.llm=LLM(model=str(model_path),tokenizer=str(model_path),dtype=self.numeric['dtype'],tensor_parallel_size=1,
             max_model_len=max_context_tokens,max_num_seqs=self.runtime_options['max_num_seqs'],
             max_num_batched_tokens=self.runtime_options['max_num_batched_tokens'],
@@ -160,7 +163,7 @@ class VLLMEngine:
             enable_prefix_caching=self.runtime_options['enable_prefix_caching'],
             enable_chunked_prefill=self.runtime_options['enable_chunked_prefill'],hf_overrides={'sliding_window':None},
             generation_config='vllm',trust_remote_code=False,
-            attention_config={'backend':self.runtime_options['attention_backend']})
+            attention_config={'backend':self.runtime_options['attention_backend']},**metrics_kwargs)
         size=self.llm.llm_engine.model_config.hf_config.vocab_size
         self.unmapped=[i for i in range(size) if tokenizer.convert_ids_to_tokens(i) is None]
     def sample(self,requests,stage,policy):
@@ -182,4 +185,8 @@ class VLLMEngine:
             if tuple(o.prompt_token_ids)!=r['prefix'] or len(o.outputs)!=1:raise ValueError('engine changed request identity')
             c=o.outputs[0];ids=list(c.token_ids)
             rows.append(dict(token_ids=ids,sampled_log_probs=[float(d[t].logprob) for t,d in zip(ids,c.logprobs,strict=True)],finish_reason=c.finish_reason))
+            if self.collect_metrics:
+                from dataclasses import asdict
+                rows[-1]['request_metrics']=asdict(o.metrics) if o.metrics is not None else None
+                rows[-1]['num_cached_tokens']=o.num_cached_tokens
         return rows
