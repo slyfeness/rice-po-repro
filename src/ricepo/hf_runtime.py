@@ -674,8 +674,15 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         atomic_json(directory/"old-policy-update-items.json",items)
         if sampling_backend=='vllm_ieee_two_stage_v1':
             from .probability_check import compare_log_probs
+            from .branch_audit import select_branch_checks
+            checked_branches=select_branch_checks(sampled_branches,update_index=global_start+int(directory.name.split('-')[-1]),
+                policy=deployment.get('branch_probability_audit','all'))
+            atomic_json(directory/'branch-probability-plan.json',dict(
+                policy=deployment.get('branch_probability_audit','all'),total=len(sampled_branches),
+                selected=[t.trajectory_id for t in checked_branches],
+                failure_action='abort before optimizer; preserve evidence and require expanded audit'))
             with torch.no_grad(),autocast():
-                for t in sampled_branches:
+                for t in checked_branches:
                     scored=sampled_old_log_probs(actor,t.token_ids,t.generated_mask,device=actor_device,
                         logit_chunk_size=deployment['logit_chunk_size'],max_context_tokens=plan['max_context_tokens'],policy_call_kwargs={})
                     check=compare_log_probs(trajectory_behavior_log_probs(t),scored[0].cpu().tolist(),t.generated_mask)

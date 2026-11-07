@@ -75,6 +75,39 @@ def hybrid_rank(dense, sparse, **kwargs) -> tuple[RankedDocument, ...]:
     return _fusion(dense, sparse, **kwargs)["ranking"]
 
 
+def array_hybrid_rank(dense, sparse, *, ordered_ids, excluded_ids,
+                      exclude_before_normalization, top_k):
+    """Float64 minmax fusion, preserving Python-float arithmetic and lexical ties.
+
+    Explicit optional path: callers retain the reference ``_fusion`` for
+    independent regression. No float32 matrix multiplication is changed.
+    """
+    import numpy as np
+    if (type(top_k) is not int or top_k <= 0 or type(exclude_before_normalization) is not bool
+            or set(dense) != set(ordered_ids) or set(sparse) != set(ordered_ids)
+            or tuple(sorted(set(ordered_ids))) != tuple(ordered_ids)):
+        raise ValueError("array fusion requires fixed sorted complete scoring domain")
+    left = np.asarray([dense[key] for key in ordered_ids], dtype=np.float64)
+    right = np.asarray([sparse[key] for key in ordered_ids], dtype=np.float64)
+    if not np.isfinite(left).all() or not np.isfinite(right).all():
+        raise ValueError("nonfinite retrieval score")
+    eligible = np.asarray([key not in excluded_ids for key in ordered_ids], dtype=bool)
+    domain = eligible if exclude_before_normalization else np.ones(len(ordered_ids), dtype=bool)
+    if not eligible.any():
+        return ()
+    def normalize(values):
+        lo, hi = values[domain].min(), values[domain].max()
+        return np.zeros_like(values) if hi == lo else (values - lo) / (hi - lo)
+    ln, rn = normalize(left), normalize(right)
+    fused = .5 * ln + .5 * rn
+    candidates = np.flatnonzero(eligible)
+    # Stable sort preserves the already lexical document order at ties.
+    ranked = candidates[np.argsort(-fused[candidates], kind="stable")][:top_k]
+    return tuple(RankedDocument(ordered_ids[i], float(fused[i]), dense_raw=float(left[i]),
+                 sparse_raw=float(right[i]), dense_normalized=float(ln[i]),
+                 sparse_normalized=float(rn[i])) for i in ranked)
+
+
 class FixedHybridRetriever:
     """Scorers and observation rendering are supplied, versioned dependencies."""
 
