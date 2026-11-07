@@ -27,7 +27,7 @@ def branch_check_plan(trajectories, *, update_index, policy="all"):
                 selected=[t.trajectory_id for t in selected],
                 strata=[dict(length=k[0], stage=k[1], failure_category=k[2], **value)
                         for k, value in sorted(strata.items())],
-                failure_action="abort before optimizer; expand to all branches before any update retry")
+                failure_action="numerical mismatch expands to all saved branches immediately; this optimizer update stays blocked")
 
 
 def select_branch_checks(trajectories, *, update_index, policy="all"):
@@ -55,3 +55,47 @@ def select_branch_checks(trajectories, *, update_index, policy="all"):
             f"branch-audit-v1:{update_index}:{t.trajectory_id}".encode()).hexdigest())
         selected.extend(ranked[:max(1, math.ceil(.05 * len(ranked)))])
     return tuple(selected)
+
+
+def execute_branch_checks(trajectories, selected, *, score, save_check, save_expansion):
+    """Score selected native traces; numerical failure expands and blocks PPO.
+
+    The caller keeps one frozen model for both phases. Already saved checks are
+    reused. Infrastructure exceptions stop immediately; an exception during
+    expansion also publishes an incomplete expansion record before propagating.
+    """
+    rows, chosen = tuple(trajectories), tuple(selected)
+    by_id = {t.trajectory_id:t for t in rows}
+    chosen_ids = [t.trajectory_id for t in chosen]
+    if (len(by_id)!=len(rows) or len(set(chosen_ids))!=len(chosen_ids)
+            or not set(chosen_ids)<=by_id.keys()):
+        raise ValueError('branch audit identities must be unique and selected from the full group')
+    checks={}
+    for t in chosen:
+        check=score(t)
+        save_check(t,check,False)
+        checks[t.trajectory_id]=check
+        if check['within_bf16_tolerance']:
+            continue
+        reused=list(checks)
+        base=dict(trigger_trajectory=t.trajectory_id,total=len(rows),
+                  reused_trajectory_ids=reused,optimizer_update_permitted=False)
+        save_expansion('started',dict(base,checked=len(checks),coverage_complete=False))
+        try:
+            for remaining in rows:
+                if remaining.trajectory_id in checks:
+                    continue
+                expanded=score(remaining)
+                save_check(remaining,expanded,True)
+                checks[remaining.trajectory_id]=expanded
+        except BaseException as exc:
+            save_expansion('failed',dict(base,checked=len(checks),coverage_complete=False,
+                error_type=type(exc).__name__,error=str(exc),
+                failed_trajectory=remaining.trajectory_id,
+                completed_trajectory_ids=list(checks)))
+            raise
+        save_expansion('complete',dict(base,checked=len(checks),coverage_complete=True,
+            reused_checks=len(reused),new_expanded_checks=len(checks)-len(reused),
+            failed_trajectories=[identity for identity,c in checks.items() if not c['within_bf16_tolerance']]))
+        raise ValueError('branch probability mismatch; expanded full audit completed; optimizer remains blocked')
+    return checks
