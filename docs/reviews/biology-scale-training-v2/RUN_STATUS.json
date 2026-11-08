@@ -1,7 +1,12 @@
 {
-  "status": "PREFLIGHT_AND_RETRIEVAL_RECHECK_COMPLETE_SMOKE_PENDING",
+  "status": "SMOKE_UPDATES_OBSERVED_CHECKPOINT_VALIDATION_PENDING",
   "new_lineage_started": false,
-  "four_query_smoke": "ATTEMPTED_FAILED_BEFORE_FIRST_ROLLOUT",
+  "four_query_smoke": "BOTH_METHODS_EXECUTED_STEP_CHECKPOINT_NOT_YET_VALIDATED",
+  "latest_observed_smoke": {
+    "ricepo": {"job_id": "177481", "computed_updates": 1, "complete_checkpoints": 0, "rank_weights_equal": true},
+    "grpo": {"job_id": "177482", "computed_updates": 1, "complete_checkpoints": 0, "rank_weights_equal": true, "state": "FAILED", "reason": "RNG bytes unsupported in checkpoint digest"},
+    "grpo_retry": {"job_id": "177505", "state_at_snapshot": "RUNNING", "source_commit": "23da708a63c5e4ff5b6c35bf2971d66c207822af"}
+  },
   "smoke_attempts": "SMOKE_ATTEMPTS.csv",
   "formal_128_query_updates": {
     "ricepo": 0,
@@ -126,5 +131,5 @@
   ],
   "queue_visibility": "squeue returned permission denied; terminal states established by sacct.",
   "automatic_restart": false,
-  "implementation_status": "The phase-offload preflight and saved 48-request retrieval recheck completed. Latest smoke pair passed initial HF-DP setup but stopped before D0 retrieval because Diver was CPU-resident. No smoke update or formal update has completed. Corrected residency sequencing awaits online validation."
+  "implementation_status": "Phase residency, online original sampling, RICE branches/credit and both two-rank optimizer steps have executed. Complete checkpoint validation is outstanding; no v2 128-query training has started. RNG-byte digest fix passed CPU save/reload test in Slurm 177498."
 }
