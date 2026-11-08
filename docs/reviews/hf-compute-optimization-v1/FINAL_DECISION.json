@@ -1,0 +1,417 @@
+{
+  "decision": "REJECT",
+  "winner": "S2",
+  "decision_reason": "HF TF32 fails preregistered numerical gates; selected-position IEEE correct but below preregistered10% HF speed improvement",
+  "speed_gate_winner": null,
+  "production_default_changed": false,
+  "online_training_qualification": false,
+  "no_generation": true,
+  "no_retrieval": true,
+  "no_reward_recomputation": true,
+  "no_32_or_128_training": true,
+  "base_commit": "42a13e3c62b2785f407c3b58b438aa1b0ccd6694",
+  "frozen_plan": {
+    "activation_checkpointing": "eval_layers_v1",
+    "base_commit": "42a13e3c62b2785f407c3b58b438aa1b0ccd6694",
+    "frozen_utc": "2026-11-07T17:36:33Z",
+    "kind": "hf_compute_optimization_v1",
+    "logit_chunk_size": 64,
+    "maximum_optimizer_steps": 1,
+    "no_generation": true,
+    "no_retrieval": true,
+    "no_reward_computation": true,
+    "old32": {
+      "HF_seconds": 2207.683277130127,
+      "total_seconds": 7614.265006929636
+    },
+    "parameter_significance": "baseline tensor grad norm >=1e-6 * baseline global grad norm; all parameters still reported",
+    "plan_sha256": "4f93583902afd09b43f6e5fc5683a6d7ee44fc2cef349883d44d8d85945ebfb8",
+    "precision_gates": {
+      "KL_abs_max": 0.001,
+      "KL_mean_abs_max": 0.0001,
+      "gradient_cosine_min": 0.99,
+      "gradient_relative_L2_max": 0.1,
+      "logprob_abs_max": 0.5,
+      "logprob_mean_max": 0.02,
+      "logprob_p99_max": 0.1,
+      "loss_scaled_error_max": 0.01,
+      "significant_parameter_cosine_min": 0.95,
+      "significant_parameter_relative_L2_max": 0.2
+    },
+    "projection_gates": {
+      "KL_abs_max": 1e-06,
+      "gradient_cosine_min": 0.99999,
+      "gradient_relative_L2_max": 0.001,
+      "logprob_abs_max": 0.0001,
+      "loss_scaled_error_max": 1e-05,
+      "significant_parameter_cosine_min": 0.999,
+      "significant_parameter_relative_L2_max": 0.01
+    },
+    "public_execution_enabled": false,
+    "repeats": 2,
+    "requested_base": "92addec697190eff6e00ded7bfab8d01f5a6ae8c",
+    "root_seed": 20261107,
+    "selected": [
+      {
+        "action_tokens": 352,
+        "identity": "7155aeab849597b26b6493a548c35c9e21baa7becb41d9a0d5b25878adce4be5",
+        "nonzero_advantages": 352,
+        "termination": "depth_limit",
+        "tokens": 4757,
+        "valid_steps": 5
+      },
+      {
+        "action_tokens": 3051,
+        "identity": "ed6172f91c09703a23a987a7b7b435b7d86c0ad22ffb2378d81ca56950b2f5ff",
+        "nonzero_advantages": 3051,
+        "termination": "depth_limit",
+        "tokens": 10926,
+        "valid_steps": 5
+      },
+      {
+        "action_tokens": 259,
+        "identity": "dceb363f18fe16fe2c7c2eb86fecf23a676f1a919ca9d5f61b8b033694c81a3e",
+        "nonzero_advantages": 0,
+        "termination": "invalid_action_terminal_zero_v1",
+        "tokens": 1444,
+        "valid_steps": 0
+      },
+      {
+        "action_tokens": 2548,
+        "identity": "bb8ed65c6acc6aab74b1847fb66a29cfd538ac6c61da0fcd869e4b99f2e38d88",
+        "nonzero_advantages": 2548,
+        "termination": "invalid_action_terminal_zero_v1",
+        "tokens": 3605,
+        "valid_steps": 0
+      },
+      {
+        "action_tokens": 605,
+        "identity": "66ecf7ad4b9ad7b7f82c14bedddfeb287787442ec16526221fe56233a5ea000f",
+        "nonzero_advantages": 0,
+        "termination": "invalid_action_terminal_zero_v1",
+        "tokens": 2235,
+        "valid_steps": 1
+      },
+      {
+        "action_tokens": 8407,
+        "identity": "1889fde7763a31b71c0680a9f24bff46fb446dd9b4ad5a44794c884db79f3182",
+        "nonzero_advantages": 7940,
+        "termination": "invalid_action_terminal_zero_v1",
+        "tokens": 12193,
+        "valid_steps": 4
+      }
+    ],
+    "selection": "saved valid/failure-first/failure-later: shortest and longest native history per stratum; before compute results",
+    "source_fingerprints": {
+      "advantages.json": "bd94c95ddf695fce37587fa45b10375de1c84d9db1d9df2d617000ebb60a2d50",
+      "old-policy-update-items.json": "bb25dcf29d2bda19b16846d73e02f691a3d8d3620a883336faf1ebcca39c454e",
+      "trajectories.json": "a208a0c3b39a591c47a250029517e23b852d8317c53569dbde04e6c42e2b7fb7"
+    },
+    "source_weights": {
+      "actor": "saved32 step1",
+      "old_q": "real saved initial behavior",
+      "reference": "fixed initial",
+      "scope": "offline fixed-data objective replay; not on-policy regeneration"
+    },
+    "speed_gate": {
+      "each_repeat_speedup_min": 1.05,
+      "median_HF_total_speedup_min": 1.1
+    },
+    "warmups": 1
+  },
+  "versions": {
+    "S0": {
+      "precision": "highest",
+      "projection": "full_sequence",
+      "hardware": "NVIDIA A800-SXM4-80GB",
+      "initialization_seconds": 137.2700493708253,
+      "actual_precision_flags": {
+        "precision": "highest",
+        "allow_tf32": false,
+        "cudnn_allow_tf32": false
+      },
+      "torch_version": "2.10.0+cu128",
+      "GEMM_kernels": [
+        "ampere_sgemm_128x128_nn",
+        "ampere_sgemm_128x128_nt",
+        "ampere_sgemm_128x128_tn",
+        "ampere_sgemm_128x32_nn",
+        "ampere_sgemm_128x32_nt",
+        "ampere_sgemm_128x32_sliced1x4_nn",
+        "ampere_sgemm_128x32_sliced1x4_nt",
+        "ampere_sgemm_128x32_sliced1x4_tn",
+        "ampere_sgemm_128x32_tn",
+        "ampere_sgemm_128x64_nn",
+        "ampere_sgemm_128x64_tn",
+        "ampere_sgemm_32x128_nt",
+        "ampere_sgemm_32x128_tn",
+        "ampere_sgemm_64x32_sliced1x4_tn",
+        "void gemmk1_kernel<int, float, 256, 5, false, false, false, false, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float>, float, 0>(cublasGemmk1Params<float, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float>, float, biasType<cublasGemvTensorStridedBatched<float>::value_type, float>::type>)"
+      ],
+      "kernel_tensor_float_evidence": false,
+      "NVML": {
+        "status": "MEASURED",
+        "peak_used_bytes": 72043528192
+      },
+      "checkpoint_statistics": {
+        "mode": "eval_layers_v1",
+        "checkpoint_forwards": 588,
+        "layer_executions": 1176
+      },
+      "speedup_median": 1.0,
+      "speedup_repeats": [
+        1.0,
+        1.0
+      ],
+      "speed_passed": false
+    },
+    "S1": {
+      "precision": "high",
+      "projection": "full_sequence",
+      "hardware": "NVIDIA A800-SXM4-80GB",
+      "initialization_seconds": 9.22442340105772,
+      "actual_precision_flags": {
+        "precision": "high",
+        "allow_tf32": true,
+        "cudnn_allow_tf32": false
+      },
+      "torch_version": "2.10.0+cu128",
+      "GEMM_kernels": [
+        "void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_128x128_16x4_nt_align4>(cutlass_80_tensorop_s1688gemm_128x128_16x4_nt_align4::Params)",
+        "void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_128x256_32x3_nn_align4>(cutlass_80_tensorop_s1688gemm_128x256_32x3_nn_align4::Params)",
+        "void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_128x64_16x6_tn_align4>(cutlass_80_tensorop_s1688gemm_128x64_16x6_tn_align4::Params)",
+        "void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_128x64_32x6_nn_align4>(cutlass_80_tensorop_s1688gemm_128x64_32x6_nn_align4::Params)",
+        "void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_128x64_32x6_tn_align4>(cutlass_80_tensorop_s1688gemm_128x64_32x6_tn_align4::Params)",
+        "void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_256x128_32x3_nn_align4>(cutlass_80_tensorop_s1688gemm_256x128_32x3_nn_align4::Params)",
+        "void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_256x128_32x3_nt_align4>(cutlass_80_tensorop_s1688gemm_256x128_32x3_nt_align4::Params)",
+        "void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_256x128_32x3_tn_align4>(cutlass_80_tensorop_s1688gemm_256x128_32x3_tn_align4::Params)",
+        "void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_256x64_32x3_tn_align4>(cutlass_80_tensorop_s1688gemm_256x64_32x3_tn_align4::Params)",
+        "void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_64x128_32x3_nt_align4>(cutlass_80_tensorop_s1688gemm_64x128_32x3_nt_align4::Params)",
+        "void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_64x128_32x6_tn_align4>(cutlass_80_tensorop_s1688gemm_64x128_32x6_tn_align4::Params)",
+        "void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_64x256_32x4_nn_align4>(cutlass_80_tensorop_s1688gemm_64x256_32x4_nn_align4::Params)",
+        "void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_64x64_16x6_nn_align4>(cutlass_80_tensorop_s1688gemm_64x64_16x6_nn_align4::Params)",
+        "void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_64x64_16x6_nt_align4>(cutlass_80_tensorop_s1688gemm_64x64_16x6_nt_align4::Params)",
+        "void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_64x64_32x6_tn_align4>(cutlass_80_tensorop_s1688gemm_64x64_32x6_tn_align4::Params)",
+        "void gemmk1_kernel<int, float, 256, 5, false, false, false, false, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float>, float, 0>(cublasGemmk1Params<float, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float>, float, biasType<cublasGemvTensorStridedBatched<float>::value_type, float>::type>)"
+      ],
+      "kernel_tensor_float_evidence": true,
+      "NVML": {
+        "status": "MEASURED",
+        "peak_used_bytes": 55195009024
+      },
+      "checkpoint_statistics": null,
+      "speedup_median": null,
+      "speedup_repeats": null,
+      "speed_passed": null
+    },
+    "S2": {
+      "precision": "highest",
+      "projection": "action_positions_v1",
+      "hardware": "NVIDIA A800-SXM4-80GB",
+      "initialization_seconds": 10.027439035475254,
+      "actual_precision_flags": {
+        "precision": "highest",
+        "allow_tf32": false,
+        "cudnn_allow_tf32": false
+      },
+      "torch_version": "2.10.0+cu128",
+      "GEMM_kernels": null,
+      "kernel_tensor_float_evidence": null,
+      "NVML": {
+        "status": "MEASURED",
+        "peak_used_bytes": 65913552896
+      },
+      "checkpoint_statistics": {
+        "mode": "eval_layers_v1",
+        "checkpoint_forwards": 560,
+        "layer_executions": 1120
+      },
+      "speedup_median": 1.0757408979890846,
+      "speedup_repeats": [
+        1.0757250803743406,
+        1.075756718504608
+      ],
+      "speed_passed": false
+    },
+    "S3": {
+      "precision": null,
+      "projection": null,
+      "hardware": null,
+      "initialization_seconds": null,
+      "actual_precision_flags": null,
+      "torch_version": null,
+      "GEMM_kernels": null,
+      "kernel_tensor_float_evidence": null,
+      "NVML": null,
+      "checkpoint_statistics": null,
+      "speedup_median": null,
+      "speedup_repeats": null,
+      "speed_passed": null
+    }
+  },
+  "winner_step": {
+    "scheme": "S2",
+    "precision": "highest",
+    "projection": "action_positions_v1",
+    "hardware": "NVIDIA A800-SXM4-80GB",
+    "initialization_seconds": 5.183961145579815,
+    "torch_version": "2.10.0+cu128",
+    "native_tokens": 35160,
+    "action_tokens": 15222,
+    "source_plan_sha256": "4f93583902afd09b43f6e5fc5683a6d7ee44fc2cef349883d44d8d85945ebfb8",
+    "checkpointing": "eval_layers_v1",
+    "model_mode": "eval",
+    "optimizer_steps": 1,
+    "actual_precision_flags": {
+      "precision": "highest",
+      "allow_tf32": false,
+      "cudnn_allow_tf32": false
+    },
+    "update": {
+      "optimizer_steps": 1,
+      "steps": [
+        {
+          "epoch": 0,
+          "minibatch_start": 0,
+          "generated_tokens": 15222,
+          "sequences": 6,
+          "loss_denominator": 6,
+          "normalized_loss": 1972.2887168732225,
+          "policy_loss": 1972.2883047829657,
+          "reference_kl": 0.41209025690909895,
+          "reference_kl_token_mean": 0.0001624321075715802,
+          "grad_norm_before_clip": 3101.33203125,
+          "ratio_min": 0.5942891240119934,
+          "ratio_max": 1.3693273067474365,
+          "ratio_mean": 0.9955724785267139,
+          "outside_clip_count": 14,
+          "effective_clip_count": 13,
+          "outside_clip_fraction": 0.0009197214557876757,
+          "effective_clip_fraction": 0.000854027066088556,
+          "positive_advantages": 352,
+          "negative_advantages": 13539,
+          "zero_advantages": 1331
+        }
+      ],
+      "global_sequences": 6,
+      "global_generated_tokens": 15222,
+      "normalized_loss": 1972.2887168732225,
+      "policy_loss": 1972.2883047829657,
+      "reference_kl": 0.41209025690909895,
+      "grad_norm_before_clip": 3101.33203125,
+      "ratio_min": 0.5942891240119934,
+      "ratio_max": 1.3693273067474365,
+      "ratio_mean": 0.9955724785267139,
+      "positive_advantages": 352,
+      "negative_advantages": 13539,
+      "zero_advantages": 1331,
+      "positive_advantages_fraction": 0.023124425174090132,
+      "negative_advantages_fraction": 0.8894363421363816,
+      "zero_advantages_fraction": 0.08743923268952832,
+      "outside_clip_fraction": 0.0009197214557876757,
+      "effective_clip_fraction": 0.000854027066088556,
+      "parameter_probe_coordinates": "first, per-axis midpoint, last of every trainable tensor",
+      "parameter_probe_changed": true,
+      "parameter_probe_max_abs_delta": 1.9073486328125e-06,
+      "zero_gradient_all_steps": false
+    },
+    "optimizer_step_seconds": 52.418250910937786,
+    "changed_parameter_elements": 1549355798,
+    "max_parameter_delta": 1.9073486328125e-06,
+    "optimizer_state_dtypes": [
+      "torch.float32"
+    ],
+    "actor_reload_all_parameters_equal": true,
+    "status": "STEP_COMPLETE"
+  },
+  "original_checkpoint_receipt_sha256": "b12b46e3a600601702bff5ef8a000206b82e9d4914287a580817b137a23ce2a6",
+  "baseline_exact_conditional_KL": {
+    "mean": 0.0001624321075715802,
+    "min": -3.8993488260530285e-07,
+    "max": 0.04912059009075165
+  },
+  "execution_source": {
+    "src/ricepo/modeling.py": {
+      "executed_sha256": "e13990fab86f7b311358683a634988c1c867282b8d07de5e071cb33d9e5366b5",
+      "AST_without_module_docstring_sha256": "f63e07850de7ae4fde881563bd22b5a722e961cb592d1ea7d7290ee73e9b8c38"
+    },
+    "src/ricepo/hf_compute.py": {
+      "executed_sha256": "0f17d19347de7777ac8748b268533dedb310dca36704e853fdec5bcd8d54a570",
+      "AST_without_module_docstring_sha256": "e64c6f19bd6820ad1d09e6fab5325e70a82f170bd4418e10ea14c89b787bc439"
+    },
+    "scripts/hf_compute_benchmark.py": {
+      "executed_sha256": "3f0728ab280789fada63ffa5efc81d19f828a857fd0e0bfdddc6aa99886f280e",
+      "AST_without_module_docstring_sha256": "89ea3b20709fcb406c36a85bb25872f06ff53924b278e979779bc7900978b762"
+    },
+    "scripts/hf_compute_driver.py": {
+      "executed_sha256": "6523fe0bfd09bb4d472dbb2232b39ba1bb58d3760d853d7901e9e1ee2d189ed9",
+      "AST_without_module_docstring_sha256": "cfea00b1e0e4c5bed55c3806df322af213adecf7e2d98087810b859372b28cd6"
+    }
+  },
+  "old32_HF_fraction": 0.2899404309044859,
+  "measured_HF_pre_step_speedup": 1.0757408979890846,
+  "Amdahl_estimate": {
+    "label": "ESTIMATED: assumes measured pre-step speedup applies to all old HF cost; other work unchanged, optimistic if optimizer/IO fixed",
+    "whole_RICE_speedup": 1.0208395843069795,
+    "time_saved_fraction": 0.020414161663927732,
+    "old32_predicted_seconds": 7458.826170126186
+  },
+  "timing_semantics": {
+    "HF_total": "MEASURED old-policy-only forward + Actor/Reference/full-vocab KL/PPO backward accumulation, before optimizer step",
+    "stage_cuda": "CUDA events in disjoint forward/normalization/KL/objective/backward scopes; wall columns contain stages and must not be added again",
+    "step": "winner only fresh FP32 AdamW offline replay, includes backward, clip and one step, separate process, not a new online RICE update",
+    "NVML": "whole device sampled every0.2s after model initialization; initialization memory peak NOT_MEASURED",
+    "ratio": "PRECISION_COMPARISON ratio is candidate/S0, not current/saved behavior; actual PPO ratio in winner_step.update"
+  },
+  "tests": {
+    "RED": {
+      "job": 176666,
+      "expected_missing_feature_errors": 3
+    },
+    "GREEN": {
+      "job": 176669,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    "GPU_job": 176670,
+    "offline_step_job": 176675
+  },
+  "source_scope": "saved32 trained Actor at step1; original fixed initial Reference; real original behavior q and fixed advantages, no re-tokenization",
+  "limitations": [
+    "six frozen trajectories, one warmup and two repeats per accepted candidate only",
+    "S2 supports bare Qwen2, rejects distributed/PEFT wrappers",
+    "full-vocabulary151936 preserved at every selected action; entropy provider unchanged",
+    "Actor-only diagnostic save/reload is not optimizer/RNG training resume checkpoint",
+    "no end-to-end RICE speed or long-run numeric qualification measured"
+  ],
+  "Slurm_states": [
+    "176665        COMPLETED   00:00:10      0:0 ",
+    "176665.batch  COMPLETED   00:00:10      0:0 ",
+    "176666           FAILED   00:00:53      1:0 ",
+    "176666.batch     FAILED   00:00:53      1:0 ",
+    "176669        COMPLETED   00:00:42      0:0 ",
+    "176669.batch  COMPLETED   00:00:42      0:0 ",
+    "176670        COMPLETED   00:11:35      0:0 ",
+    "176670.batch  COMPLETED   00:11:35      0:0 ",
+    "176675        COMPLETED   00:01:47      0:0 ",
+    "176675.batch  COMPLETED   00:01:47      0:0"
+  ],
+  "candidate_decisions": {
+    "S1": "REJECT_NUMERICAL_GATES",
+    "S2": "CORRECT_BUT_REJECT_SPEED_GATE; optional memory-saving path only",
+    "S3": "NOT_RUN: S1 prerequisite failed"
+  },
+  "offline_step_selection": "S2 was the fastest numerically correct candidate. Its single offline step was explicitly requested even though no candidate met the10% speed adoption rule; speed gate was not relaxed.",
+  "published_source_comparison": "Benchmark, driver and HF precision scope bytes match execution. modeling.py differs only in module documentation; same-interpreter AST comparison confirmed identical functional code. Runtime deployment flag wiring is statically checked, not a new online Trainer validation.",
+  "AST_fingerprint_note": "Execution AST hashes use cluster Python3.11; AST dumps are interpreter-version dependent.",
+  "allocator_protocol": "Kernel warmup once, then two repeats. CUDA allocator cache cleared outside each timed batch and peak counters reset; no claim of warm-allocator steady-state production timing.",
+  "final_native_source_audit": {
+    "job": 176677,
+    "status": "PASS",
+    "advantages_unchanged": true,
+    "old_policy_items_unchanged": true,
+    "trajectories_unchanged": true,
+    "method": "post-run SHA256 equals pre-GPU frozen fingerprints; CPU Slurm, no model execution"
+  }
+}

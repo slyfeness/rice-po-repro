@@ -1,0 +1,248 @@
+{
+  "candidate_priority": [
+    "T",
+    "A_only_if_T_cannot_enter_update"
+  ],
+  "conditions": {
+    "anchors_per_query": 4,
+    "clip": 0.2,
+    "context": 32768,
+    "depth": 5,
+    "failure": "invalid_action_terminal_zero_v1",
+    "kl": 0.001,
+    "learning_rate": 1e-06,
+    "local_advantage_normalization": "center_only",
+    "new_branches_per_anchor": 5,
+    "per_action_model_budget": 4096,
+    "protocol": "two_stage_env_summary_v1",
+    "query_composition": {
+      "mode": "original_and_summary",
+      "separator": "\n"
+    },
+    "temperature": 1,
+    "top_k": 0,
+    "top_p": 1,
+    "trajectories_per_query": 4
+  },
+  "execution": {
+    "enabled": false
+  },
+  "frozen_utc": "2026-11-07T05:42:53Z",
+  "gradient_screen": {
+    "A_cosine_min": 0.99,
+    "A_relative_l2_max": 0.1,
+    "T_cosine_min": 0.999999,
+    "T_relative_l2_max": 1e-06,
+    "reason": "additional bounded engineering screen fixed before new outputs; not a theoretical guarantee"
+  },
+  "history_result_sha256": "cae72ca3c42df6cf90067f2d075aa1e26d84570b5907e55ac3b969c959dc673e",
+  "initial_model_payload_sha256": "972c28b609f0a8f8b16d47c488d9f46da6292f50c1ad2936186b1c74716eedaf",
+  "kind": "mixed_backend_restricted_pilot_v1",
+  "maximum_updates": 2,
+  "no_full_backend_equivalence_claim": true,
+  "private_plan_sha256": "956146f3493f5173bb16d4e193d98b324462e92bc41d60ebc39ae8e55bdaae30",
+  "query_batches_sha256": [
+    "957f57ecf59db36cef00bd5ae314c38d852a20eedd957355286a431ee19828ad",
+    "4860f879104708954e24c1677f8e7bc7eed0058adb279d454fb5086c6d050361"
+  ],
+  "request_selection": "hash rank from saved TRAINING scale32 raw events; excluded calibration prefix hashes; longest eligible + stage/source coverage; no outcome filter",
+  "requests": [
+    {
+      "prefix_sha256": "695be1e689c2995f5472a1523425c15606c41e7dd479fc2c099111efbb40be69",
+      "prefix_tokens": 11689,
+      "remaining_token_budget": 3604,
+      "request_id": "612e1b87439d328b08f0b9933fd3e96b3d44b81e47d3fafe88f856e47e25d350",
+      "root_seed": 59852277827929937,
+      "seed": 3865281531965531528,
+      "source_event_sha256": "b38f87e354d6de3a942fff99b2c0dfc139fea77215ba1801f48e7e257411fef0",
+      "source_kind": "branch",
+      "stage": "summary"
+    },
+    {
+      "prefix_sha256": "c4e522958dd7b5e44381ee917782a4e22f858919056540953e934aa976c27a76",
+      "prefix_tokens": 3159,
+      "remaining_token_budget": 4096,
+      "request_id": "0001babf6e8afa99ba5fde635399e96547bc10ee73c5e1c55b8059af53b7cfe6",
+      "root_seed": 2757711276145128863,
+      "seed": 117034608693762472,
+      "source_event_sha256": "d2c539fef066636237e26c78f86059d58a404dfdb870fabfc2562f82b7f75d3b",
+      "source_kind": "original",
+      "stage": "think"
+    },
+    {
+      "prefix_sha256": "f441fb6213eea22ecf4cc6f91e69b267c3749b6b03956be3ab55fa8b141d3e6f",
+      "prefix_tokens": 6109,
+      "remaining_token_budget": 4096,
+      "request_id": "0028183005c0a1bff6bf9ceabb405319102f0246e0d280f6a204396d027b6f3f",
+      "root_seed": 1780572025589552674,
+      "seed": 5885595704989543273,
+      "source_event_sha256": "db38e668c3e2fb6a5925da7657a84f54ad7259b54e381832c0d29d545560ac4d",
+      "source_kind": "branch",
+      "stage": "think"
+    },
+    {
+      "prefix_sha256": "588731adcaa6143e8eea41b196f13fe914d9dfaaea5837b4669b35620869d0ee",
+      "prefix_tokens": 2122,
+      "remaining_token_budget": 4096,
+      "request_id": "00595821185b481f4745732705e99d85205e3e8911372d58b88efc86b2ebdfcb",
+      "root_seed": 6201609790388323440,
+      "seed": 709410219342301614,
+      "source_event_sha256": "b474b36eb39f0be5e9c2f882e4e103a63c4877a99c7a40571dd2ca0a436e9d1a",
+      "source_kind": "branch",
+      "stage": "think"
+    },
+    {
+      "prefix_sha256": "095a31b47bc6865fdf9eb6593e6635989202a5a00dd3ed223a09a1b7d92a6d0c",
+      "prefix_tokens": 3142,
+      "remaining_token_budget": 4096,
+      "request_id": "0140b8512c62010ec34f994f0b90466dc9b013e0da287c92beffd79a64b93ace",
+      "root_seed": 3411887926087268689,
+      "seed": 4054099761939972730,
+      "source_event_sha256": "184b448ff63ea904bccaba120d7ed5e823000386c9671a71a6d063d6c90f431d",
+      "source_kind": "branch",
+      "stage": "think"
+    },
+    {
+      "prefix_sha256": "6ba1a6c4ea8cd481d017f24e3fb0632fed248162feeb49cecd5edb2f783b5104",
+      "prefix_tokens": 3969,
+      "remaining_token_budget": 3779,
+      "request_id": "00611bb893bf881b6ad05b2bf4c703a7a95f0f542aa1a5ac577c911acddc5fb7",
+      "root_seed": 5221453904498643849,
+      "seed": 2050970270224695329,
+      "source_event_sha256": "461120b7f4fa31f60886482d9f12efa30a141fb1c24584366751990538bc97ac",
+      "source_kind": "branch",
+      "stage": "summary"
+    },
+    {
+      "prefix_sha256": "9fc92be482bac75847c179a2d554ac6d03438047c75bc614cc6e8edc57221dcc",
+      "prefix_tokens": 2740,
+      "remaining_token_budget": 3800,
+      "request_id": "00693dc0031fefc85072e6288f4b643cb37f9365538c54823d1189062865cb65",
+      "root_seed": 7511088404383143660,
+      "seed": 7651396253091523451,
+      "source_event_sha256": "c0970bbb9e2e5b18166b0123647a52dad5ade61a0ca324923722b7317adfa5fa",
+      "source_kind": "branch",
+      "stage": "summary"
+    },
+    {
+      "prefix_sha256": "26ae8de9555690b0b3f466e59d8978b70020277e913a6dd5bfb0f1949192cf25",
+      "prefix_tokens": 5613,
+      "remaining_token_budget": 3843,
+      "request_id": "006a7e319092651c3cff361c67e149ac97a7f76be681e7dd54e59f3ca53a9887",
+      "root_seed": 8163829544118715544,
+      "seed": 8083651214382215710,
+      "source_event_sha256": "eae1764a9d7919b1a050aae5c687cc700daa7d7f34cc3df6e324414c28c85daf",
+      "source_kind": "branch",
+      "stage": "summary"
+    },
+    {
+      "prefix_sha256": "a5bb649fbcf0bcd1b7314f5da2f6591f5aed3aced0742b46f548d02edcf228a5",
+      "prefix_tokens": 4790,
+      "remaining_token_budget": 3931,
+      "request_id": "0083097398a307f4e3414787f2e1064e1ded194846b65a0ffb514b36e9fb3a9c",
+      "root_seed": 5089093725813039620,
+      "seed": 7067719996095923955,
+      "source_event_sha256": "d498bf8e174bfe4642fa3424b283723c98fc5a48ece8ba11553766e61900bcf2",
+      "source_kind": "branch",
+      "stage": "summary"
+    },
+    {
+      "prefix_sha256": "028bdcb6971f97168fe38045e04f499943534ed6e59effe923cbd815f4ffc619",
+      "prefix_tokens": 1404,
+      "remaining_token_budget": 3883,
+      "request_id": "00dbe544d6d8e99feb84c9f9c35ce4dce0c157522a6f5921eb83fe57813bf646",
+      "root_seed": 6629183040646736179,
+      "seed": 3518443116260316107,
+      "source_event_sha256": "a5f092696daef2f0dbc1a16bbfdbbb2a234e0b2cb46e108ec20c446ce768ae07",
+      "source_kind": "branch",
+      "stage": "summary"
+    },
+    {
+      "prefix_sha256": "cabadf223466d42341e4cc8932a43adcc5ce2f94c823be31bffd7ac09193df8c",
+      "prefix_tokens": 1518,
+      "remaining_token_budget": 3786,
+      "request_id": "0103ec34c71e08746419e27478dc350e4125212c7ccaacff68732407dc8e559c",
+      "root_seed": 7397518811114125144,
+      "seed": 4858018441427778548,
+      "source_event_sha256": "e42d98842c338f85af3ce3c911558df1802ce0463932a6af9f6f1085c9f0a896",
+      "source_kind": "branch",
+      "stage": "summary"
+    },
+    {
+      "prefix_sha256": "caa103f3caf0aab678d4043c968824ecd58b8d4393f28d8333fe079b90627323",
+      "prefix_tokens": 3661,
+      "remaining_token_budget": 4095,
+      "request_id": "013232e26cf0f13cc42efcb309264d13a726774930e2e5d42d5c22de19bbb93e",
+      "root_seed": 7127874269171904855,
+      "seed": 1604712220742396275,
+      "source_event_sha256": "45aa320e1c5abe8c04f7d3ad2f0a2873c51e13955e7b8a559e900906e6b99cac",
+      "source_kind": "branch",
+      "stage": "summary"
+    },
+    {
+      "prefix_sha256": "54ea2b521b65baa19dacf7a170a636f9fcc5bae1e802ce1453aa66d13f6c9717",
+      "prefix_tokens": 2288,
+      "remaining_token_budget": 4096,
+      "request_id": "0144f3bd968136f54ab4079045d1d840b3bf052712ed8f96c1d712114ec46150",
+      "root_seed": 4425156908314613039,
+      "seed": 6810135782228962140,
+      "source_event_sha256": "79fd983235e45a2d72a4dab9fa0af87dc455c6d1658a1b331cc09cbcb07c4afb",
+      "source_kind": "branch",
+      "stage": "think"
+    },
+    {
+      "prefix_sha256": "c3ab83184ffc20f60ba7e3d296ee19373e78a7e463e3675ed75964f8da83c74a",
+      "prefix_tokens": 2963,
+      "remaining_token_budget": 3751,
+      "request_id": "0178ca8da5d01bedac94b5627b87095abefc23bade389a192ab29dfa9d8d6999",
+      "root_seed": 4719663037297775506,
+      "seed": 9088092706104725592,
+      "source_event_sha256": "c7a3dc5c796fc129df5e8dd82b02d91d8f7a475330721b32898f61780094113f",
+      "source_kind": "branch",
+      "stage": "summary"
+    },
+    {
+      "prefix_sha256": "bd0ef2a7397ca68423982d7531e4f7367cdebaee5bec808f3c5298152869716c",
+      "prefix_tokens": 1922,
+      "remaining_token_budget": 3816,
+      "request_id": "01838697efb329c17dc18a05bb08765ccb44824e2c6b72680ac8018507c907c6",
+      "root_seed": 1641233404912623254,
+      "seed": 340095970090688544,
+      "source_event_sha256": "850e33ec1c4f182ecec992bbb7c0677fdaba4ce3cbd9df64a41df40b29e041a5",
+      "source_kind": "branch",
+      "stage": "summary"
+    },
+    {
+      "prefix_sha256": "b3f1925fc042932b04aead499731241b44a32789b11aed94b474bbf80ffa8b09",
+      "prefix_tokens": 5849,
+      "remaining_token_budget": 3777,
+      "request_id": "01881d183af0740f4f30cccc3ac4adfa2640140ce87864683a34a4fd5e182cd8",
+      "root_seed": 1714843449125366911,
+      "seed": 6246076357528615141,
+      "source_event_sha256": "07894e71ee508367a6e30f34f03b6324a8e96e6c519a91c19b0dd12d05512178",
+      "source_kind": "branch",
+      "stage": "summary"
+    }
+  ],
+  "revised_after_historical_results": true,
+  "screen": {
+    "extreme_tail_fraction_max": 0.0005,
+    "outside_clip_fraction_max": 0.01,
+    "ratio_mean_diagnostic_band": [
+      0.995,
+      1.005
+    ],
+    "second_update_outside_clip_fraction_max": 0.02
+  },
+  "second_update_only_if_first_has_no_reward_signal": true,
+  "stop_immediately": [
+    "identity",
+    "token_probability_mask_alignment",
+    "nonfinite",
+    "stale_cache",
+    "sampling_support_mismatch"
+  ],
+  "train_manifest_sha256": "818fce2b0d9e41b57425b329008173bdbc60320c43972b515a1c377c940f65b2",
+  "training_seed": 20261107,
+  "training_selection": "first4 SHA256-ranked train IDs excluding historical optimization4 query batch; two fixed batches"
+}

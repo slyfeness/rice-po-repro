@@ -1,0 +1,30 @@
+"""Read-only installed vLLM capability inventory, no engine/model initialization."""
+import os,json,inspect,importlib.metadata as md,ast
+from pathlib import Path
+r=Path(os.environ['RICE_PROJECT']);out=r/'reports'/('vllm-compatibility-'+os.environ['SLURM_JOB_ID']+'.json')
+if out.exists():raise FileExistsError(out)
+result=dict(scope='CPU installed-package inventory only; no engine, model, inference, GPU or installation',
+ job_id=os.environ['SLURM_JOB_ID'],packages={},candidate_not_validated=True)
+for n in ('vllm','torch','transformers','numpy'):
+ try:result['packages'][n]=md.version(n)
+ except md.PackageNotFoundError:result['packages'][n]=None
+try:
+ from vllm import LLM,SamplingParams
+ result['import_succeeded']=True
+ result['llm_constructor_parameters']=list(inspect.signature(LLM).parameters)
+ result['sampling_parameters']=list(inspect.signature(SamplingParams).parameters)
+ import vllm
+ package=Path(vllm.__file__).parent
+ backends={}
+ for name in ('flash_attn','flashinfer','triton_attn','flex_attention'):
+  p=package/'v1/attention/backends'/(name+'.py');tree=ast.parse(p.read_text());items=[]
+  for node in ast.walk(tree):
+   if isinstance(node,(ast.FunctionDef,ast.AsyncFunctionDef)) and node.name in ('get_supported_dtypes','get_supported_head_sizes'):
+    items.append(ast.get_source_segment(p.read_text(),node))
+  backends[name]=items
+ result['backend_declared_capabilities']=backends
+except Exception as exc:
+ result.update(import_succeeded=False,exception_type=type(exc).__name__)
+ # Private logs retain the actual exception; public inventory contains no local path.
+ print('IMPORT_FAILURE',repr(exc),flush=True)
+out.write_text(json.dumps(result,indent=2)+'\n');print('INVENTORY',out,flush=True)

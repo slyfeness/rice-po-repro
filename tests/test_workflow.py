@@ -55,7 +55,7 @@ def run(value, root, method="ricepo"):
     recipe = dict(method=method, queries_per_update=2, trajectories_per_query=2, rollout_depth=1,
                   anchors_per_query=2, total_branches_including_original=2, normalization_epsilon=0.1,
                   local_advantage_normalization="center_only", influence_threshold=0.05, residual_threshold=0.03,
-                  gate_mode="paper", anchor_selection="entropy")
+                  gate_mode="paper", anchor_selection="entropy", format_failure_policy="raise")
     return run_iteration(value, iteration=0, policy_version="old", output_root=root,
                          recipe=recipe, root_seed=17)
 

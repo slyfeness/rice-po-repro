@@ -1,6 +1,7 @@
 """Source fixtures for the shared per-query evaluation path."""
 
 import json
+import inspect
 from dataclasses import dataclass
 
 import pytest
@@ -86,6 +87,38 @@ def test_evaluation_step_seeds_are_paired_across_methods_and_distinct_between_sp
         seeds.append(json.loads((target / "results-by-query.json").read_text())[0]["generation_seeds"])
     assert seeds[0] == seeds[1]
     assert seeds[0] != seeds[2]
+
+
+def test_evaluation_draws_fixed_paired_samples_per_query(tmp_path):
+    """Multiple development samples are paired by query/sample index, never method."""
+    assert "samples_per_query" in inspect.signature(evaluate_queries).parameters
+    key = '["biology","q"]'
+
+    class RecordingRunner(EchoRunner):
+        def __init__(self):
+            self.seeds = []
+
+        def run(self, *, seeds, **kwargs):
+            self.seeds.append(tuple(seeds))
+            return super().run(seeds=seeds, **kwargs)
+
+    observed = []
+    for method in ("grpo", "ricepo"):
+        runner = RecordingRunner()
+        summary = evaluate_queries(
+            examples={key: QueryExample(key, "biology", "original text", frozenset({"blocked"}))},
+            expected_ids={("biology", "q")}, split="development", phase="development", method=method,
+            root_seed=42, policy_version=f"{method}/v1", rollout_depth=1,
+            retrievers={"biology": TinyRetriever()}, runners={"biology": runner}, renderer=EchoRenderer(),
+            reward=Reward(), output=tmp_path / method, manifest_sha256="a"*64,
+            backend_fingerprints={"biology": "b"*64}, samples_per_query=4,
+        )
+        rows = json.loads((tmp_path / method / "results-by-query.json").read_text())
+        assert summary["samples_per_query"] == 4
+        assert [row["sample_index"] for row in rows] == [0, 1, 2, 3]
+        assert len({row["generation_seeds"][0] for row in rows}) == 4
+        observed.append(runner.seeds)
+    assert observed[0] == observed[1]
 
 
 def evaluation_rows():

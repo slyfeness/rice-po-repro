@@ -1,0 +1,62 @@
+{
+  "candidates": {
+    "S0": {
+      "gpu_memory_utilization": 0.8,
+      "max_num_batched_tokens": 16384,
+      "max_num_seqs": 64
+    },
+    "S1": {
+      "gpu_memory_utilization": 0.8,
+      "max_num_batched_tokens": 32768,
+      "max_num_seqs": 128
+    },
+    "S2": {
+      "gpu_memory_utilization": 0.9,
+      "max_num_batched_tokens": 32768,
+      "max_num_seqs": 144
+    }
+  },
+  "coverage": {
+    "summary": 2406,
+    "think": 2529
+  },
+  "frozen_utc": "2026-11-07T06:35:19Z",
+  "full_pool": {
+    "requests_per_stage": 576
+  },
+  "kind": "tf32_swap_fixed_native_conditions_v1",
+  "long_confirmation": {
+    "shared_budget": 4096,
+    "think_requests": 16
+  },
+  "manifest_sha256": "deffef839ce8f181db69b1a0fa5b109529a814500d62ae243a7013fe946bc9ac",
+  "prefix_length_range": [
+    1057,
+    11689
+  ],
+  "requests": 1152,
+  "retrieval_request_count": 12,
+  "sampling": {
+    "max_context_tokens": 32768,
+    "model_action_budget": 4096,
+    "temperature": 1.0,
+    "top_k": 0,
+    "top_p": 1.0
+  },
+  "screen": {
+    "cold_then_hot": true,
+    "requests_per_stage": 144,
+    "short_cap": 512
+  },
+  "selection": "saved request identity hash order, longest/stage/source witnesses; no reward/format/length-outcome selection",
+  "source_binding_sha256": "47fa7398df88343b184fdd664d063f0372a74bda805d861ab5544ed37af632b9",
+  "source_counts": {
+    "branch": 849,
+    "original": 303
+  },
+  "source_run": "scale32-ricepo-175312",
+  "stage_counts": {
+    "summary": 576,
+    "think": 576
+  }
+}

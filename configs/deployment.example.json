@@ -6,6 +6,7 @@
   "output_root": "/file_storage01/home/USERNAME/ricepo/runs/NEW_RUN_DIRECTORY",
   "cache_root": "/file_storage01/home/USERNAME/ricepo/cache",
   "prompt_path": "/file_storage01/home/USERNAME/ricepo/control/ricepo_system.txt",
+  "output_parser_mode": "strict_native_tags",
   "train_manifest_path": null,
   "development_manifest_path": null,
   "actor_device": "cuda:0",

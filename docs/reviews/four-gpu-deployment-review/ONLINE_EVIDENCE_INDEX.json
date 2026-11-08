@@ -1,0 +1,242 @@
+[
+  {
+    "alias": "vllm-online-ricepo-175018/binding",
+    "bytes": 1911,
+    "sha256": "fdd1c03fe54e3b70e4da45efbd3b1622e817780c82ad0515df740c88ac398fa9"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/iteration-000000/originals",
+    "bytes": 2238040,
+    "sha256": "e71613fefef9d6bd6aed0c70be2891310b2dd04509739a8cbc3fe86e69a55c43"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/iteration-000000/advantages",
+    "bytes": 662596,
+    "sha256": "abda0461f2e209267d8cb5bb0749a0168cf182429c01851898a41d1cecc5eda6"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/iteration-000000/credit-diagnostics",
+    "bytes": 7467,
+    "sha256": "49f8fd64995cb48ebf5605ab676701ea9fd50f6d34eac05121a307ac060f25d0"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/iteration-000000/counterfactuals",
+    "bytes": 11949051,
+    "sha256": "c85d3a2e997a011eb05d76e4ca49b92909ca67accfe124a4b4cac53aefdc0229"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/iteration-000000/update",
+    "bytes": 2044,
+    "sha256": "b31038b10a68ea166d47af6d188bd4c197e4cfeb3ea880461014eea346a31778"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/iteration-000000/reload-verification",
+    "bytes": 119,
+    "sha256": "a005c53d600aeced266aadfd9149759aedb9993db8b1630e9c2a14a284e33da9"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/iteration-000000/checkpoint-complete",
+    "bytes": 1186,
+    "sha256": "673e0ea2e717c09eda614449a0f462fc01e39f7abc94c1639195b33802382a8c"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/iteration-000001/originals",
+    "bytes": 1610430,
+    "sha256": "f0b09ec32412216923b416908871e0b5491a6bc3c324af33597e061db5b61b1d"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/iteration-000001/advantages",
+    "bytes": 414663,
+    "sha256": "40c599fcc2291e6c696445f4cb0aeef2fa9fc17c56bf3bff510b7eaa7ef78dee"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/iteration-000001/credit-diagnostics",
+    "bytes": 9132,
+    "sha256": "9caef735617a7f0bc9fa3e75ee6aa74d1daa4ddf7347bf494c4c03d5d79ceeb8"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/iteration-000001/counterfactuals",
+    "bytes": 15270298,
+    "sha256": "b49b4ca7abdf3799acb2e7c46f56d9796524a97beef8e4fdd91f1293662ee421"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/iteration-000001/update",
+    "bytes": 2103,
+    "sha256": "e924431f73225070e3d9bcfc4d05aa5df9eda7677ac1845ab8e4fcb7e0b2da38"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/iteration-000001/reload-verification",
+    "bytes": 119,
+    "sha256": "dda2c68cfd2ad2b468591846fe9c310e7d190a7a937548ae49659fab7e579c9d"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/iteration-000001/checkpoint-complete",
+    "bytes": 1186,
+    "sha256": "95dd7d555a6ee44b93e3bfb2f10f291a840a2c6fbeaee54ebbe2ab8d742f3e04"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/iteration-000001/development-summary",
+    "bytes": 1523,
+    "sha256": "0ccb28f97b2a4bf80ab8bf4c82ff93c0de8f77e48626b36ca68f172fa31a5d3b"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/iteration-000001/development-queries",
+    "bytes": 60210,
+    "sha256": "1ae4e02ee5468a31d91ab845a5b5b52ac7bbe1bf4b974a369d725f7b05947e5c"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/resources",
+    "bytes": 161,
+    "sha256": "a2a70bc2ce55235f7b29a31d261b321e58b07499b8560a9bd257a38bbed8ff7b"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/worker-ready/worker-1-ready.json",
+    "bytes": 967,
+    "sha256": "9483fca1e007512c20076e25da4e38da17ea85432b1e17e47d98495f9c18a457"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/worker-ready/worker-2-ready.json",
+    "bytes": 966,
+    "sha256": "7afa12b3f2ee3bc975f15f285db36c4fe0f9b181788430e617a817cac977dac6"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/worker-ready/worker-3-ready.json",
+    "bytes": 967,
+    "sha256": "db572d7a617a84fdcccfa143da91fb96f5048c05cef105def6aecdfca5361505"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/worker-ready/worker-4-ready.json",
+    "bytes": 966,
+    "sha256": "44e6e2bdb840054afd3b143377d7aa54ead46b83a3bcf02e18b88347bb3813b2"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/worker-ready/worker-5-ready.json",
+    "bytes": 966,
+    "sha256": "4fb3f49dc9011d89632dec77bda80a69d7adb3b6d9c5c367c1734c6dc1c2ef14"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/snapshot/snapshot-c1602c359ac213c06398009614255f2f77348351cadc7a8a7d81dc39b79557e6",
+    "bytes": 951,
+    "sha256": "be1d2724dbed307b06d0fd1b4f7e89abf9e619f6e1582d3970be36cc1932af5a"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/snapshot/snapshot-b815c807fe100f6396397de0df10f3220a42767c57d543a0318f7f10f3f58fa9",
+    "bytes": 951,
+    "sha256": "5a7e551599ebb982573508358961deca3a7f96b5e579da99d0b7c3311b2c9aa7"
+  },
+  {
+    "alias": "vllm-online-ricepo-175018/snapshot/snapshot-5844539f26d9dffcdd984fdaa42743d392fa6b0812e7be0667121a6df8e60fe0",
+    "bytes": 951,
+    "sha256": "a8ca2fba00ddef6e371727142e224ecd54827a2598aba298f53b3b3bf0521507"
+  },
+  {
+    "alias": "vllm-online-grpo-175019/binding",
+    "bytes": 1911,
+    "sha256": "e3dc0b5d55f013a68c9ace60f8a458868ab0df5f3ddc8128b507f78ae85e3a20"
+  },
+  {
+    "alias": "vllm-online-grpo-175019/iteration-000000/originals",
+    "bytes": 2238130,
+    "sha256": "13bbd01cdf3aeb374460d07a41983cae63866222d774e94415baea2bcff81cad"
+  },
+  {
+    "alias": "vllm-online-grpo-175019/iteration-000000/advantages",
+    "bytes": 661856,
+    "sha256": "0a3332689f0bb6ab3d4a391eaa7e41bad520ed899e427a347c54c5e4cdb32813"
+  },
+  {
+    "alias": "vllm-online-grpo-175019/iteration-000000/update",
+    "bytes": 2035,
+    "sha256": "1e2f7f7678ffda29fd481c95a8a1d598758adb67fe7e722c5d359eaf762a41bd"
+  },
+  {
+    "alias": "vllm-online-grpo-175019/iteration-000000/reload-verification",
+    "bytes": 119,
+    "sha256": "d1b2c6015f396848d28d0dd8ef7870814c50ccd6cb59a6be2a018a13f58e6066"
+  },
+  {
+    "alias": "vllm-online-grpo-175019/iteration-000000/checkpoint-complete",
+    "bytes": 1186,
+    "sha256": "654f3cd1d2f433c8d2674f98360a9a754282a7e71aee3c70ed2f6e8e7bf68470"
+  },
+  {
+    "alias": "vllm-online-grpo-175019/iteration-000001/originals",
+    "bytes": 1610392,
+    "sha256": "38382c4b600d2c32e024b5989dc6eadd799b9f850d50623b5cf72e38b74cac76"
+  },
+  {
+    "alias": "vllm-online-grpo-175019/iteration-000001/advantages",
+    "bytes": 405111,
+    "sha256": "9f75bd58570f618f2d43d2475f6453c6715cda06c5f1b88525da8f1d428a1a87"
+  },
+  {
+    "alias": "vllm-online-grpo-175019/iteration-000001/update",
+    "bytes": 2061,
+    "sha256": "e4e3dcf7930773f49bef3aac5db548a3ffbb2a0e57ea8da331354d0c873051f8"
+  },
+  {
+    "alias": "vllm-online-grpo-175019/iteration-000001/reload-verification",
+    "bytes": 119,
+    "sha256": "661ad7c8761ce4ec22b93778e7332bc88f36a262873ff84af155d993ceebee8f"
+  },
+  {
+    "alias": "vllm-online-grpo-175019/iteration-000001/checkpoint-complete",
+    "bytes": 1186,
+    "sha256": "9bccd353d5069d0efe7f3427f9ab487a528c823f1864e58231c42c1a150a15e8"
+  },
+  {
+    "alias": "vllm-online-grpo-175019/iteration-000001/development-summary",
+    "bytes": 1478,
+    "sha256": "92dadbbbd98f25deac4b77018f7c1aae1c52ca5bfad5deffb8977aabaf16d657"
+  },
+  {
+    "alias": "vllm-online-grpo-175019/iteration-000001/development-queries",
+    "bytes": 60388,
+    "sha256": "ab9d911390a84fca4bc97329abd1e50643e4b3002bfb2cde16eb36c5c1fe7303"
+  },
+  {
+    "alias": "vllm-online-grpo-175019/resources",
+    "bytes": 161,
+    "sha256": "1ceb39d2cc1c44889f062c1dbb22a2388f0d0d036c1b1f60ecb2bfa3a8784008"
+  },
+  {
+    "alias": "vllm-online-grpo-175019/worker-ready/worker-1-ready.json",
+    "bytes": 967,
+    "sha256": "30d505cdf27d029c856790b6ccfd16b7e5f7e846d26d9d420e09725deb487faf"
+  },
+  {
+    "alias": "vllm-online-grpo-175019/worker-ready/worker-2-ready.json",
+    "bytes": 966,
+    "sha256": "d9f7674dc332975eed756f296a3acb92ca34e257e8fb17f64e064754c4fcc0be"
+  },
+  {
+    "alias": "vllm-online-grpo-175019/worker-ready/worker-3-ready.json",
+    "bytes": 967,
+    "sha256": "2e14aceb6f69126962ccc155b9152845572b858cdad4da500ed968274ac60a1e"
+  },
+  {
+    "alias": "vllm-online-grpo-175019/snapshot/snapshot-2ce0b7e635a3b2a9f52219b9a5c14ee78fe5d4dec03c24a14567739764d74125",
+    "bytes": 951,
+    "sha256": "0d76030bc3aad519f213aaf47a629855a95514e3796d300c769d6bc559e15936"
+  },
+  {
+    "alias": "vllm-online-grpo-175019/snapshot/snapshot-5844539f26d9dffcdd984fdaa42743d392fa6b0812e7be0667121a6df8e60fe0",
+    "bytes": 951,
+    "sha256": "a8ca2fba00ddef6e371727142e224ecd54827a2598aba298f53b3b3bf0521507"
+  },
+  {
+    "alias": "vllm-online-grpo-175019/snapshot/snapshot-cb57c6490e5f554fdd1fd619a35547d5206664e5c72a309ea83a17a7117c1f3f",
+    "bytes": 951,
+    "sha256": "36d6b87ba0cc1a80c8ca993b860ccb56cd969c18ced1475c9e846609fd5f57ed"
+  },
+  {
+    "alias": "independent-reload/vllm-reload-ricepo-175040",
+    "bytes": 805,
+    "sha256": "bcb32db792af55a1cb55e96f812774c8c56c9412d6abaef0565c8c1281f4f0d8"
+  },
+  {
+    "alias": "independent-reload/vllm-reload-grpo-175039",
+    "bytes": 805,
+    "sha256": "50f191423d71d9b0c8760d1f97eea448c1c8383f93c1a65d90d66d3b328a5744"
+  }
+]

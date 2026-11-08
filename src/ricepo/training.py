@@ -136,7 +136,7 @@ def _parameter_probe(model):
 
 
 def ppo_plan_update(model, optimizer, items: Sequence[UpdateItem], *, policy_version: str,
-                    forward: Callable, device, recipe) -> dict:
+                    forward: Callable, device, recipe, step_observer=None, probability_guard=None) -> dict:
     """Single-process PPO over frozen original trajectories in declared order.
 
     One optimizer step consumes one whole optimizer minibatch. Every sequence
@@ -159,6 +159,10 @@ def ppo_plan_update(model, optimizer, items: Sequence[UpdateItem], *, policy_ver
     clip, coefficient, limit = (recipe[k] for k in ("clip_epsilon", "actor_kl_coefficient", "max_grad_norm"))
     if isinstance(limit, bool) or not math.isfinite(limit) or limit <= 0:
         raise ValueError("max_grad_norm must be finite and positive")
+    if probability_guard is not None:
+        if epochs != 1 or mini != len(items):
+            raise ValueError("fused full-batch risk requires exactly one global optimizer step")
+        probability_guard.begin(items, policy_version)
     first_probe = _parameter_probe(model)
     steps = []
     for epoch in range(epochs):
@@ -173,6 +177,11 @@ def ppo_plan_update(model, optimizer, items: Sequence[UpdateItem], *, policy_ver
             ratio_min, ratio_max = math.inf, -math.inf
             for item in group:
                 current, kl = forward(model, item)
+                if probability_guard is not None:
+                    try: probability_guard.observe(item, current)
+                    except BaseException:
+                        optimizer.zero_grad(set_to_none=True)
+                        raise
                 old = torch.tensor([item.old_log_probs], dtype=current.dtype, device=device)
                 adv = torch.tensor([item.advantages], dtype=current.dtype, device=device)
                 mask = torch.tensor([item.generated_mask], dtype=torch.bool, device=device)
@@ -195,10 +204,17 @@ def ppo_plan_update(model, optimizer, items: Sequence[UpdateItem], *, policy_ver
                     kl_sum += float(kl[mask].double().sum())
                     loss_sum += float(loss.detach())
                 del current, kl, loss
+            if probability_guard is not None:
+                try: probability_guard.finish()
+                except BaseException:
+                    optimizer.zero_grad(set_to_none=True)
+                    raise
+            if step_observer is not None:step_observer('before_clip')
             norm = torch.nn.utils.clip_grad_norm_(model.parameters(), limit, error_if_nonfinite=True)
             from .audit import operation
             with operation("optimizer_minibatch_step",epoch=epoch,minibatch_start=start):
                 optimizer.step()
+            if step_observer is not None:step_observer('after_step')
             steps.append({"epoch": epoch, "minibatch_start": start, "generated_tokens": tokens,
                           "sequences": len(group), "loss_denominator": denominator,
                           "normalized_loss": loss_sum / denominator,

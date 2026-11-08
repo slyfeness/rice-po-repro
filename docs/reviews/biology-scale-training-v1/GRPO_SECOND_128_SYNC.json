@@ -1,0 +1,14 @@
+{
+  "observed_stage": "second committed 128-query GRPO update; subsequent real P2 sampling has started",
+  "policy": "735a887076a5d8d6f67194e0c5ea7661d7e0ffd98c79dd2244ed89be8fe23ca0",
+  "actor_payload_sha256": "cae9b42f2533fe552a1e7ec6dc6a612c2e3987ac482d02799fac62e91a35c374",
+  "sampler_load_seconds": 151.6787642147392,
+  "worker_ready_file_sha256": "bc5897bb09e6ca22f17ba5d0b16db08fd489ccf798002252bd34bc4410da8c5c",
+  "worker_policy_equals_new_policy": true,
+  "worker_assets_match_checkpoint2": true,
+  "actual_sampler_gemm_precision": "high",
+  "HF_expandable_allocator_in_sampler": false,
+  "cache_policy": "new process; no KV reuse across model snapshots",
+  "P2_HF_probability_check": "pending next real original batch; no duplicate diagnostic generation",
+  "independent_checkpoint2_restore": "not run; capacity and final10 are the frozen independent restore points"
+}

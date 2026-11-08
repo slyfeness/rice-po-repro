@@ -1,0 +1,163 @@
+{
+  "runs": [
+    {
+      "run": "optimization4-candidate-grpo-175525",
+      "run_wall_seconds": 902.4210571553558,
+      "generation_train_host_seconds": 79.8999132886529,
+      "generation_train_fraction": 0.0885395045418336,
+      "generation_pure_GPU_seconds": "UNKNOWN",
+      "lifecycle_train_seconds": 187.27208640426397,
+      "lifecycle_inside_eval_or_probe_seconds": 115.2327751237899,
+      "evaluation_total_seconds": 0.0,
+      "evaluation_generation_subset_seconds": null,
+      "component_rows_are_disjoint": true,
+      "exclusive_seconds_sum": 902.4210571553558,
+      "saving_if_only_training_generation_1_5x": 0.029513168180611195,
+      "saving_if_train_and_known_eval_generation_1_5x": 0.029513168180611195,
+      "whole_speedup_if_training_generation_1_5x": 1.0304106838062732,
+      "whole_speedup_if_train_and_known_eval_generation_1_5x": 1.0304106838062732,
+      "estimate_basis": "ESTIMATED Amdahl, other stages fixed; transport/format inside generation may not accelerate; no new training measurement"
+    },
+    {
+      "run": "optimization4-candidate-ricepo-175524",
+      "run_wall_seconds": 1740.9917647633702,
+      "generation_train_host_seconds": 326.5834130253643,
+      "generation_train_fraction": 0.18758469720260418,
+      "generation_pure_GPU_seconds": "UNKNOWN",
+      "lifecycle_train_seconds": 186.27710829116404,
+      "lifecycle_inside_eval_or_probe_seconds": 120.40417628921568,
+      "evaluation_total_seconds": 0.0,
+      "evaluation_generation_subset_seconds": null,
+      "component_rows_are_disjoint": true,
+      "exclusive_seconds_sum": 1740.9917647633702,
+      "saving_if_only_training_generation_1_5x": 0.06252823240086806,
+      "saving_if_train_and_known_eval_generation_1_5x": 0.06252823240086806,
+      "whole_speedup_if_training_generation_1_5x": 1.0666987898323628,
+      "whole_speedup_if_train_and_known_eval_generation_1_5x": 1.0666987898323628,
+      "estimate_basis": "ESTIMATED Amdahl, other stages fixed; transport/format inside generation may not accelerate; no new training measurement"
+    },
+    {
+      "run": "optimization4-reference-grpo-175523",
+      "run_wall_seconds": 892.4820546414703,
+      "generation_train_host_seconds": 66.53075736947358,
+      "generation_train_fraction": 0.07454576484028068,
+      "generation_pure_GPU_seconds": "UNKNOWN",
+      "lifecycle_train_seconds": 133.72365814261138,
+      "lifecycle_inside_eval_or_probe_seconds": 157.45854826830328,
+      "evaluation_total_seconds": 0.0,
+      "evaluation_generation_subset_seconds": null,
+      "component_rows_are_disjoint": true,
+      "exclusive_seconds_sum": 892.4820546414703,
+      "saving_if_only_training_generation_1_5x": 0.02484858828009356,
+      "saving_if_train_and_known_eval_generation_1_5x": 0.02484858828009356,
+      "whole_speedup_if_training_generation_1_5x": 1.025481774400826,
+      "whole_speedup_if_train_and_known_eval_generation_1_5x": 1.025481774400826,
+      "estimate_basis": "ESTIMATED Amdahl, other stages fixed; transport/format inside generation may not accelerate; no new training measurement"
+    },
+    {
+      "run": "optimization4-reference-ricepo-175521",
+      "run_wall_seconds": 1754.242689402774,
+      "generation_train_host_seconds": 336.39183724299073,
+      "generation_train_fraction": 0.19175900761913062,
+      "generation_pure_GPU_seconds": "UNKNOWN",
+      "lifecycle_train_seconds": 207.95860612019897,
+      "lifecycle_inside_eval_or_probe_seconds": 137.60932735726237,
+      "evaluation_total_seconds": 0.0,
+      "evaluation_generation_subset_seconds": null,
+      "component_rows_are_disjoint": true,
+      "exclusive_seconds_sum": 1754.242689402774,
+      "saving_if_only_training_generation_1_5x": 0.06391966920637687,
+      "saving_if_train_and_known_eval_generation_1_5x": 0.06391966920637687,
+      "whole_speedup_if_training_generation_1_5x": 1.0682843844739103,
+      "whole_speedup_if_train_and_known_eval_generation_1_5x": 1.0682843844739103,
+      "estimate_basis": "ESTIMATED Amdahl, other stages fixed; transport/format inside generation may not accelerate; no new training measurement"
+    },
+    {
+      "run": "scale32-grpo-175313",
+      "run_wall_seconds": 3042.4550522160716,
+      "generation_train_host_seconds": 458.4527332126163,
+      "generation_train_fraction": 0.15068512939203071,
+      "generation_pure_GPU_seconds": "UNKNOWN",
+      "lifecycle_train_seconds": 156.40533310780302,
+      "lifecycle_inside_eval_or_probe_seconds": 133.51259332802147,
+      "evaluation_total_seconds": 684.5016565322876,
+      "evaluation_generation_subset_seconds": 497.8973068604246,
+      "component_rows_are_disjoint": true,
+      "exclusive_seconds_sum": 3042.4550522160716,
+      "saving_if_only_training_generation_1_5x": 0.05022837646401023,
+      "saving_if_train_and_known_eval_generation_1_5x": 0.10477832579936303,
+      "whole_speedup_if_training_generation_1_5x": 1.0528846885075493,
+      "whole_speedup_if_train_and_known_eval_generation_1_5x": 1.1170417660999126,
+      "estimate_basis": "ESTIMATED Amdahl, other stages fixed; transport/format inside generation may not accelerate; no new training measurement"
+    },
+    {
+      "run": "scale32-ricepo-175312",
+      "run_wall_seconds": 7614.265006929636,
+      "generation_train_host_seconds": 2357.5517686614767,
+      "generation_train_fraction": 0.3096230255337714,
+      "generation_pure_GPU_seconds": "UNKNOWN",
+      "lifecycle_train_seconds": 242.43567693140358,
+      "lifecycle_inside_eval_or_probe_seconds": 148.9183856593445,
+      "evaluation_total_seconds": 718.5473349094391,
+      "evaluation_generation_subset_seconds": 514.8090618504211,
+      "component_rows_are_disjoint": true,
+      "exclusive_seconds_sum": 7614.265006929636,
+      "saving_if_only_training_generation_1_5x": 0.1032076751779238,
+      "saving_if_train_and_known_eval_generation_1_5x": 0.12574471853806868,
+      "whole_speedup_if_training_generation_1_5x": 1.1150853685087014,
+      "whole_speedup_if_train_and_known_eval_generation_1_5x": 1.1438306650293244,
+      "estimate_basis": "ESTIMATED Amdahl, other stages fixed; transport/format inside generation may not accelerate; no new training measurement"
+    }
+  ],
+  "evidence_index": [
+    {
+      "alias": "optimization4-candidate-grpo-175525/optimization4-candidate-grpo-175525-operations.json",
+      "sha256": "52b4eb222d18200a163125783734f4adb205f4df81a1d1c1770274ebb0438f92"
+    },
+    {
+      "alias": "optimization4-candidate-grpo-175525/optimization4-candidate-grpo-175525-resources.json",
+      "sha256": "65b405245a2af0c0ffbd2954193636b96cbf8d619a6e1f72ecfaad3b0dce3d1d"
+    },
+    {
+      "alias": "optimization4-candidate-ricepo-175524/optimization4-candidate-ricepo-175524-operations.json",
+      "sha256": "59fb4ece588fc5fb078c46f2bb25bd71c44df439f351d8dd6cebc32ef8bd7108"
+    },
+    {
+      "alias": "optimization4-candidate-ricepo-175524/optimization4-candidate-ricepo-175524-resources.json",
+      "sha256": "3b7778eb2b99354ccb86f22451def7ec6dd0162b7675daa05ba6a4ddb064fce8"
+    },
+    {
+      "alias": "optimization4-reference-grpo-175523/optimization4-reference-grpo-175523-operations.json",
+      "sha256": "62af76c6069aaa027d2dc8c1bbc44db7c11bc384f25bb3bfc03bfd836876a7fc"
+    },
+    {
+      "alias": "optimization4-reference-grpo-175523/optimization4-reference-grpo-175523-resources.json",
+      "sha256": "b03731466cbfe9b05a122280b102485adfe26ee8800a537dc70c78afe5f21897"
+    },
+    {
+      "alias": "optimization4-reference-ricepo-175521/optimization4-reference-ricepo-175521-operations.json",
+      "sha256": "1b3bb2b468a56c98cd27b3432dccbb5a497742c44657bb4f3551180da18eb62c"
+    },
+    {
+      "alias": "optimization4-reference-ricepo-175521/optimization4-reference-ricepo-175521-resources.json",
+      "sha256": "12c1c099214c185002abcd37d56dfa1749e8b0b525dfd9a8f49c9d360ae7351e"
+    },
+    {
+      "alias": "scale32-grpo-175313/scale32-grpo-175313-operations.json",
+      "sha256": "c155ebf9ff03823ca5b425c50b06b13dc6c437c6ccb4257648e62d17c0bf1c48"
+    },
+    {
+      "alias": "scale32-grpo-175313/scale32-grpo-175313-resources.json",
+      "sha256": "d6fdcf2defc20f8966a1ceab358bd705c36eb331bd171f0ba02763fecb05800c"
+    },
+    {
+      "alias": "scale32-ricepo-175312/scale32-ricepo-175312-operations.json",
+      "sha256": "8e3ebe1ab251ccc3857b2dbb0b83b45e4c0699023df8a9f9f09c4022d8f7e4cd"
+    },
+    {
+      "alias": "scale32-ricepo-175312/scale32-ricepo-175312-resources.json",
+      "sha256": "f3a7f9ad4e6106aa4a917b8878e10187a5c6cd15cea2f9028c531ac9e7b15168"
+    }
+  ],
+  "interval_accounting_checks": 2
+}

@@ -1,0 +1,17 @@
+{
+  "status": "COMPLETED",
+  "job_id": "177412",
+  "scope": "Diver loaded from CPU to GPU1, then 48 saved rank-level requests rerun using array_minmax_v1. No model generation, reward recomputation, PPO step, checkpoint, or old-run resume.",
+  "requests": 48,
+  "selection": "first 48 distinct saved rank-level request hashes in lexical order",
+  "selection_sha256": "6e565de6c31245a9097fd7ccdf04c70bc8265ed8288298db56ad02d661820ced",
+  "Diver_transition": {
+    "phase": "generation",
+    "device": "cuda:1",
+    "seconds": 2.3441501688212156
+  },
+  "elapsed_seconds": 4.171505911275744,
+  "ranking_identity": "exact document ID sequence",
+  "ndcg_identity": "exact",
+  "source_commit": "135ce6dd59d3d78cdfe794dfe18e104cfd8049d4"
+}

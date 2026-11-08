@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "extends": "failure_zero_ricepo.json",
+  "deviations": {
+    "native_span_parser": {"value": "two_stage_env_summary_v1", "reason": "User-authorized independent two-stage protocol. Model samples Think close; deterministic environment Summary opener is masked; nonempty sampled Summary ends by close or EOS. One RNG stream and 4096 total sampled-token budget."}
+  }
+}

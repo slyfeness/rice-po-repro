@@ -1,0 +1,84 @@
+{
+  "original_training": "PAUSED_AFTER_USER_CANCELLATION",
+  "original_jobs": {
+    "176768": "CANCELLED",
+    "176798": "CANCELLED"
+  },
+  "GRPO": {
+    "computed_updates": 2,
+    "persisted_updates": 2,
+    "complete_checkpoint": 2,
+    "uncommitted_tail": "update3 trajectories and risk complete; interrupted backward, no step3"
+  },
+  "RICE_PO": {
+    "computed_updates": 1,
+    "persisted_updates": 0,
+    "complete_checkpoint": 0,
+    "P1_actor_snapshot_is_full_resume_point": false,
+    "uncommitted_tail": "update2 originals and entropy saved; no step2; P1 Adam/RNG not persisted; cannot resume logical update2 from actor-only snapshot"
+  },
+  "future_training_submissions_authorized": false,
+  "raw_assets_retained": true,
+  "jobs": [
+    {
+      "job": "176890",
+      "state": "FAILED_TEST_FIXTURE",
+      "elapsed_seconds": 32,
+      "slurm_state": "FAILED"
+    },
+    {
+      "job": "176891",
+      "state": "COMPLETED",
+      "elapsed_seconds": 24,
+      "slurm_state": "COMPLETED"
+    },
+    {
+      "job": "176892",
+      "state": "FAILED_NUMERICAL_GATE",
+      "elapsed_seconds": 172,
+      "slurm_state": "FAILED"
+    },
+    {
+      "job": "176893",
+      "state": "COMPLETED",
+      "elapsed_seconds": 915,
+      "slurm_state": "COMPLETED"
+    },
+    {
+      "job": "176895",
+      "state": "COMPLETED",
+      "elapsed_seconds": 6,
+      "slurm_state": "COMPLETED"
+    },
+    {
+      "job": "176900",
+      "state": "COMPLETED",
+      "elapsed_seconds": 222,
+      "slurm_state": "COMPLETED"
+    },
+    {
+      "job": "176901",
+      "state": "CONTROLLED_CANCEL_BEFORE_UNSAFE_LONG_DEVICE_TEST",
+      "elapsed_seconds": 210,
+      "slurm_state": "CANCELLED"
+    },
+    {
+      "job": "176903",
+      "state": "COMPLETED",
+      "elapsed_seconds": 32,
+      "slurm_state": "COMPLETED"
+    }
+  ],
+  "new_generated_tokens": 0,
+  "new_retrieval_requests": 0,
+  "new_scale_updates": 0,
+  "independent_offline_optimizer_steps": 2,
+  "final_cpu_tests": {
+    "executed": 5,
+    "passed": 5,
+    "failed": 0,
+    "skipped": 0
+  },
+  "initial_CPU_attempt": "2 passed, 1 failed: test q=-100 triggered preexisting overflow rejection before full batch; finite q=-2 corrected test, thresholds unchanged",
+  "final_state_verification": "sacct reconfirmed original jobs CANCELLED and all diagnostic jobs terminal; complete checkpoint2 marker present. Final squeue query returned partition permission denied; no queue-visibility claim from that query."
+}

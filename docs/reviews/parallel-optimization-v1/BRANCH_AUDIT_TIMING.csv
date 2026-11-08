@@ -1,0 +1,3 @@
+mode,job,total_branches,checked_branches,actual_sample_fraction,hf_forward_seconds,total_wall_seconds,scored_action_tokens,all_probability_checks_passed
+full,175508,20,20,1.0,22.588838463649154,22.616646552458405,29867,true
+stratified_five_percent_v1,175508,20,4,0.2,3.4243925362825394,3.4277712423354387,3327,true

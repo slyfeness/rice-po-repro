@@ -1,0 +1,135 @@
+{
+  "A": {
+    "worker_state": [
+      {
+        "cache_block_size": 16,
+        "cuda_build": "12.8",
+        "cudnn_allow_tf32": true,
+        "gpu_name": "NVIDIA A800-SXM4-80GB",
+        "linear_dispatch": "vllm.model_executor.layers.utils.default_unquantized_gemm",
+        "linear_methods": {
+          "vllm.model_executor.layers.linear.UnquantizedLinearMethod": 112,
+          "vllm.model_executor.layers.vocab_parallel_embedding.UnquantizedEmbeddingMethod": 2
+        },
+        "matmul_allow_tf32": false,
+        "parameter_dtypes": {
+          "torch.float32": 199
+        },
+        "torch_float32_matmul_precision": "highest",
+        "triton_f32_default": "tf32",
+        "worker_precision_env": "highest"
+      }
+    ],
+    "initialization_seconds": 84.03732913173735,
+    "manifest_sha256": "deffef839ce8f181db69b1a0fa5b109529a814500d62ae243a7013fe946bc9ac",
+    "model_payload_sha256": "972c28b609f0a8f8b16d47c488d9f46da6292f50c1ad2936186b1c74716eedaf",
+    "gemm_kernels": [
+      {
+        "name": "ampere_sgemm_128x32_tn",
+        "count": 56,
+        "gpu_duration_us": 560847.3219999998
+      },
+      {
+        "name": "ampere_sgemm_128x64_tn",
+        "count": 56,
+        "gpu_duration_us": 1020448.5149999998
+      },
+      {
+        "name": "std::enable_if<!(false), void>::type internal::gemvx::kernel<int, int, float, float, float, float, false, true, true, false, 9, false, cublasGemvParamsEx<int, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float>, float> >(cublasGemvParamsEx<int, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float>, float>)",
+        "count": 196,
+        "gpu_duration_us": 6865.1230000000005
+      },
+      {
+        "name": "void gemv2T_kernel_val<int, int, float, float, float, float, 128, 16, 4, 4, false, false, cublasGemvParamsEx<int, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float>, float> >(cublasGemvParamsEx<int, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float>, float>, float, float)",
+        "count": 596,
+        "gpu_duration_us": 21156.67
+      }
+    ],
+    "aten_operators": {
+      "aten::addmm": 82,
+      "aten::mm": 38,
+      "aten::linear": 8
+    },
+    "kernel_duration_note": "tiny real-model probe only; summed kernel durations are not full workload makespan"
+  },
+  "B": {
+    "worker_state": [
+      {
+        "cache_block_size": 16,
+        "cuda_build": "12.8",
+        "cudnn_allow_tf32": true,
+        "gpu_name": "NVIDIA A800-SXM4-80GB",
+        "linear_dispatch": "vllm.model_executor.layers.utils.default_unquantized_gemm",
+        "linear_methods": {
+          "vllm.model_executor.layers.linear.UnquantizedLinearMethod": 112,
+          "vllm.model_executor.layers.vocab_parallel_embedding.UnquantizedEmbeddingMethod": 2
+        },
+        "matmul_allow_tf32": true,
+        "parameter_dtypes": {
+          "torch.float32": 199
+        },
+        "torch_float32_matmul_precision": "high",
+        "triton_f32_default": "tf32",
+        "worker_precision_env": "high"
+      }
+    ],
+    "initialization_seconds": 58.228942742571235,
+    "manifest_sha256": "deffef839ce8f181db69b1a0fa5b109529a814500d62ae243a7013fe946bc9ac",
+    "model_payload_sha256": "972c28b609f0a8f8b16d47c488d9f46da6292f50c1ad2936186b1c74716eedaf",
+    "gemm_kernels": [
+      {
+        "name": "std::enable_if<!(false), void>::type internal::gemvx::kernel<int, int, float, float, float, float, false, true, true, false, 9, false, cublasGemvParamsEx<int, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float>, float> >(cublasGemvParamsEx<int, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float>, float>)",
+        "count": 196,
+        "gpu_duration_us": 6868.647999999998
+      },
+      {
+        "name": "void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_128x128_16x5_tn_align4>(cutlass_80_tensorop_s1688gemm_128x128_16x5_tn_align4::Params)",
+        "count": 56,
+        "gpu_duration_us": 28297.426
+      },
+      {
+        "name": "void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_128x256_32x3_tn_align4>(cutlass_80_tensorop_s1688gemm_128x256_32x3_tn_align4::Params)",
+        "count": 28,
+        "gpu_duration_us": 62778.437
+      },
+      {
+        "name": "void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_256x128_32x3_tn_align4>(cutlass_80_tensorop_s1688gemm_256x128_32x3_tn_align4::Params)",
+        "count": 28,
+        "gpu_duration_us": 132411.405
+      },
+      {
+        "name": "void gemv2T_kernel_val<int, int, float, float, float, float, 128, 16, 4, 4, false, false, cublasGemvParamsEx<int, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float>, float> >(cublasGemvParamsEx<int, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float const>, cublasGemvTensorStridedBatched<float>, float>, float, float)",
+        "count": 596,
+        "gpu_duration_us": 21164.485000000008
+      }
+    ],
+    "aten_operators": {
+      "aten::addmm": 82,
+      "aten::mm": 38,
+      "aten::linear": 8
+    },
+    "kernel_duration_note": "tiny real-model probe only; summed kernel durations are not full workload makespan"
+  },
+  "new_B_gemm_kernels": [
+    "void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_128x128_16x5_tn_align4>(cutlass_80_tensorop_s1688gemm_128x128_16x5_tn_align4::Params)",
+    "void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_128x256_32x3_tn_align4>(cutlass_80_tensorop_s1688gemm_128x256_32x3_tn_align4::Params)",
+    "void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_256x128_32x3_tn_align4>(cutlass_80_tensorop_s1688gemm_256x128_32x3_tn_align4::Params)"
+  ],
+  "removed_A_gemm_kernels": [
+    "ampere_sgemm_128x32_tn",
+    "ampere_sgemm_128x64_tn"
+  ],
+  "control_effect": "MEASURED",
+  "evidence_index": [
+    {
+      "alias": "A/rank0.1794041532582939972.pt.trace.json",
+      "sha256": "e696a0541760474b697ad5e9e56f19185e4017d2193128f7f1b583863aa01e6a",
+      "bytes": 4048828
+    },
+    {
+      "alias": "B/rank0.1794041606982912871.pt.trace.json",
+      "sha256": "1828606886fdeb1197e9428eaa75740c079c62fa7e5d58c0bae2072e3a238809",
+      "bytes": 4094782
+    }
+  ]
+}

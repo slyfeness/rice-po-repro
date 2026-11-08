@@ -1,0 +1,11 @@
+# Qualified runtime screen
+
+Use IEEE FP32, TP1,64 sequences,16384 batched tokens,0.80 memory, Triton IEEE, graphs, prefix cache and chunked prefill. Same saved144 native requests and512-token stage caps: S0 repeated151.325s/234.409 token/s, S1(128/16384)162.295s/218.565 token/s. Historical same-workload S0 was152.698s/232.301 token/s; S2(128/32768)164.216s/216.008 token/s is reused rather than regenerated. New S0/S1 run on the same assigned GPU, S0 second with warmer compilation/model caches; the1% S0 repeat agreement is evidence of stability, not a controlled confidence interval. No memory-utilization sweep is justified by these results.
+
+S1 passed9/9 independently checked fixed histories against the HF FP32 Actor (job175518). Source native IDs are preserved, same causal positions and sampling law; maximum sampled-token log error0.000257492. Full check results are in `S1_PROBABILITY_CHECK.json`.
+
+Winner S0 additionally ran8 preselected saved Think prefixes with the real4096 sampled-token shared two-stage budget:5911 real generated tokens in42.367s;5 valid actions and3 explicit invalid actions, all retained without retry. This is a real long-action-budget protocol test, not a complete five-round training result. Prefixes are the longest available saved real histories, not synthetic32K-capacity inputs.
+
+Whole assigned GPU sampled at200ms reached66925MiB across the new S0/S1 runs. The vLLM worker ran in a child process, so parent Torch allocator peak is not used. Returned RequestOutput timing metrics were all unavailable: actual running concurrency, queue tail percentiles and KV occupancy are not inferred from configured max_num_seqs. No preemption/OOM warning was observed in the completed job; this is not an instrumented cumulative preemption counter. Engine initialization/graph capture/warmup are logged separately; CSV reports initialization and warmup apart from formal batch makespan.
+
+Job175505 COMPLETED/0 in8m15s. CPU extraction175526. No optimizer, retrieval or credit ran in this screen. The independent BF16 matching experiment failed its preregistered behavior gate, so the BF16 throughput configuration is not selected for PPO. This phase does not compare raw throughput directly with SwAP's different load/precision recipe.

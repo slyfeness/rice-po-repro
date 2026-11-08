@@ -74,6 +74,13 @@ def token_entropy_from_logits(logits: Tensor, *, chunk_size: int) -> Tensor:
     return torch.cat(values).reshape(shape)
 
 
+def _conditional_kl(current, reference):
+    divergence = (current.exp() * (current - reference)).sum(-1)
+    # At identical normalized distributions both value and first derivative
+    # are exactly zero. Avoid cancellation in log_softmax backward there.
+    return divergence.masked_fill((current == reference).all(dim=-1), 0.0)
+
+
 def exact_reference_kl(
     logits: Tensor, reference_logits: Tensor, *, chunk_size: int
 ) -> Tensor:
@@ -97,7 +104,7 @@ def exact_reference_kl(
     for start in range(0, rows.shape[0], chunk_size):
         current = _log_probabilities(rows[start : start + chunk_size])
         reference = _log_probabilities(reference_rows[start : start + chunk_size])
-        values.append((current.exp() * (current - reference)).sum(dim=-1))
+        values.append(_conditional_kl(current, reference))
     return torch.cat(values).reshape(shape)
 
 

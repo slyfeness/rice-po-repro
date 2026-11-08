@@ -1,0 +1,143 @@
+{
+  "status": "FORMAL_JOBS_RUNNING_INITIALIZATION",
+  "new_lineage_started": true,
+  "formal_jobs": [
+    {"job_id":"177622","method":"ricepo","state_at_snapshot":"RUNNING","output_alias":"biology-scale-v3-training-ricepo","gpus":2},
+    {"job_id":"177623","method":"grpo","state_at_snapshot":"RUNNING","output_alias":"biology-scale-v3-training-grpo","gpus":2}
+  ],
+  "formal_execution_source_commit": "f148a3d3aefd7b79247b6a28f0851b991e9ee4ea",
+  "four_query_smoke": "BOTH_COMPLETE",
+  "latest_observed_smoke": {
+    "ricepo": {"job_id": "177481", "computed_updates": 1, "complete_checkpoints": 0, "rank_weights_equal": true},
+    "grpo": {"job_id": "177482", "computed_updates": 1, "complete_checkpoints": 0, "rank_weights_equal": true, "state": "FAILED", "reason": "RNG bytes unsupported in checkpoint digest"},
+    "grpo_retry": {"job_id": "177505", "state_at_snapshot": "COMPLETED", "computed_updates": 1, "complete_checkpoints": 1, "post_update_risk_check": true, "source_commit": "23da708a63c5e4ff5b6c35bf2971d66c207822af"},
+    "ricepo_retry": {"job_id": "177514", "state_at_snapshot": "COMPLETED", "computed_updates": 1, "complete_checkpoints": 1, "post_update_risk_check": true, "source_commit": "23da708a63c5e4ff5b6c35bf2971d66c207822af"},
+    "grpo_independent_restore": {"job_id": "177536", "state_at_snapshot": "COMPLETED", "rank1_rng_verified": true},
+    "ricepo_independent_restore": {"job_id": "177578", "state_at_snapshot": "COMPLETED", "rank1_rng_verified": true}
+  },
+  "smoke_attempts": "SMOKE_ATTEMPTS.csv",
+  "formal_128_query_updates": {
+    "ricepo": 0,
+    "grpo": 0
+  },
+  "old_runs": [
+    {
+      "method": "grpo",
+      "job_id": "176768",
+      "slurm_state": "CANCELLED",
+      "computed_updates": 2,
+      "persisted_updates": 2,
+      "resume_attempted": false
+    },
+    {
+      "method": "ricepo",
+      "job_id": "176798",
+      "slurm_state": "CANCELLED",
+      "computed_updates": 1,
+      "persisted_updates": 0,
+      "P1_actor_only_is_recoverable_checkpoint": false,
+      "resume_attempted": false
+    }
+  ],
+  "old_progress_source": "Preserved prior validated records; job cancellation rechecked with sacct.",
+  "new_jobs": [
+    {
+      "job_id": "177080",
+      "purpose": "saved longest-history GPU1 memory preflight with Diver resident",
+      "state": "FAILED",
+      "exit_code": "1:0",
+      "elapsed_seconds": 149,
+      "gpus": 2
+    },
+    {
+      "job_id": "177205",
+      "purpose": "CPU-only source-test wrapper attempt",
+      "state": "FAILED",
+      "exit_code": "127:0",
+      "elapsed_seconds": 5,
+      "gpus": 0,
+      "project_tests_executed": false,
+      "failure": "python executable absent from batch PATH"
+    },
+    {
+      "job_id": "177208",
+      "purpose": "CPU-only source-test and v2 static recipe expansion",
+      "state": "COMPLETED",
+      "exit_code": "0:0",
+      "elapsed_seconds": 6,
+      "gpus": 0,
+      "tests": {
+        "hf_data_parallel": "10 passed",
+        "dual_engine_prefix_affinity": "3 passed",
+        "v2_config_expansion": "2 configs expanded"
+      },
+      "scope": "No model, retrieval, rollout, optimizer step, or GPU execution."
+    },
+    {
+      "job_id": "177376",
+      "purpose": "Longest-history GPU1 HF forward/backward after Diver phase offload to CPU",
+      "state": "COMPLETED",
+      "exit_code": "0:0",
+      "elapsed_seconds": 78,
+      "gpus": 2,
+      "optimizer_steps": 0,
+      "oom": false,
+      "report": "PHASE_RESIDENCY_PREFLIGHT.json"
+    },
+    {
+      "job_id": "177409",
+      "purpose": "48-request retrieval recheck initial wrapper attempt",
+      "state": "FAILED",
+      "exit_code": "1:0",
+      "elapsed_seconds": 151,
+      "gpus": 2,
+      "failure": "JVM environment variable absent before BM25 initialization; no retrieval comparison completed"
+    },
+    {
+      "job_id": "177412",
+      "purpose": "48-request retrieval recheck after Diver restored from CPU to GPU1",
+      "state": "COMPLETED",
+      "exit_code": "0:0",
+      "elapsed_seconds": 49,
+      "gpus": 2,
+      "report": "RETRIEVAL_RECHECK.json"
+    },
+    {
+      "job_id": "177287",
+      "purpose": "CPU TDD red check for new v2 smoke namespace",
+      "state": "FAILED",
+      "exit_code": "1:0",
+      "elapsed_seconds": 7,
+      "gpus": 0,
+      "project_tests_executed": true,
+      "failure": "Expected pre-implementation run_tag interface mismatch"
+    },
+    {
+      "job_id": "177335",
+      "purpose": "CPU launcher syntax check after v2 smoke wiring",
+      "state": "FAILED",
+      "exit_code": "1:0",
+      "elapsed_seconds": 5,
+      "gpus": 0,
+      "project_tests_executed": false,
+      "failure": "New worker syntax defect corrected before final validation"
+    },
+    {
+      "job_id": "177337",
+      "purpose": "CPU validation of phase residency, long-history placement, and v2 smoke launch wiring",
+      "state": "COMPLETED",
+      "exit_code": "0:0",
+      "elapsed_seconds": 12,
+      "gpus": 0,
+      "tests": {
+        "hf_data_parallel": "12 passed",
+        "v2_scheduling": "7 passed",
+        "v2_config_expansion": "2 configs expanded"
+      },
+      "scope": "No model, retrieval, rollout, optimizer step, or GPU execution."
+    }
+  ],
+  "queue_visibility": "squeue returned permission denied; terminal states established by sacct.",
+  "automatic_restart": false,
+  "implementation_status": "Both corrected four-query smokes and independent checkpoint restorations completed. Two fresh formal jobs are running initialization with frozen v2 systems recipes and v3 output aliases. Zero formal updates have completed at this snapshot; running is not a completion claim."
+}

@@ -1,0 +1,28 @@
+import os,sys,json,time
+from pathlib import Path
+from ricepo.hf_runtime import run
+from ricepo.artifacts import atomic_json
+from ricepo.config import resolve
+r=Path(os.environ['RICE_PROJECT']);old=r/'runs/continuation-ricepo-174715'
+gate=json.loads(Path(sys.argv[1]).read_text())
+if not gate['passed']:raise ValueError('native recovery gate did not pass')
+read=lambda p:json.loads(p.read_text())
+cfg=read(old/'config.json');dep=read(old/'deployment.json')
+if resolve(cfg,'train')['fingerprint']!=read(old/'recipe.json')['fingerprint']:raise ValueError('frozen recipe changed')
+tag='continuation-ricepo-'+os.environ['SLURM_JOB_ID'];release=r/'releases/native-recovery-v2'
+dep.update(output_root=str(r/'runs'/tag),cache_root=str(r/'cache'/tag),
+    prompt_path=str(release/'prompts/ricepo_prefilled_think_smoke.txt'),
+    native_action_replay_sources=[dict(run=str(old),source=str(r/'releases/continuation-v1'))])
+atomic_json(r/'reports'/(tag+'-config.json'),dict(config=cfg,deployment=dep,
+    recovery_parent=old.name,previous_first_update_preserved=True,additional_optimizer_updates=2,
+    allocation=dict(gpus=2,time_limit_hours=3.5,total_budget_gpu_hours=32)))
+import torch
+if torch.cuda.device_count()!=2:raise ValueError('exactly two assigned visible CUDA devices required')
+start=time.monotonic()
+try:
+    print('NATIVE_RECOVERY_START',tag,flush=True)
+    print('NATIVE_RECOVERY_RESULT',run(cfg,dep),flush=True)
+finally:
+    atomic_json(r/'reports'/(tag+'-resources.json'),dict(elapsed_seconds=time.monotonic()-start,
+        peak_cuda_allocated=[torch.cuda.max_memory_allocated(i) for i in range(2)],
+        peak_cuda_reserved=[torch.cuda.max_memory_reserved(i) for i in range(2)]))

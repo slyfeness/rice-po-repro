@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "extends": "controlled_biology.json",
+  "profile": "ablation",
+  "deviations": {
+    "queries_per_update": {"value": 4, "reason": "Authorized small-budget comparison, four queries per optimizer update."},
+    "development_every_updates": {"value": 5, "reason": "Same intermediate cadence for both methods; final update always evaluated."}
+  },
+  "runtime_bindings": {"total_updates": 20},
+  "execution": {"enabled": false, "runtime_validated": false, "four_gpu_validated": false}
+}

@@ -1,0 +1,45 @@
+"""HF-only recovery of saved vLLM outputs; no vLLM resampling."""
+import os,json,time
+from pathlib import Path
+from ricepo.artifacts import atomic_json,file_sha256
+from ricepo.audit import fingerprint
+from ricepo.state import verify_checkpoint
+r=Path(os.environ['RICE_PROJECT']);source=r/'runs/vllm-fp32-probe-174858';root=r/'runs'/('vllm-hf-recovery-'+os.environ['SLURM_JOB_ID']);root.mkdir()
+read=lambda p:json.loads(p.read_text())
+selection=read(source/'selection.json');prefixes=selection['prefixes'];seeds=selection['seeds']
+parent=r/'runs/continuation-grpo-174716';cp=parent/'iteration-000001/checkpoint';binding=read(parent/'binding.json');receipt=verify_checkpoint(cp,fingerprint(binding))
+for p,seed,g in zip(prefixes,seeds,read(source/'vllm-native.json'),strict=True):
+ if g['prefix_sha256']!=fingerprint(p) or g['seed']!=seed:raise ValueError('saved request mismatch')
+if read(source/'vllm-metrics.json')['policy_checkpoint']!=receipt['policy_version']:raise ValueError('policy changed')
+import torch
+from transformers import AutoModelForCausalLM,AutoTokenizer,GenerationConfig
+from ricepo.policy_identity import identify
+from ricepo.modeling import sampled_old_log_probs
+from ricepo.probability_check import compare_log_probs
+model=AutoModelForCausalLM.from_pretrained(str(cp/'actor'),torch_dtype=torch.float32,local_files_only=True,trust_remote_code=False).to('cuda:0').eval();model.requires_grad_(False)
+version,identity=identify(model,binding['behavior'])
+if version!=receipt['policy_version']:raise ValueError('actual teacher weights differ')
+tok=AutoTokenizer.from_pretrained(str(cp/'actor'),local_files_only=True,trust_remote_code=False)
+checks=[]
+for p,g in zip(prefixes,read(source/'vllm-native.json'),strict=True):
+ ids=p+g['token_ids'];mask=[False]*len(p)+[True]*len(g['token_ids'])
+ with torch.inference_mode():teacher=sampled_old_log_probs(model,ids,mask,device='cuda:0',logit_chunk_size=64,max_context_tokens=32768,policy_call_kwargs={})[0].cpu().tolist()
+ checks.append(dict(prefix_length=len(p),native_length=len(ids),**compare_log_probs([0.]*len(p)+g['sampled_log_probs'],teacher,mask)))
+# Speed reference has the same raw continuation budget, EOS and sampling law;
+# differing random generators may produce differing lengths/text, which is disclosed.
+count=0;start=time.monotonic();hf_records=[]
+for p,seed in zip(prefixes,seeds,strict=True):
+ with torch.random.fork_rng(devices=[0]),torch.inference_mode():
+  torch.manual_seed(seed);torch.cuda.manual_seed(seed)
+  config=GenerationConfig(do_sample=True,temperature=1.,top_p=1.,top_k=0,max_new_tokens=512,eos_token_id=tok.eos_token_id,pad_token_id=tok.eos_token_id,repetition_penalty=1.)
+  out=model.generate(input_ids=torch.tensor([p],device='cuda:0'),attention_mask=torch.ones((1,len(p)),dtype=torch.long,device='cuda:0'),generation_config=config)
+  ids=out[0,len(p):].tolist();count+=len(ids);hf_records.append(dict(prefix_sha256=fingerprint(p),seed=seed,token_ids=ids))
+torch.cuda.synchronize();seconds=time.monotonic()-start;atomic_json(root/'hf-native.json',hf_records)
+atomic_json(root/'hf-metrics.json',dict(checks=checks,all_probability_checks_passed=all(c['within_bf16_tolerance'] for c in checks),serial_actual_model_tokens=count,serial_generation_seconds=seconds,serial_tokens_per_second=count/seconds,
+ actual_teacher_state_dict_sha256=identity['state_dict_sha256'],peak_allocated=torch.cuda.max_memory_allocated(),peak_reserved=torch.cuda.max_memory_reserved()))
+if not all(c['within_bf16_tolerance'] for c in checks):raise ValueError('vLLM sampled versus HF conditional probabilities failed; no BF16 fallback')
+h=read(root/'hf-metrics.json');v=read(source/'vllm-metrics.json')
+atomic_json(root/'summary.json',dict(vllm=v,hf=h,numerical_gate_passed=h['all_probability_checks_passed'],speed_ratio=v['tokens_per_second']/h['serial_tokens_per_second'],
+ source_native_sha256=file_sha256(source/'vllm-native.json'),source_selection_sha256=file_sha256(source/'selection.json'),original_failed_attempt_preserved=True,vllm_resampling=False,
+ scope='Fixed raw conditional continuations, max512; not a two-stage online sampler or PPO qualification. vLLM parent allocator peaks do not measure worker memory.'))
+print('HF_RECOVERY_COMPLETE',root,flush=True)

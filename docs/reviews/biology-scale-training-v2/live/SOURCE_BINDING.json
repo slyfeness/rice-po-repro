@@ -1,0 +1,8 @@
+{
+  "verification": "read from each active worker process RICE_SOURCE_COMMIT",
+  "source_commit_observed": "f148a3d3aefd7b79247b6a28f0851b991e9ee4ea",
+  "snapshot_utility_jobs": [
+    "177963 cancelled: broad event parser",
+    "177992 completed: metadata-only snapshot"
+  ]
+}

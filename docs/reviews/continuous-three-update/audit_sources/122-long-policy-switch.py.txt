@@ -1,0 +1,91 @@
+"""Single-GPU long-native-history batch gate across actual update-1/3 weights."""
+import os,json,time
+from pathlib import Path
+from contextlib import nullcontext
+import torch
+from transformers import AutoTokenizer,AutoModelForCausalLM
+import sys
+# This job has not started; use the explicitly tested unmapped-ID fix. The
+# original workload benchmark remains bound to its already-running source.
+sys.path.insert(0,str(Path(os.environ['RICE_PROJECT'])/'releases/native-recovery-v2/src'))
+if not json.loads((Path(os.environ['RICE_PROJECT'])/'reports/native-recovery-preflight-174746/complete.json').read_text())['passed']:
+    raise ValueError('tested native recovery source not qualified')
+from ricepo.artifacts import atomic_json,file_sha256
+from ricepo.state import verify_checkpoint
+from ricepo.audit import fingerprint,stable_seed,attempt,operation,cost_report
+from ricepo.environment import configure_caches
+from ricepo.policy_identity import identify
+from ricepo.hf_runtime import HFNativeGenerator
+from ricepo.contracts import generation_action_mask,Generation
+from ricepo.modeling import sampled_old_log_probs
+from ricepo.probability_check import compare_log_probs
+r=Path(os.environ['RICE_PROJECT']);root=r/'runs'/('long-policy-switch-'+os.environ['SLURM_JOB_ID']);root.mkdir()
+configure_caches(r/'cache'/root.name);read=lambda p:json.loads(p.read_text())
+traces=read(r/'runs/two-stage-online-ricepo-174610/iteration-000000/trajectories.json')
+candidates=sorted([(len(s['prefix_token_ids']),t['trajectory_id'],s['depth'],tuple(s['prefix_token_ids']))
+                   for t in traces for s in t['steps']],key=lambda x:(-x[0],x[1],x[2]))
+chosen=candidates[:4]
+if len(chosen)!=4:raise ValueError('four fixed training native histories required')
+prefixes=[x[3] for x in chosen];seeds=[stable_seed(42,'long_policy_switch_v1',x[1],x[2]) for x in chosen]
+atomic_json(root/'selection.json',dict(rule='four longest existing update-one training native prefixes; identity/depth ties, no reward/legality selection',
+    source_sha256=file_sha256(r/'runs/two-stage-online-ricepo-174610/iteration-000000/trajectories.json'),
+    prefix_lengths=[len(p) for p in prefixes],prefix_sha256=[fingerprint(p) for p in prefixes],seeds=seeds))
+parents=[r/'runs/two-stage-online-grpo-174611',r/'runs/continuation-grpo-174716']
+cp_dirs=[parents[0]/'iteration-000000/checkpoint',parents[1]/'iteration-000001/checkpoint']
+bindings=[read(p/'binding.json') for p in parents]
+if bindings[0]['behavior']!=bindings[1]['behavior']:raise ValueError('behavior changed between weight versions')
+receipts=[verify_checkpoint(cp,fingerprint(b)) for cp,b in zip(cp_dirs,bindings,strict=True)]
+if receipts[0]['policy_version']==receipts[1]['policy_version']:raise ValueError('no actual policy change to validate')
+for name,digest in receipts[0]['files'].items():
+    if name.startswith('actor/') and not name.endswith('.safetensors') and receipts[1]['files'].get(name)!=digest:
+        raise ValueError('tokenizer/config changed across weight switch: '+name)
+tok=AutoTokenizer.from_pretrained(str(cp_dirs[0]/'actor'),local_files_only=True,trust_remote_code=False)
+model=AutoModelForCausalLM.from_pretrained(str(cp_dirs[0]/'actor'),torch_dtype=torch.float32,
+    local_files_only=True,trust_remote_code=False).to('cuda:0').eval();model.requires_grad_(False)
+version='unset'
+gen=HFNativeGenerator(model=model,tokenizer=tok,device='cuda:0',policy_version_getter=lambda:version,
+    max_new_tokens=4096,max_context_tokens=32768,prefilled_think=True,precision_context=nullcontext,
+    summary_mode='two_stage_env_summary_v1',structured_stop=True,parser_settings={},failure_semantics='invalid_action_terminal_zero_v1')
+results=[]
+with attempt(root):
+    for i,(cp,binding,receipt) in enumerate(zip(cp_dirs,bindings,receipts,strict=True)):
+        if i:
+            replacement,info=AutoModelForCausalLM.from_pretrained(str(cp/'actor'),torch_dtype=torch.float32,
+                local_files_only=True,trust_remote_code=False,output_loading_info=True)
+            if any(info.get(k) for k in ('missing_keys','mismatched_keys','error_msgs')):raise ValueError('partial replacement model')
+            model.load_state_dict(replacement.state_dict(),strict=True);del replacement
+        version,identity=identify(model,binding['behavior'])
+        if version!=receipt['policy_version']:raise ValueError('live actual weights do not match checkpoint version')
+        modes={};records={};checks=[]
+        for mode in ('serial','batch'):
+            started=time.monotonic()
+            with operation('long_policy_switch_'+mode,policy_version=version):
+                gs=(tuple(gen.generate(p,seed=s) for p,s in zip(prefixes,seeds,strict=True))
+                    if mode=='serial' else gen.generate_many(prefixes,seeds))
+            torch.cuda.synchronize();seconds=time.monotonic()-started;mode_checks=[]
+            for n,(prefix,g) in enumerate(zip(prefixes,gs,strict=True)):
+                ids=prefix+g.token_ids;mask=(False,)*len(prefix)+generation_action_mask(g)
+                with torch.inference_mode():
+                    teacher=sampled_old_log_probs(model,ids,mask,device='cuda:0',logit_chunk_size=64,
+                        max_context_tokens=32768,policy_call_kwargs={})[0].cpu().tolist()
+                sampled=(0.,)*len(prefix)+tuple(0. if p is None else p for p in g.sampled_log_probs)
+                c=compare_log_probs(sampled,teacher,mask);mode_checks.append(dict(prefix_length=len(prefix),native_length=len(ids),**c))
+                atomic_json(root/f'policy-{i}-{mode}-request-{n}.json',dict(prefix_sha256=fingerprint(prefix),generation=g,probability=mode_checks[-1]))
+            count=sum(sum(generation_action_mask(g)) for g in gs);records[mode]=gs;checks.extend(mode_checks)
+            modes[mode]=dict(checks=mode_checks,actual_model_tokens=count,generation_seconds=seconds,tokens_per_second=count/seconds,
+                valid_actions=sum(isinstance(g,Generation) for g in gs),probability_passed=all(c['within_bf16_tolerance'] for c in mode_checks))
+        row=dict(policy_version=version,state_dict_sha256=identity['state_dict_sha256'],global_completed_updates=1 if i==0 else 3,
+            checks=checks,probability_passed=all(c['within_bf16_tolerance'] for c in checks),
+            modes=modes,native_ids_identical=all(a.token_ids==b.token_ids for a,b in zip(records['serial'],records['batch'],strict=True)),
+            action_masks_identical=all(generation_action_mask(a)==generation_action_mask(b) for a,b in zip(records['serial'],records['batch'],strict=True)),
+            peak_allocated=torch.cuda.max_memory_allocated(0))
+        atomic_json(root/f'policy-{i}-summary.json',row);results.append(row)
+        print('LONG_SWITCH_POLICY',i,version,row['probability_passed'],flush=True)
+        if not row['probability_passed']:raise ValueError('new-weight long-context probability gate failed')
+    atomic_json(root/'summary.json',dict(passed=all(x['probability_passed'] for x in results),results=results,
+        source_release='native-recovery-v2',
+        identical_model_object_across_load=True,actual_state_dict_changed=results[0]['state_dict_sha256']!=results[1]['state_dict_sha256'],
+        prefix_lengths=[len(p) for p in prefixes],
+        scope='Fixed conditional-history sampler gate, not fresh on-policy trajectories, no rewards or optimizer step'))
+    atomic_json(root/'cost.json',cost_report(root))
+print('LONG_SWITCH_COMPLETE',root,flush=True)

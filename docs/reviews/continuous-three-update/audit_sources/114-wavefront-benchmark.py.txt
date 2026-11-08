@@ -1,0 +1,140 @@
+"""Fixed one-query full-method sampling workload, serial then batch; no optimizer."""
+import os,json,time
+from pathlib import Path
+from contextlib import nullcontext
+import torch
+from ricepo.artifacts import atomic_json,file_sha256
+from ricepo.audit import attempt,operation,stable_seed,fingerprint,cost_report
+from ricepo.state import verify_checkpoint
+from ricepo.dataset_bundle import verify_bundle
+from ricepo.environment import configure_caches
+from ricepo.hf_runtime import HFNativeGenerator,_manifest,_domain_retriever
+from ricepo.asset_identity import local_model_identity
+from ricepo.formats import PromptRenderer
+from ricepo.retrieval import DiverEncoder,PyTrecReward,ExplicitQueryComposer
+from ricepo.rollout import RolloutRunner,RolloutRules,BranchRequest
+from ricepo.batched_rollout import OriginalRequest,run_many
+from ricepo.backends import TransformersEntropyProvider
+from ricepo.credit import select_anchors,build_advantages
+from ricepo.modeling import sampled_old_log_probs
+from ricepo.probability_check import compare_log_probs
+from ricepo.contracts import trajectory_behavior_log_probs,generation_action_mask
+from ricepo.policy_identity import identify
+from ricepo.continuation import scheduled_queries
+from transformers import AutoTokenizer,AutoModelForCausalLM
+r=Path(os.environ['RICE_PROJECT']);source=r/'runs/two-stage-online-ricepo-174610'
+root=r/'runs'/('wavefront-workload-'+os.environ['SLURM_JOB_ID']);root.mkdir()
+read=lambda p:json.loads(p.read_text())
+dep=read(source/'deployment.json');plan=read(source/'recipe.json')['values'];binding=read(source/'binding.json')
+configure_caches(r/'cache'/root.name)
+if torch.cuda.device_count()!=2:raise ValueError('two assigned visible devices required')
+frozen=verify_bundle(dep)
+_,train,qrels=_manifest(frozen.paths['train'],set(dep['domains']),expected_sha256=frozen.manifest_sha256['train'])
+schedule=read(r/'control/continuation-schedule-v1.json')
+q=scheduled_queries(train,42,1,4)[0]
+if q!=schedule['batches'][0][0]:raise ValueError('fixed benchmark query changed')
+ex=train[q];cp=source/'iteration-000000/checkpoint'
+saved=verify_checkpoint(cp,fingerprint(binding))
+tok=AutoTokenizer.from_pretrained(str(cp/'actor'),local_files_only=True,trust_remote_code=False)
+actor=AutoModelForCausalLM.from_pretrained(str(cp/'actor'),torch_dtype=torch.float32,local_files_only=True,
+    trust_remote_code=False).to('cuda:0').eval();actor.requires_grad_(False)
+version,evidence=identify(actor,binding['behavior'])
+if version!=saved['policy_version']:raise ValueError('benchmark checkpoint does not match parent')
+renderer=PromptRenderer(tok,(r/'releases/batch-wavefront-v1/prompts/ricepo_prefilled_think_smoke.txt').read_text(),
+    observation_top_k=plan['observation_top_k'],observation_token_limit=plan['observation_token_limit'],prefill_think=True)
+encoder=DiverEncoder.from_local(dep)
+backend,retriever_source=_domain_retriever(ex.domain,dep['domains'][ex.domain],dep,plan,read(source/'config.json')['model'],
+    encoder,renderer,train,qrels)
+if retriever_source!=read(source/'retriever-sources.json')[ex.domain]:raise ValueError('retriever recipe/assets changed')
+native=HFNativeGenerator(model=actor,tokenizer=tok,device='cuda:0',policy_version_getter=lambda:version,
+    max_new_tokens=4096,max_context_tokens=32768,prefilled_think=True,precision_context=nullcontext,
+    summary_mode='two_stage_env_summary_v1',structured_stop=True,parser_settings={},failure_semantics='invalid_action_terminal_zero_v1')
+reward=PyTrecReward(qrels)
+class Meter:
+    @property
+    def policy_version(self):return native.policy_version
+    def __init__(self):self.seconds=0.;self.tokens=0;self.requests=0
+    def generate(self,prefix,*,seed):
+        start=time.monotonic();g=native.generate(prefix,seed=seed);torch.cuda.synchronize(0)
+        self.seconds+=time.monotonic()-start;self.tokens+=sum(generation_action_mask(g));self.requests+=1
+        return g
+    def generate_many(self,prefixes,seeds):
+        start=time.monotonic();gs=native.generate_many(prefixes,seeds);torch.cuda.synchronize(0)
+        self.seconds+=time.monotonic()-start;self.tokens+=sum(sum(generation_action_mask(g)) for g in gs);self.requests+=len(gs)
+        return gs
+all_results={}
+for mode in ('serial','batch'):
+    folder=root/mode;folder.mkdir();meter=Meter();start=time.monotonic()
+    runner=RolloutRunner(generator=meter,retriever=backend,reward_scorer=reward,query_composer=ExplicitQueryComposer(**plan['query_composition']),
+        rules=RolloutRules(frozenset({'stop'}),4096,32768,5),should_stop=lambda steps:False,
+        final_reward=lambda steps:steps[-1].local_reward,render_next_turn=renderer.next_user_turn,
+        failure_semantics=plan['format_failure_policy'],excluded_ids_by_query={q:ex.excluded_ids})
+    for i in range(2):torch.cuda.reset_peak_memory_stats(i)
+    with attempt(folder):
+        initial=backend.retrieve(ex.query,excluded_ids=ex.excluded_ids);prefix=renderer.initial(ex.query,initial.documents)
+        requests=[OriginalRequest(q,f'1-{fingerprint(q)}-{n}',ex.query,prefix,
+            tuple(stable_seed(42,'original',1,ex.domain,q,n,d) for d in range(1,6)),version,
+            reward.score(q,tuple(d.document_id for d in initial.documents))) for n in range(4)]
+        atomic_json(folder/'requests.json',requests)
+        originals=tuple(runner.run(**x.serial_kwargs()) for x in requests) if mode=='serial' else run_many(runner,requests)
+        atomic_json(folder/'originals.json',originals)
+        provider=TransformersEntropyProvider(model=actor,policy_version_getter=lambda:version,device='cuda:0',
+            chunk_size=dep['entropy_chunk_size'],max_context_tokens=32768,model_call_kwargs={})
+        entropy={t.trajectory_id:provider.token_entropies(t) if t.steps else (float('nan'),)*len(t.token_ids) for t in originals}
+        candidates=select_anchors(originals,entropy,top_k=sum(len(t.steps) for t in originals));anchors=candidates[:4]
+        atomic_json(folder/'anchors.json',anchors)
+        byid={t.trajectory_id:t for t in originals};collections=[]
+        for a in anchors:
+            t=byid[a.trajectory_id]
+            branches=[BranchRequest(f'{t.trajectory_id}-d{a.depth}-b{b}',
+                tuple(stable_seed(42,'branch_v2',ex.domain,q,t.trajectory_id,a.depth,b,d) for d in range(a.depth,6))) for b in range(1,6)]
+            c=runner.branch(original_query=ex.query,original=t,anchor=a,requests=branches,batched=mode=='batch')
+            collections.append(c);atomic_json(folder/('branches-'+fingerprint([t.trajectory_id,a.depth])+'.json'),c)
+        comparable=[c.group for c in collections if all(o.local_reward is not None for o in c.group.outcomes)]
+        advantage=build_advantages(originals,comparable,expected_branch_count=6,epsilon=plan['normalization_epsilon'],
+            local_normalization=plan['local_advantage_normalization'],gate_mode=plan['gate_mode'],
+            variance_threshold=.05,residual_threshold=.03)
+        atomic_json(folder/'advantages.json',advantage)
+        workload_seconds=time.monotonic()-start
+        traces=list(originals)+[t for c in collections for t in c.trajectories]
+        checks=[]
+        for t in traces:
+            with torch.inference_mode():
+                teacher=sampled_old_log_probs(actor,t.token_ids,t.generated_mask,device='cuda:0',
+                    logit_chunk_size=64,max_context_tokens=32768,policy_call_kwargs={})[0].cpu().tolist()
+            sample=trajectory_behavior_log_probs(t)
+            if sample is None:raise ValueError('missing actual sampled probabilities')
+            check=compare_log_probs(sample,teacher,t.generated_mask)
+            checks.append(dict(identity_sha256=fingerprint(t.trajectory_id),native_length=len(t.token_ids),
+                valid_rounds=len(t.steps),failed=t.failure is not None,**check))
+            atomic_json(folder/'probability'/(fingerprint(t.trajectory_id)+'.json'),checks[-1])
+        all_results[mode]=dict(originals=4,normal_originals=sum(t.failure is None for t in originals),
+            selected_anchors=len(anchors),new_branches=sum(len(c.trajectories) for c in collections),estimable_anchors=len(comparable),
+            workload_seconds=workload_seconds,generation_seconds=meter.seconds,actual_model_tokens=meter.tokens,
+            action_requests=meter.requests,tokens_per_second=meter.tokens/meter.seconds,checks=checks,
+            probability_passed=all(c['within_bf16_tolerance'] for c in checks),
+            max_native_length=max(c['native_length'] for c in checks),
+            peak_allocated=[torch.cuda.max_memory_allocated(i) for i in range(2)],
+            peak_reserved=[torch.cuda.max_memory_reserved(i) for i in range(2)],
+            retrieval_calls=1+sum(len(t.steps) for t in originals)+sum(len(t.steps)-c.group.anchor.depth+1 for c in collections for t in c.trajectories),
+            scope='Repeated frozen one-query workload diagnostic; real retrieval/credit, no optimizer step, not an independent training result')
+        atomic_json(folder/'summary.json',all_results[mode]);atomic_json(folder/'cost.json',cost_report(folder))
+        print('WORKLOAD_COMPLETE',mode,meter.tokens,meter.seconds,all_results[mode]['max_native_length'],all_results[mode]['probability_passed'],flush=True)
+        if not all_results[mode]['probability_passed']:raise ValueError('long native trajectory probability gate failed')
+sa=read(root/'serial/originals.json');ba=read(root/'batch/originals.json')
+same_originals=all(x['token_ids']==y['token_ids'] and x['generated_mask']==y['generated_mask'] for x,y in zip(sa,ba,strict=True))
+same_anchors=read(root/'serial/anchors.json')==read(root/'batch/anchors.json')
+serial_branch_files=sorted((root/'serial').glob('branches-*.json'));batch_branch_files=sorted((root/'batch').glob('branches-*.json'))
+same_branch_identities=[p.name for p in serial_branch_files]==[p.name for p in batch_branch_files]
+same_branch_ids=same_branch_identities and all(
+    all(x['token_ids']==y['token_ids'] and x['generated_mask']==y['generated_mask']
+        for x,y in zip(read(sp)['trajectories'],read(bp)['trajectories'],strict=True))
+    for sp,bp in zip(serial_branch_files,batch_branch_files,strict=True))
+atomic_json(root/'summary.json',dict(results=all_results,policy_version=version,manifest_sha256=frozen.manifest_sha256['train'],
+    native_originals_identical=same_originals,entropy_anchors_identical=same_anchors,
+    branch_request_identities_identical=same_branch_identities,native_branches_identical=same_branch_ids,
+    fixed_query_sha256=fingerprint(q),checkpoint_complete_sha256=file_sha256(cp/'complete.json'),
+    order='serial then batch; shared already-loaded models/index, warm-cache order remains a limitation',
+    passed=all(v['probability_passed'] for v in all_results.values()),
+    total_elapsed_seconds=time.monotonic()-float(os.environ['BENCHMARK_START_MONOTONIC'])))
+print('BENCHMARK_COMPLETE',root,flush=True)

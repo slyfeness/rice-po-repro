@@ -1,0 +1,21 @@
+#!/bin/bash
+#SBATCH -p ${SLURM_PARTITION}
+#SBATCH -A ${SLURM_ACCOUNT}
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH --gres=gpu:2
+#SBATCH -c 16
+#SBATCH --mem=192G
+#SBATCH -t 01:30:00
+date -u '+BATCH_ENTRY %Y-%m-%dT%H:%M:%SZ'
+set -euo pipefail
+export RICE_PROJECT=${PROJECT_ROOT}
+source ${BULK_ROOT}/envs/ricepo-retrieval-overlay-v1/bin/activate
+export JAVA_HOME=${BULK_ROOT}/envs/ricepo-temurin21-21.0.12.1_1
+export PATH="$JAVA_HOME/bin:$PATH" PYTHONPATH="$RICE_PROJECT/releases/batch-wavefront-v1/src"
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 HF_DATASETS_OFFLINE=1 OMP_NUM_THREADS=8
+export TMPDIR="$RICE_PROJECT/tmp/batch-benchmark-$SLURM_JOB_ID"
+mkdir "$TMPDIR"
+unset HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy
+export BENCHMARK_START_MONOTONIC=$(python -c 'import time;print(time.monotonic())')
+python -u "$RICE_PROJECT/control/114-wavefront-benchmark.py"

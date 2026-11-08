@@ -1,0 +1,97 @@
+{
+  "packages": {
+    "torch": "2.10.0",
+    "transformers": "5.5.1",
+    "vllm": "0.19.1",
+    "triton": "3.6.0",
+    "safetensors": "0.8.0"
+  },
+  "swap_current_packages": {
+    "torch": "2.10.0",
+    "transformers": "5.5.1",
+    "vllm": "0.19.1",
+    "triton": "3.6.0"
+  },
+  "versions_scope": "Current reused installations; historical per-job logs separately verify engine version, dtype and backend.",
+  "checkpoint_policy": "0cf680de7291fc39980acdaa1e33536501e07c4db2b24b02aca0a847d96700e2",
+  "serialized_tensor_elements": 1777088000,
+  "tensor_count": 339,
+  "fp32_tensor_bytes": 7108352000,
+  "source_sha256": {
+    "configs/deployment-four-gpu-fast-generation-v2.json": "2d60700ceceeb31eced44c6680867453f6031fb7350b88353e93ddc5cdf25b6c",
+    "configs/deployment-four-gpu-training-v1.json": "283e219651a57e8306002023b5b5dc12b2d55da38fc174fe487fa9f5e80ab4fa",
+    "slurm/14_four_gpu_config2.sbatch": "1311847ab5798cc7b9cce4c253079ce6ae73b216feae159c0714f5f7ad46a93e",
+    "docs/ZHURONG_FOUR_GPU_GENERATION_CONFIG2_RESULTS_20261102.md": "7b4cbce283f1c9cb0dba975acdd4429485beef7e152b0d3ea3d56ab718c4d0c1",
+    "outputs/zhurong-four-gpu-generation-config2-169532/RESULTS.json": "74a16a0c5444c1c9bd7232ae31f556ebb1115c5b8054b2f4bf4689ea3f6e2c2a",
+    "outputs/zhurong-four-gpu-generation-config2-169532/block-0/batch144.log": "6525c27e9cb2bd5e4a19c522b1bac010c0903e53d72e06b73953bf2a29c391f3"
+  },
+  "model_config": {
+    "architectures": [
+      "Qwen2ForCausalLM"
+    ],
+    "attention_dropout": 0.0,
+    "bos_token_id": 151643,
+    "dtype": "float32",
+    "eos_token_id": 151643,
+    "hidden_act": "silu",
+    "hidden_size": 1536,
+    "initializer_range": 0.02,
+    "intermediate_size": 8960,
+    "layer_types": [
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention"
+    ],
+    "max_position_embeddings": 131072,
+    "max_window_layers": 21,
+    "model_type": "qwen2",
+    "num_attention_heads": 12,
+    "num_hidden_layers": 28,
+    "num_key_value_heads": 2,
+    "pad_token_id": null,
+    "rms_norm_eps": 1e-06,
+    "rope_parameters": {
+      "rope_theta": 10000,
+      "rope_type": "default"
+    },
+    "sliding_window": null,
+    "tie_word_embeddings": false,
+    "transformers_version": "5.5.1",
+    "use_cache": true,
+    "use_mrope": false,
+    "use_sliding_window": false,
+    "vocab_size": 151936
+  },
+  "estimates_only": {
+    "actor_bytes": 7108352000,
+    "reference_bytes": 7108352000,
+    "gradient_bytes": 7108352000,
+    "adam_moments_bytes": 14216704000
+  },
+  "caveat": "Static tensor storage, not measured CUDA allocator attribution; excludes activations, logits, caches, copies and allocator overhead."
+}

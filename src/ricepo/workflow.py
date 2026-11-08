@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Callable, Sequence
 
 from .artifacts import atomic_json, stage_receipt
-from .contracts import AdvantageBatch, Anchor, EntropyProvider, Span, Trajectory
+from .contracts import AdvantageBatch, Anchor, EntropyProvider, Span, Trajectory,generation_action_mask
 from .credit import build_advantages, select_anchors, trajectory_advantages
 from .audit import operation, saved_item, stable_seed
 from .diagnostics import credit_report
@@ -21,6 +21,12 @@ class IterationComponents:
     collect_branches: Callable[[Trajectory, Anchor], BranchRollouts] | None
     update: Callable
     phase_barrier: Callable[[str, str], None]
+    # Optional scheduler-only extension.  It receives ordered (trajectory,
+    # anchor) pairs and must return the same ordered branch collections.
+    # Scientific branch construction remains the responsibility of the normal
+    # callback; this hook only coalesces actions that are already ready.
+    collect_branches_batch: Callable[[Sequence[tuple[Trajectory, Anchor]]], Sequence[BranchRollouts]] | None = None
+    entropy_batch: Callable[[Sequence[Trajectory]], dict] | None = None
 
 
 def _validate_branch_trace(trace: Trajectory, source: Trajectory, anchor: Anchor) -> None:
@@ -47,7 +53,7 @@ def _validate_branch_trace(trace: Trajectory, source: Trajectory, anchor: Anchor
         if step.retrieval.backend_version != source_step.retrieval.backend_version:
             raise ValueError("counterfactual retrieval backend changed from the fixed source backend")
         history += generation.token_ids + step.retrieval.observation_token_ids
-        mask += (True,) * len(generation.token_ids) + (False,) * len(step.retrieval.observation_token_ids)
+        mask += generation_action_mask(generation) + (False,) * len(step.retrieval.observation_token_ids)
     if history != trace.token_ids or mask != trace.generated_mask:
         raise ValueError("counterfactual trace IDs or mask do not reproduce its saved steps")
     if any(type(token) is not int or token < 0 for token in history):
@@ -94,6 +100,7 @@ def _validate_branch_rollouts(branch_rollouts, anchors, originals, total_branche
 
 
 def _collect_credit(components, grouped, originals, root, policy_version, recipe, seed, iteration):
+    zero = recipe["format_failure_policy"] == "invalid_action_terminal_zero_v1"
     def grouped_baseline():
         return [trajectory_advantages(g, epsilon=recipe["normalization_epsilon"]) for g in grouped.values()]
     if recipe["method"] == "grpo":
@@ -104,12 +111,21 @@ def _collect_credit(components, grouped, originals, root, policy_version, recipe
     entropy, anchors, summaries = {}, [], []
     provider = components.entropy_provider
     components.phase_barrier("rollout", "entropy")
+    if components.entropy_batch is not None:
+        eligible=[t for group in grouped.values() for t in group if not (zero and not t.steps)]
+        if provider.policy_version != policy_version:raise ValueError('entropy provider policy changed')
+        entropy.update(components.entropy_batch(eligible))
+        if set(entropy)!={t.trajectory_id for t in eligible}:raise ValueError('batched entropy coverage differs')
+        if provider.policy_version != policy_version:raise ValueError('entropy provider policy changed')
     for q, group in grouped.items():
         for t in group:
             if provider.policy_version != policy_version:
                 raise ValueError("entropy provider changed policy within the iteration")
-            with operation("entropy", query=q, trajectory=t.trajectory_id, input_tokens=len(t.token_ids)-1, model_passes=1):
-                entropy[t.trajectory_id] = tuple(provider.token_entropies(t))
+            if zero and not t.steps:
+                entropy[t.trajectory_id] = (float("nan"),)*len(t.token_ids)
+            elif t.trajectory_id not in entropy:
+                with operation("entropy", query=q, trajectory=t.trajectory_id, input_tokens=len(t.token_ids)-1, model_passes=1):
+                    entropy[t.trajectory_id] = tuple(provider.token_entropies(t))
             if provider.policy_version != policy_version:
                 raise ValueError("entropy provider changed policy during teacher forcing")
             for step in t.steps:
@@ -119,7 +135,7 @@ def _collect_credit(components, grouped, originals, root, policy_version, recipe
         candidates = select_anchors(group, {t.trajectory_id:entropy[t.trajectory_id] for t in group},
                                     top_k=sum(len(t.steps) for t in group))
         k = recipe["anchors_per_query"]
-        if len(candidates) < k:
+        if len(candidates) < k and not zero:
             raise ValueError("fewer eligible actions than configured anchor budget")
         if recipe["anchor_selection"] == "random":
             candidates = sorted(candidates, key=lambda a: stable_seed(seed, "random_anchor", iteration,
@@ -132,14 +148,25 @@ def _collect_credit(components, grouped, originals, root, policy_version, recipe
     stage_receipt(root, "entropy", policy_version=policy_version,
                   artifacts={"anchors.json":anchor_digest, "summary-entropies.json":entropy_digest})
     components.phase_barrier("entropy","branches")
-    collections = []
-    for a in anchors:
-        collection = components.collect_branches(originals[a.trajectory_id], a)
+    if components.collect_branches_batch is not None:
+        collections=list(components.collect_branches_batch(
+            tuple((originals[a.trajectory_id],a) for a in anchors)))
+        if len(collections)!=len(anchors):
+            raise ValueError('cross-anchor scheduler changed the branch collection count')
+    else:
+        collections = []
+        for a in anchors:
+            collections.append(components.collect_branches(originals[a.trajectory_id], a))
+    for a,collection in zip(anchors,collections,strict=True):
         saved_item("branch_group", [iteration,a.trajectory_id,a.depth], collection)
-        collections.append(collection)
     total = recipe["total_branches_including_original"]
-    _validate_branch_rollouts(collections, anchors, originals, total)
-    branches = [item.group for item in collections]
+    if zero:
+        from .failure_zero import validate_collections
+        validate_collections(collections,anchors,originals,total,recipe["rollout_depth"])
+    else:
+        _validate_branch_rollouts(collections, anchors, originals, total)
+    all_branches = [item.group for item in collections]
+    branches = [b for b in all_branches if all(o.local_reward is not None for o in b.outcomes)]
     digest = atomic_json(root / "counterfactual-trajectories.json", collections)
     stage_receipt(root, "branches_complete", policy_version=policy_version,
                   artifacts={"counterfactual-trajectories.json":digest})
@@ -149,7 +176,21 @@ def _collect_credit(components, grouped, originals, root, policy_version, recipe
              local_normalization=recipe["local_advantage_normalization"], gate_mode=recipe["gate_mode"],
              variance_threshold=recipe["influence_threshold"], residual_threshold=recipe["residual_threshold"])
              for q,group in grouped.items()]
-    atomic_json(root / "credit-diagnostics.json", credit_report(grouped, branches, parts, recipe, iteration))
+    report = credit_report(grouped, branches, parts, recipe, iteration)
+    if zero:
+        report["failure_semantics"] = recipe["format_failure_policy"]
+        report["selected_anchor_count"] = len(anchors)
+        report["estimable_anchor_count"] = len(branches)
+        report["gate_pass_count"] = sum(r.propagate for part in parts for r in part.records)
+        report["local_replacement_count"] = len(branches)
+        report["nonzero_local_credit_count"] = sum(r.summary_advantage!=0 for part in parts for r in part.records)
+        report["fallback"] = [dict(anchor=b.anchor,status="not_estimable",
+            reason="missing_counterfactual_anchor_summary",
+            missing_local_branch_ids=[o.branch_id for o in b.outcomes if o.local_reward is None])
+            for b in all_branches if any(o.local_reward is None for o in b.outcomes)]
+        report["original_failure_count"] = sum(t.failure is not None for t in originals.values())
+        report["original_count"] = len(originals)
+    atomic_json(root / "credit-diagnostics.json", report)
     return parts
 
 
@@ -164,7 +205,10 @@ def run_iteration(components, *, iteration, policy_version, output_root, recipe,
         for trajectory in components.rollout_batch(iteration,policy_version):
             if trajectory.trajectory_id in originals or trajectory.policy_version != policy_version:
                 raise ValueError("duplicate trajectory or mixed behavior policy")
-            if len(trajectory.steps) != recipe["rollout_depth"] or trajectory.final_reward != trajectory.steps[-1].local_reward:
+            if recipe["format_failure_policy"] == "invalid_action_terminal_zero_v1":
+                from .failure_zero import validate_trajectory
+                validate_trajectory(trajectory,recipe["rollout_depth"])
+            elif len(trajectory.steps) != recipe["rollout_depth"] or trajectory.final_reward != trajectory.steps[-1].local_reward:
                 raise ValueError("incomplete configured horizon or final reward differs from last retrieval")
             saved_item("original", trajectory.trajectory_id, trajectory)
             originals[trajectory.trajectory_id] = trajectory

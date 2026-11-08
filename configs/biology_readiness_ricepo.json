@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "extends": "paper_reference.json",
+  "profile": "ablation",
+  "method": "ricepo",
+  "runtime_bindings": {"total_updates": null},
+  "deviations": {
+    "max_new_tokens_per_step": {"value":4096,"reason":"Frozen independent two-stage generation capacity."},
+    "native_span_parser": {"value":"two_stage_env_summary_v1","reason":"Authorized independent two-stage native protocol."},
+    "prompt_artifact": {"value":"prompts/ricepo_prefilled_think_smoke.txt","reason":"Frozen format-compatible prefilled Think prompt, not unmodified Figure5."},
+    "format_failure_policy": {"value":"invalid_action_terminal_zero_v1","reason":"Authorized independent invalid-action zero-utility terminal."},
+    "query_composition": {"value":{"mode":"original_and_summary","separator":"\n"},"reason":"Independent paper4.2.2 interpretation, new common-initial lineage."},
+    "development_every_updates": {"value":4,"reason":"Predeclared complete evaluation every4 updates and always final."},
+    "checkpoint_every_updates": {"value":2,"reason":"Save every2 updates plus final and every formal evaluation/selection point; generation weights still synchronize after every update."},
+    "eval_samples_per_query": {"value":4,"reason":"Fixed4 independent samples per query, averaged within query before macro average."}
+  },
+  "execution": {"enabled": false,"runtime_validated": false,"four_gpu_validated": false}
+}

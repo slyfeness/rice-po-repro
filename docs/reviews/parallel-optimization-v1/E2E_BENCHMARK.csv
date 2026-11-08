@@ -1,0 +1,5 @@
+method,variant,job,wall_seconds,originals,new_branches,optimizer_steps,checkpoint_reload,new_weight_sampling,wall_scope
+ricepo,reference,175521,1754.242689403,16,80,1,true,true,run_including_initialization_checkpoint_and_post_update_probe
+ricepo,candidate,175524,1740.991764763,16,80,1,true,true,run_including_initialization_checkpoint_and_post_update_probe
+grpo,reference,175523,892.482054641,16,0,1,true,true,run_including_initialization_checkpoint_and_post_update_probe
+grpo,candidate,175525,902.421057155,16,0,1,true,true,run_including_initialization_checkpoint_and_post_update_probe

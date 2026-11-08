@@ -1,0 +1,86 @@
+{
+  "status": "QUALIFIED_FOR_BOUNDED_PILOT_ONLY",
+  "adopt_B_as_optional_candidate": true,
+  "change_verified_default": false,
+  "base_commit": "5d4b4ff5287941abb365637b222239ae29ce9909",
+  "gemm_control": {
+    "status": "MEASURED",
+    "effective": true,
+    "A": "highest / allow_tf32=false / ampere_sgemm",
+    "B": "high / allow_tf32=true / tensorop_s1688gemm",
+    "single_row_gemv": "unchanged"
+  },
+  "speed": {
+    "status": "MEASURED",
+    "primary": "same1152 cold host batch makespan, excludes initialization",
+    "cold_speedup": 2.5082613451501534,
+    "minimum_required": 1.5,
+    "passed": true,
+    "A_seconds": 366.440751247108,
+    "B_seconds": 146.09352887235582,
+    "B_tokens": 226505,
+    "B_tokens_per_second": 1550.4109028532052,
+    "full_training_speedup": "UNKNOWN; not measured by a paired online comparison"
+  },
+  "numerical": {
+    "status": "MEASURED",
+    "independent_requests": 16,
+    "independent_tokens": 3782,
+    "risk_screen_pass": true,
+    "independent_outside_fraction": 0.0,
+    "independent_extreme_fraction": 0.0,
+    "online_originals_risk_pass": true,
+    "online_all_records_historical_consistency_pass": false,
+    "post_update_risk_pass": true,
+    "post_update_outside_fraction": 0.0032679738562091504,
+    "post_update_historical_consistency_pass": false,
+    "post_update_p99_abs_log_error": 0.1554884910583496,
+    "backend_equivalence": false
+  },
+  "online": {
+    "status": "MEASURED",
+    "queries": 2,
+    "originals": 8,
+    "legal_five_round_originals": 4,
+    "new_branches": 40,
+    "selected_anchors": 8,
+    "estimable_anchors": 5,
+    "nonzero_local_credit": 3,
+    "reasoning_propagation_gates_passed": 0,
+    "optimizer_steps": 1,
+    "gradient_norm": 1782.188232421875,
+    "weight_delta_l2": 0.03660403107809791,
+    "changed_parameter_elements": 1546270516,
+    "checkpoint_restore": "PASS",
+    "new_weight_sampling": true,
+    "development": "NOT_RUN",
+    "elapsed_seconds": 1138.8634223937988
+  },
+  "cost": {
+    "status": "ESTIMATED",
+    "old32_RICE_training_generation_host_fraction": 0.3096230255337714,
+    "whole_time_saving_if_training_generation_1_5x": 0.1032076751779238,
+    "whole_time_saving_if_training_and_eval_generation_1_5x": 0.12574471853806868,
+    "pure_GPU_generation_fraction": "UNKNOWN"
+  },
+  "dual_engine_priority": {
+    "status": "ESTIMATED",
+    "decision": "defer Trainer integration until B end-to-end benefit and memory lifecycle measured",
+    "reason": "B removes part of the generation bottleneck; old dual-engine speedup does not establish incremental gain with B",
+    "B_dual_engine_trainer_validated": false
+  },
+  "limitations": [
+    "independent two-stage/invalid-action-zero environment",
+    "only one two-query update; no long-run or32/128 qualification",
+    "post-update historical probability diagnostics fail although fixed risk gates pass",
+    "no new dual-engine or four-card GEMM deployment test",
+    "no checkpoint selection or development score in this phase"
+  ],
+  "gpu_jobs_terminal": true,
+  "allocated_GPU_hours": 0.9486111111111111,
+  "automatic_training_continuation": false,
+  "archive_generated": false,
+  "execution": {
+    "enabled": false
+  }
+}

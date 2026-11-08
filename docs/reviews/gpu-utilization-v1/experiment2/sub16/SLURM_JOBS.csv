@@ -1,0 +1,5 @@
+job_id,state,elapsed_seconds,allocated_gpus,GPU_hours,exit_code
+176909,COMPLETED,37,0,0.0,0:0
+176910,COMPLETED,5,0,0.0,0:0
+176913,COMPLETED,549,1,0.1525,0:0
+176918,COMPLETED,1,0,0.0,0:0

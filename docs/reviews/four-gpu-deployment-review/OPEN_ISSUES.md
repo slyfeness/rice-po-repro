@@ -1,0 +1,7 @@
+# Review decisions and remaining gates
+
+1. Review A/B/C placement before any formal new four-GPU topology or larger comparison. Current C is a correctness baseline; storage traffic and small4/5-request batches limit throughput. Prioritize testing Retriever/inference co-residency and cross-query batching only after this review. SwAP BF16 settings cannot replace the frozen IEEE-FP32 behavior.
+2. Original+LF+Summary improves fixed-summary retrieval means but does not consistently remove intermediate-to-final degradation. Keep it a separate candidate. Adopting it requires common-initial RICE/GRPO runs; no reuse of old future branch rewards.
+3. Native two-stage/failure-zero remains an independent environment. Missing anchor Summary makes credit not estimable, with trajectory fallback. Reasoning gates remain data-dependent; do not reduce0.05/0.03 to obtain propagation.
+4. Full-history numeric tests cover observed native lengths, including a real4096-token action. They do not establish worst-case32768-context training capacity or64 simultaneous maximum-length sequences. Worker-wide synchronized GPU peaks and separate prefill/decode kernel measurements are still missing.
+5. Standalone holdout explicitly rejects vLLM. Full BRIGHT twelve-domain assets, paper batch128 interpretation/budget and formal performance reproduction remain future work. No formal expansion is started by this delivery.

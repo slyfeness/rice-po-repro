@@ -1,0 +1,43 @@
+{
+  "kind": "rice_quick_inference_recommendation_v1",
+  "benchmark_scope": "fixed 144 saved native RICE conditions per single-card candidate; 512-token stage cap; no retrieval, credit, PPO, evaluation, or checkpointing",
+  "fastest_measured": {
+    "candidate": "B",
+    "numeric_mode": "bf16_fast",
+    "attention_backend": "FLASH_ATTN",
+    "max_num_seqs": 144,
+    "max_num_batched_tokens": 32768,
+    "gpu_memory_utilization": 0.9,
+    "max_model_len": 32768,
+    "temperature": 1.0,
+    "top_p": 1.0,
+    "top_k": 0,
+    "prefix_cache": true,
+    "cuda_graphs": true,
+    "chunked_prefill": true,
+    "mean_formal_wall_seconds": 18.109694984,
+    "mean_generated_tokens": 34659.5,
+    "mean_tokens_per_second": 1913.88,
+    "ppo_compatibility": "failed existing HF probability tolerance on 16 fixed real-prefix checks; pure-inference-only"
+  },
+  "fastest_previously_ppo_compatible": {
+    "candidate": "C",
+    "numeric_mode": "ieee_fp32",
+    "attention_backend": "TRITON_ATTN",
+    "max_num_seqs": 64,
+    "max_num_batched_tokens": 16384,
+    "gpu_memory_utilization": 0.8,
+    "tokens_per_second": 232.301063,
+    "status": "previously validated IEEE baseline; this quick benchmark did not repeat its PPO training validation"
+  },
+  "four_card_pure_inference_confirmation": {
+    "candidate": "B",
+    "workers": 4,
+    "requests_per_worker": 144,
+    "completed_requests": 576,
+    "generated_tokens": 138655,
+    "shared_wall_seconds": 69.971141635,
+    "aggregate_tokens_per_second": 1981.602654481,
+    "measurement_note": "shared wall time includes independent engine initialization and warmup; it is not a sum of single-card rates"
+  }
+}

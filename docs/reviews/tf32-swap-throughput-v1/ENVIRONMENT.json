@@ -1,0 +1,19 @@
+{
+  "python": "3.11.16 (main, Sep 24 2026, 17:56:40) [Clang 22.1.3 ]",
+  "packages": {
+    "torch": "2.10.0",
+    "transformers": "5.5.1",
+    "vllm": "0.19.1",
+    "triton": "3.6.0",
+    "numpy": "1.26.4",
+    "pyserini": "0.22.1",
+    "pytrec-eval": "NOT_AVAILABLE",
+    "safetensors": "0.8.0",
+    "pytrec-eval-terrier": "0.5.11"
+  },
+  "installation_changes": false,
+  "selected_candidate_live_device_metadata": "NVIDIA A800-SXM4-80GB, 81920 MiB, 580.65.06",
+  "hardware_evidence_scope": "S1 live check; selected S2 full-pool allocation live check; per-worker actual names in dual/four receipts. Other historical screen jobs only recorded device UUID/memory, not names.",
+  "accounting_timestamp_timezone": "UTC",
+  "pytrec_note": "The pytrec_eval module is supplied by pytrec_eval-terrier 0.5.11. The short pytrec-eval distribution alias was not found, not a missing runtime module. Existing overlay METADATA Name/Version was checked after export; no package was installed."
+}

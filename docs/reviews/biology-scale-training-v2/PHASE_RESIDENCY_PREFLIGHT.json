@@ -1,0 +1,30 @@
+{
+  "status": "COMPLETED",
+  "job_id": "177376",
+  "scope": "Saved longest-history native trajectory; Diver loaded on GPU1 then transferred to CPU before HF Actor/Reference loading and backward. No generation, retrieval, optimizer step, checkpoint, or old-run resume.",
+  "history": {
+    "horizon": 16947,
+    "action_tokens": 3411
+  },
+  "Diver_transition": {
+    "phase": "hf",
+    "device": "cpu",
+    "seconds": 3.876268334686756
+  },
+  "HF": {
+    "precision": "FP32 weights, TF32 GEMM",
+    "projection": "action_positions_v1",
+    "elapsed_seconds": 34.18617455661297,
+    "gradient_norm": 33.71570587158203,
+    "optimizer_steps": 0,
+    "oom": false
+  },
+  "GPU1": {
+    "allocated_peak_bytes": 76287407104,
+    "reserved_peak_bytes": 77097598976,
+    "sampled_memory_peak_MiB": 73607,
+    "sampled_utilization_mean_percent": 73.06451612903226,
+    "sampled_utilization_max_percent": 100.0
+  },
+  "source_commit": "229c95c70e5815a81ea7d4dfc4b8c6bf2c3afa95"
+}

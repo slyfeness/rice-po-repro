@@ -1,0 +1,146 @@
+[
+  {
+    "delta": 1.0,
+    "depth": 2,
+    "lexical_query_term_retention": 0.125,
+    "method": "grpo1",
+    "original_and_summary": {
+      "ndcg": 1.0,
+      "ranking_sha256": "36f49b796a0141fe84d550cd2075243fa5dfd2d9cbd2eedd1a5fe98352191c8f",
+      "relevant_ranks": [
+        1
+      ],
+      "request_sha256": "28e08eaf4d2e3f0d4fe8334631b56d18d498f49b310eb0b6b8a65ef3fd804e90"
+    },
+    "query_sha256": "69567aa19b8e26887a4fe678780834b45769f01a20903ac36e39d96c4f1443c8",
+    "selection": "largest_gain",
+    "summary_only": {
+      "ndcg": 0.0,
+      "ranking_sha256": "0e8b3ba76af63f8339bed9a1a7b40772658030eaae1118598be36af35b976183",
+      "relevant_ranks": [],
+      "request_sha256": "0c24be1f6ac81fffe5f805c89cd040fb640fbee924a30e01e1c472817da28b15"
+    },
+    "summary_sha256": "82950ab575187f2202b9263056635266adb33340dc3e25e7c8da11c562e0de83"
+  },
+  {
+    "delta": 1.0,
+    "depth": 1,
+    "lexical_query_term_retention": 0.13333333333333333,
+    "method": "grpo1",
+    "original_and_summary": {
+      "ndcg": 1.0,
+      "ranking_sha256": "c6cad298519cf055a601fd264d1abc5200e7b830a60d620f1175abf5cdebb2c5",
+      "relevant_ranks": [
+        1
+      ],
+      "request_sha256": "98419e6ea738feb9cb18877d4c2b30c9c3df83b488c8808bd9529a054f7d8408"
+    },
+    "query_sha256": "d3fb8138412ab382aacd6f7578f2d1ca81d7e2192a3fb5a395e35c4225e2c21e",
+    "selection": "largest_gain",
+    "summary_only": {
+      "ndcg": 0.0,
+      "ranking_sha256": "fc39821e65055a9d7022608fb985d1e88e322a2f910f268e16330109c891ed7a",
+      "relevant_ranks": [],
+      "request_sha256": "20743f09637524a40e621b3d4a9bf4fa7c34b238766bc4f33bcbd0aa8e827521"
+    },
+    "summary_sha256": "5c3a3124272e53e4db89fd163a4d6f2234d6e81e865b128ffa2ed8edcdd4153d"
+  },
+  {
+    "delta": 1.0,
+    "depth": 1,
+    "lexical_query_term_retention": 0.36363636363636365,
+    "method": "grpo1",
+    "original_and_summary": {
+      "ndcg": 1.0,
+      "ranking_sha256": "42aded636c5faee09e9f4c9e365c576fca9843b5313977ec5d04a6573abafab5",
+      "relevant_ranks": [
+        1
+      ],
+      "request_sha256": "84b63c40dc619cfdcdd8a716eb929ff47075f7cba3b630495ad3d57271104e72"
+    },
+    "query_sha256": "bc3e995f8de30ae3fc75f8d0543974de8f65ae93d1abb5833ac06216c6e7d081",
+    "selection": "largest_gain",
+    "summary_only": {
+      "ndcg": 0.0,
+      "ranking_sha256": "b50948220f1c762db849f813e986da81c108072631c1fb306dac2781aa364cde",
+      "relevant_ranks": [],
+      "request_sha256": "21b80f100a6828910f5d2c6832f5100c24d6efacc7f28df05ad808f252e401c4"
+    },
+    "summary_sha256": "aab4a0bc475569cc863858d3ffe40c1bd0e97eeb590ddd9d10914b3d1fdc3af1"
+  },
+  {
+    "delta": -0.5,
+    "depth": 1,
+    "lexical_query_term_retention": 0.44680851063829785,
+    "method": "grpo1",
+    "original_and_summary": {
+      "ndcg": 0.5,
+      "ranking_sha256": "cd6da8fb8eb55b54e153fbc0c8a927610917d35ec7256b2fbbadd9ea82bb44cc",
+      "relevant_ranks": [
+        3
+      ],
+      "request_sha256": "7c5e34b516f458f05f493e7d58389bb0d59919b09ca2a4ce7b6c8effe2c4eac9"
+    },
+    "query_sha256": "9d4def0f4306f2966e732c94ff886b1805ef3c17988d59166ee3ff40bd34a0e6",
+    "selection": "largest_decline",
+    "summary_only": {
+      "ndcg": 1.0,
+      "ranking_sha256": "f5761909b6e2f3af23088648f232e1c2cc1d53c012cc3e03e06d0cbb564b2cc1",
+      "relevant_ranks": [
+        1
+      ],
+      "request_sha256": "6ddee9057aeb9fd2d714b0ee46f728f077931c6d4d4b4b178fead5877718febe"
+    },
+    "summary_sha256": "f9ba42c91bb8e53f272d7d6b365171370575dfd1a3a7f3b91248c55b4ad59f81"
+  },
+  {
+    "delta": -0.36907024642854247,
+    "depth": 3,
+    "lexical_query_term_retention": 0.2692307692307692,
+    "method": "initial",
+    "original_and_summary": {
+      "ndcg": 0.6309297535714575,
+      "ranking_sha256": "f074ed6d16546587954c176f40da8a908c4f172440eb2650972ab555ea1b06e2",
+      "relevant_ranks": [
+        2
+      ],
+      "request_sha256": "8c1b4d1632e5495623e71a2c3edebb18965129bb13a2d14f4bf21844ae2c2935"
+    },
+    "query_sha256": "ce56a1916feed358ac2a61e653d731a158c869d471fb57a7d1f31971ea45670a",
+    "selection": "largest_decline",
+    "summary_only": {
+      "ndcg": 1.0,
+      "ranking_sha256": "0f2dc0ace5cefe7e01e61a66298847810d3673a8161595efc7fd59c925d75400",
+      "relevant_ranks": [
+        1
+      ],
+      "request_sha256": "8a7b044e136bbca32b7396c533cea638464212134dd679d604f9f5694d2100ce"
+    },
+    "summary_sha256": "fad82963ebec983fa640ade7b0dd18c3aad9df00426c0789e09cafbf89c8d9b3"
+  },
+  {
+    "delta": -0.36907024642854247,
+    "depth": 5,
+    "lexical_query_term_retention": 0.17391304347826086,
+    "method": "initial",
+    "original_and_summary": {
+      "ndcg": 0.6309297535714575,
+      "ranking_sha256": "9ed503a0d00ee05523eb39455dcbd2b8b52336acbf6073c7471dbc1844094393",
+      "relevant_ranks": [
+        2
+      ],
+      "request_sha256": "6777542200ec3d41f4757e9157124196537cf2588adce1419a43d00f639dbbc3"
+    },
+    "query_sha256": "268e0977bd3e87ea4a7095b9eae609fcd511e1fa9e257c9c73d13c2b10f41e26",
+    "selection": "largest_decline",
+    "summary_only": {
+      "ndcg": 1.0,
+      "ranking_sha256": "c0fcf36441a98ac9ef2d26658164a456ba1630adcc1e0decca6444e511538d7b",
+      "relevant_ranks": [
+        1
+      ],
+      "request_sha256": "7d537f1d6151e7f8c40e37e28a210a984930ba0927eb14ea13c81be5deadf6c7"
+    },
+    "summary_sha256": "39f422c1ee9d50cff550d678ba349f980c9842e3f37450b2f39e20b9e8a80d05"
+  }
+]

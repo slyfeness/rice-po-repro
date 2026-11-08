@@ -1,0 +1,19 @@
+#!/bin/bash
+#SBATCH -p ${SLURM_PARTITION}
+#SBATCH -A ${SLURM_ACCOUNT}
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 4
+#SBATCH --mem=24G
+#SBATCH -t 00:20:00
+date -u '+BATCH_ENTRY %Y-%m-%dT%H:%M:%SZ'
+set -euo pipefail
+export RICE_PROJECT=${PROJECT_ROOT}
+source ${BULK_ROOT}/envs/ricepo-retrieval-overlay-v1/bin/activate
+mkdir "$RICE_PROJECT/releases/native-recovery-v2"
+tar -xf "$RICE_PROJECT/incoming/native-recovery-v2.tar" -C "$RICE_PROJECT/releases/native-recovery-v2"
+export PYTHONPATH="$RICE_PROJECT/pytest-compat:$RICE_PROJECT/releases/native-recovery-v2/src" PYTEST_DISABLE_PLUGIN_AUTOLOAD=1
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 HF_DATASETS_OFFLINE=1
+cd "$RICE_PROJECT/releases/native-recovery-v2"
+python -m pytest -q tests/test_action_recovery.py tests/test_two_stage_format.py tests/test_two_stage_generator.py tests/test_batched_generation.py tests/test_failure_zero.py tests/test_rollout.py tests/test_workflow.py tests/test_continuation.py --junitxml="$RICE_PROJECT/reports/native-recovery-tests-$SLURM_JOB_ID.xml"
+python -u "$RICE_PROJECT/control/123-native-recovery-preflight.py"

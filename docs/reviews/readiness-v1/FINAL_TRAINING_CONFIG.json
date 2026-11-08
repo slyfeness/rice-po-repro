@@ -1,0 +1,36 @@
+{
+  "status": "candidate_configuration_only_execution_disabled",
+  "recipes": ["configs/biology_readiness_ricepo.json", "configs/biology_readiness_grpo.json"],
+  "execution": {"enabled": false, "total_updates": null},
+  "runtime": {
+    "runtime": "single_process_hf_reference",
+    "layout": "two independent two-device Slurm jobs; at most four GPUs total",
+    "actor_precision": "float32",
+    "sampling_backend": "vllm_ieee_two_stage_v1",
+    "TRITON_F32_DEFAULT": "ieee",
+    "actor_device": "cuda:0",
+    "retriever_device": "cuda:1",
+    "vllm_runtime": {"max_num_seqs":64,"max_num_batched_tokens":16384,"gpu_memory_utilization":0.80,
+      "enforce_eager":false,"enable_prefix_caching":true,"enable_chunked_prefill":true,"attention_backend":"TRITON_ATTN"},
+    "retrieval_ranking_impl": "reference",
+    "branch_probability_audit": "all",
+    "activation_checkpointing": "eval_layers_v1"
+  },
+  "frozen_method": {
+    "query_composition":{"mode":"original_and_summary","separator":"\n"},
+    "queries_per_update":128,"trajectories_per_query":4,"anchors_per_query":4,
+    "total_branches_including_original":6,"rollout_depth":5,"max_new_tokens_per_step":4096,
+    "max_context_tokens":32768,"temperature":1,"top_p":1,"top_k":0,
+    "influence_threshold":0.05,"residual_threshold":0.03,"local_advantage_normalization":"center_only",
+    "actor_learning_rate":0.000001,"actor_kl_coefficient":0.001,"loss_reduction":"sequence_mean",
+    "ppo_epochs":1,"microbatch_size":1,"optimizer_minibatch_size":512,"gradient_accumulation":512,
+    "format_failure_policy":"invalid_action_terminal_zero_v1","native_span_parser":"two_stage_env_summary_v1",
+    "checkpoint_every_updates":1,"development_every_updates":4,"eval_samples_per_query":4,
+    "checkpoint_selection":"best_development_macro"
+  },
+  "independent_choices": ["original question plus LF plus Summary", "prefilled-think compatibility prompt",
+    "two-stage environment Summary opener", "invalid action zero-utility terminal", "independent128/32 Biology data split"],
+  "unresolved_private_bindings": ["verified model and tokenizer paths", "retriever vector bundle and manifests",
+    "fresh output/cache/IPC/checkpoint-staging directories", "frozen update schedule", "total update budget"],
+  "resume": "only complete checkpoint; preserve exact code/config/assets/optimizer/CPU-CUDA RNG; incomplete update is not resumable mid-step"
+}

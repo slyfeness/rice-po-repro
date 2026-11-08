@@ -1,0 +1,462 @@
+[
+  {
+    "alias": "two-stage-pair-A-174592/summary",
+    "bytes": 11084,
+    "sha256": "22d211c1854edbae334e734ef4382ad1af05bef27e9108b22f7b6db6227b2960"
+  },
+  {
+    "alias": "two-stage-pair-A-174592/configuration.json",
+    "bytes": 25652,
+    "sha256": "cd385418369ad04412fc2678321cc7b81690037c926eb6250b86e71a1914346a"
+  },
+  {
+    "alias": "two-stage-pair-A-174592/policy.json",
+    "bytes": 474,
+    "sha256": "780aa635353fc5c0c299914cb615bb6d3cb35807c2e6a3289cceb248cb758d74"
+  },
+  {
+    "alias": "two-stage-pair-A-174592/precommitted-selection.json",
+    "bytes": 855,
+    "sha256": "d1237ef2e9546b4bdb9d7288b4afa3191d116300bdf3a84cc58b9c5f4b4f355a"
+  },
+  {
+    "alias": "two-stage-pair-A-174592/cost.json",
+    "bytes": 1822,
+    "sha256": "9f3b120dd009086137eec5443ec76882ad677e768e1bf78c5ad3567b4b0b7d02"
+  },
+  {
+    "alias": "two-stage-pair-A-174592/memory.json",
+    "bytes": 32,
+    "sha256": "49011d4f8d2bd27e7a8f3c3adedac45eac862467b4b2cc9d15ef3963f4e2221c"
+  },
+  {
+    "alias": "two-stage-pair-A-174592/trajectories/00.json",
+    "bytes": 480751,
+    "sha256": "a6e4bbb01c57aedab206201f0ede25b2bbc7045830bff96f7ca105701abd93e6"
+  },
+  {
+    "alias": "two-stage-pair-A-174592/trajectories/01.json",
+    "bytes": 386417,
+    "sha256": "f1aa043ea19edf18f7c5d7dc045253b7f9e935bd2e16fb3a3955e35f5f21e147"
+  },
+  {
+    "alias": "two-stage-pair-A-174592/trajectories/02.json",
+    "bytes": 58093,
+    "sha256": "1b8a6b8593d6a873bdbdedbf5ce36ac3cc26b64291f45f8497be4e633fa77ff4"
+  },
+  {
+    "alias": "two-stage-pair-A-174592/trajectories/03.json",
+    "bytes": 357254,
+    "sha256": "ef4ee55355f5d945a8ed2eaf6ca50fef6f58e80f1d88f6bfea2022497903363b"
+  },
+  {
+    "alias": "two-stage-pair-A-174592/trajectories/04.json",
+    "bytes": 58585,
+    "sha256": "0fe6026f8199d1941f3a5c71d5109058dd280a8db459c5debb4da42e5d614f63"
+  },
+  {
+    "alias": "two-stage-pair-A-174592/trajectories/05.json",
+    "bytes": 320584,
+    "sha256": "74c98b58536631d5cc3329971c18a36b1f52fc13fce22eafe4a9c79eb24e1f1f"
+  },
+  {
+    "alias": "two-stage-pair-A-174592/trajectories/06.json",
+    "bytes": 252885,
+    "sha256": "e70cf6b480602ff2db741410441f5a2d6a45865c5b446a55ed01737667885598"
+  },
+  {
+    "alias": "two-stage-pair-A-174592/trajectories/07.json",
+    "bytes": 60754,
+    "sha256": "7f6c24460ec08943372b161d5b22a1f479c43f789706ec57bea55fdc7e515efb"
+  },
+  {
+    "alias": "two-stage-pair-A-174592/trajectory-probability/00.json",
+    "bytes": 106,
+    "sha256": "1c0042e575029278a22bdaeedd70419c28751c113439dee8cf473d4b393a4afe"
+  },
+  {
+    "alias": "two-stage-pair-A-174592/trajectory-probability/01.json",
+    "bytes": 106,
+    "sha256": "1c0042e575029278a22bdaeedd70419c28751c113439dee8cf473d4b393a4afe"
+  },
+  {
+    "alias": "two-stage-pair-A-174592/trajectory-probability/02.json",
+    "bytes": 106,
+    "sha256": "1c0042e575029278a22bdaeedd70419c28751c113439dee8cf473d4b393a4afe"
+  },
+  {
+    "alias": "two-stage-pair-A-174592/trajectory-probability/03.json",
+    "bytes": 106,
+    "sha256": "1c0042e575029278a22bdaeedd70419c28751c113439dee8cf473d4b393a4afe"
+  },
+  {
+    "alias": "two-stage-pair-A-174592/trajectory-probability/04.json",
+    "bytes": 106,
+    "sha256": "1c0042e575029278a22bdaeedd70419c28751c113439dee8cf473d4b393a4afe"
+  },
+  {
+    "alias": "two-stage-pair-A-174592/trajectory-probability/05.json",
+    "bytes": 106,
+    "sha256": "1c0042e575029278a22bdaeedd70419c28751c113439dee8cf473d4b393a4afe"
+  },
+  {
+    "alias": "two-stage-pair-A-174592/trajectory-probability/06.json",
+    "bytes": 106,
+    "sha256": "1c0042e575029278a22bdaeedd70419c28751c113439dee8cf473d4b393a4afe"
+  },
+  {
+    "alias": "two-stage-pair-A-174592/trajectory-probability/07.json",
+    "bytes": 106,
+    "sha256": "1c0042e575029278a22bdaeedd70419c28751c113439dee8cf473d4b393a4afe"
+  },
+  {
+    "alias": "two-stage-recovery-B-174606/summary",
+    "bytes": 20110,
+    "sha256": "77dd3aa38158ec19e204cdff48720f65289066be38136f74910a1cef6cf7f685"
+  },
+  {
+    "alias": "two-stage-recovery-B-174606/configuration.json",
+    "bytes": 25997,
+    "sha256": "9eee7b1c3ca0e99933dd3aee193a20ec1ff2aed3f6ff70f6718792410aa4e637"
+  },
+  {
+    "alias": "two-stage-recovery-B-174606/policy.json",
+    "bytes": 476,
+    "sha256": "8a0d27db20bf50bd36d53cd0debbc487f6b882601b569bd27aba441432d7a5cc"
+  },
+  {
+    "alias": "two-stage-recovery-B-174606/precommitted-selection.json",
+    "bytes": 855,
+    "sha256": "d1237ef2e9546b4bdb9d7288b4afa3191d116300bdf3a84cc58b9c5f4b4f355a"
+  },
+  {
+    "alias": "two-stage-recovery-B-174606/saved-action-recovery.json",
+    "bytes": 38751,
+    "sha256": "de2d505558c004e63c06c52213ce2d9f5840dae5934e744aeee3a5f6aaa86093"
+  },
+  {
+    "alias": "two-stage-recovery-B-174606/cost.json",
+    "bytes": 1827,
+    "sha256": "c6d71efee249854bd096091022826b0cda2b66a1a9e847b3a01c115041daf153"
+  },
+  {
+    "alias": "two-stage-recovery-B-174606/memory.json",
+    "bytes": 32,
+    "sha256": "73a11dd77081014e1ee7578807963e4b20737601b4f1e3b346e356886edbf8a6"
+  },
+  {
+    "alias": "two-stage-recovery-B-174606/trajectories/00.json",
+    "bytes": 537121,
+    "sha256": "23739cf8bc9509d83c40adb42afe5abc85090a081a11f856adb6a0aa1fe40802"
+  },
+  {
+    "alias": "two-stage-recovery-B-174606/trajectories/01.json",
+    "bytes": 213362,
+    "sha256": "cae41b035d3708e363b193450f1883bf0c2c0af862d12a94a55710e1e6aace43"
+  },
+  {
+    "alias": "two-stage-recovery-B-174606/trajectories/02.json",
+    "bytes": 628034,
+    "sha256": "6f38d1d827726ede351ea29b8884c1972c0584b3d59826f9de598a43162bd7de"
+  },
+  {
+    "alias": "two-stage-recovery-B-174606/trajectories/03.json",
+    "bytes": 485869,
+    "sha256": "30fb31470afa55d15c9d85655cbe441dca18d1f86f3bf6f491caec4d54983305"
+  },
+  {
+    "alias": "two-stage-recovery-B-174606/trajectories/04.json",
+    "bytes": 243612,
+    "sha256": "d460a98f1de132482cc667aaf6aa0cb17dfcd8c93b29214f11a64c49e7ab363b"
+  },
+  {
+    "alias": "two-stage-recovery-B-174606/trajectories/05.json",
+    "bytes": 984816,
+    "sha256": "42811b45e26f7f986c4b33da79c6eea689c96c836b15d80706859847f91cdd41"
+  },
+  {
+    "alias": "two-stage-recovery-B-174606/trajectories/06.json",
+    "bytes": 590243,
+    "sha256": "924f5b80b9441904ab2ebe3a1bafa72af5a8a09f6e5207745045fda868acd8e8"
+  },
+  {
+    "alias": "two-stage-recovery-B-174606/trajectories/07.json",
+    "bytes": 88264,
+    "sha256": "69a2efad8ea128a45b1bf51f61edb5567e610479433411833f4407fff1b888bb"
+  },
+  {
+    "alias": "two-stage-recovery-B-174606/trajectory-probability/00.json",
+    "bytes": 406,
+    "sha256": "7b94179a10003d6df13b9b668a459276d005e12bdb77bec4964d38e0aef16ed9"
+  },
+  {
+    "alias": "two-stage-recovery-B-174606/trajectory-probability/01.json",
+    "bytes": 406,
+    "sha256": "87b7a32d5cc4e968892b73ffff5faa3ff198b2d47df1ada375c027e65d5c6a21"
+  },
+  {
+    "alias": "two-stage-recovery-B-174606/trajectory-probability/02.json",
+    "bytes": 406,
+    "sha256": "500e4c7ee9674e90d802566a8baa604f4397648e7eba018700bc5815e4cc9c00"
+  },
+  {
+    "alias": "two-stage-recovery-B-174606/trajectory-probability/03.json",
+    "bytes": 406,
+    "sha256": "f165189f86cefc41db2f1e817e9a79021f5ba92473e738641ff5d2d6e1e3bb23"
+  },
+  {
+    "alias": "two-stage-recovery-B-174606/trajectory-probability/04.json",
+    "bytes": 405,
+    "sha256": "53c399498b6b254678cb15522551f42b0c61f34bd512cc38426ccb70fcff5bdf"
+  },
+  {
+    "alias": "two-stage-recovery-B-174606/trajectory-probability/05.json",
+    "bytes": 406,
+    "sha256": "2624d6e7563d95f19c727c4f4e598bf2539927afee59fa3764613a97a0b460c9"
+  },
+  {
+    "alias": "two-stage-recovery-B-174606/trajectory-probability/06.json",
+    "bytes": 406,
+    "sha256": "e87ccc73fa8b2ede8b023502984b2d6d4570bfbb310dced9c3c64b6af54f33df"
+  },
+  {
+    "alias": "two-stage-recovery-B-174606/trajectory-probability/07.json",
+    "bytes": 403,
+    "sha256": "4e3154f8251aebedc0fad9ec4dff4be06073a5ac85db90cfa1d31b886fea39c8"
+  },
+  {
+    "alias": "precision-probe",
+    "bytes": 3549,
+    "sha256": "f0d0e037876be6d8626f9078b83d81dcbb02379cf4e090aae1afc4d3434936ba"
+  },
+  {
+    "alias": "kernel-summary",
+    "bytes": 5186,
+    "sha256": "80f2573b5875f4742c70f8e5b28df36dfeb1649e7536538f21d988705cb0909f"
+  },
+  {
+    "alias": "kernel-real-weight-sync",
+    "bytes": 2476,
+    "sha256": "f494de02cd2a83a6afe584ebdc87616a267be8121c614669a0275cb43fb8dd22"
+  },
+  {
+    "alias": "invalid-utf8-diagnosis",
+    "bytes": 622,
+    "sha256": "c5b4001f65789d9e8189a2c36238aeea361ca563911196747b67963c2bd555fa"
+  },
+  {
+    "alias": "storage-sized-write-test",
+    "bytes": 1287,
+    "sha256": "2dd6d66fc573bd3493ff55a3e27d34404be69b0e4d34369e7dce5160b4d74200"
+  },
+  {
+    "alias": "two-stage-online-ricepo-174610/gpu-hardware",
+    "bytes": 88,
+    "sha256": "ac75acdf7f2a1c4b5315432216d4f70892f2c05627bd4c1f15e9effe71a852aa"
+  },
+  {
+    "alias": "two-stage-online-ricepo-174610/originals",
+    "bytes": 6995445,
+    "sha256": "b4aac63a7e8424d46823bf77de950c0e13dff41b5afae666ffb5a2e6ea29b988"
+  },
+  {
+    "alias": "two-stage-online-ricepo-174610/update.json",
+    "bytes": 2610,
+    "sha256": "e8087fec9abc58979c5971ded9437bb7d445af1d0c9b0e3800a65dde867815f9"
+  },
+  {
+    "alias": "two-stage-online-ricepo-174610/credit-vs-grpo-gradient.json",
+    "bytes": 467,
+    "sha256": "e32550d0aa6f78902ec37a8fc4f8dbd52175bfa90e11ce168eb1205dcc5ff0c8"
+  },
+  {
+    "alias": "two-stage-online-ricepo-174610/reload-verification.json",
+    "bytes": 119,
+    "sha256": "082682645ccff4ce25d1688ff19175fa1437481afa4221b5878e2557d0321ebb"
+  },
+  {
+    "alias": "two-stage-online-ricepo-174610/credit-diagnostics",
+    "bytes": 27812,
+    "sha256": "2b860e167f19efa3e19deac8a35fa31d0b9d6d6c0732a62f777129cc3a4d9514"
+  },
+  {
+    "alias": "two-stage-online-ricepo-174610/advantages",
+    "bytes": 1962081,
+    "sha256": "a8c56f1a396c132630a072fcea3be2ae852fab7061f33dc12334dad98bf11d3c"
+  },
+  {
+    "alias": "two-stage-online-ricepo-174610/saved-update-items",
+    "bytes": 4028915,
+    "sha256": "2b94993985227131d75df2036361eac2fa03856e5db146705226ab1fbf57dfb6"
+  },
+  {
+    "alias": "two-stage-online-ricepo-174610/branches",
+    "bytes": 65566245,
+    "sha256": "4a16c42f016941a156c9fff71a08116bb14647a67a90a882a82c85d343787dfe"
+  },
+  {
+    "alias": "two-stage-online-ricepo-174610/development-summary",
+    "bytes": 1444,
+    "sha256": "37ce9070a1ff53c64225d3cb3b828ec61419fcb308bca36d0cc2547d94b8c9a5"
+  },
+  {
+    "alias": "two-stage-online-ricepo-174610/development-queries",
+    "bytes": 59993,
+    "sha256": "28272b988d5619a3f7ab02084f97b4e9b1a9968bb98bc48279b77451f356a927"
+  },
+  {
+    "alias": "two-stage-online-ricepo-174610/checkpoint-complete",
+    "bytes": 1186,
+    "sha256": "1c974c77de11c2f6c05bdaa4569ae566a08357e244e34a08a3a97f4f513f3093"
+  },
+  {
+    "alias": "two-stage-online-ricepo-174610/resources",
+    "bytes": 170,
+    "sha256": "346cb412fca8095c3868f64b39daa75785fe647ca22b4ff53b46127706e859d1"
+  },
+  {
+    "alias": "two-stage-online-ricepo-174610/binding.json",
+    "bytes": 1861,
+    "sha256": "6a55f5c101b7d212e8abba0b45ceabba5044e6f8f4291eebf9efcc8aac317b25"
+  },
+  {
+    "alias": "two-stage-online-ricepo-174610/recipe.json",
+    "bytes": 14908,
+    "sha256": "c0f6c67beaf9a2f20e6b84cc7c2614b306154a6becb676c11419ba1ac34495a0"
+  },
+  {
+    "alias": "two-stage-online-ricepo-174610/sources.json",
+    "bytes": 3392,
+    "sha256": "e622257898196a04db74a9a1e6df04773be957ec7e849a90c12cc696aa2d84ad"
+  },
+  {
+    "alias": "two-stage-online-ricepo-174610/effective-generation.json",
+    "bytes": 270,
+    "sha256": "f6e5f4be3c3ba81f78e2126ae498549f324e75b4caee8690f88243153535ca17"
+  },
+  {
+    "alias": "two-stage-online-ricepo-174610/model-sources.json",
+    "bytes": 3133,
+    "sha256": "e2155b281830ea574e80e9e0a7aa2c852f77051c50ef913051b3d5209238f85a"
+  },
+  {
+    "alias": "two-stage-online-ricepo-174610/retriever-sources.json",
+    "bytes": 2756,
+    "sha256": "5ab420ae333ab56c28de1012c60100e6acda1c2ab07a84a4bb43c03682ffb3e4"
+  },
+  {
+    "alias": "two-stage-online-grpo-174611/gpu-hardware",
+    "bytes": 88,
+    "sha256": "ac75acdf7f2a1c4b5315432216d4f70892f2c05627bd4c1f15e9effe71a852aa"
+  },
+  {
+    "alias": "two-stage-online-grpo-174611/originals",
+    "bytes": 6995445,
+    "sha256": "b4aac63a7e8424d46823bf77de950c0e13dff41b5afae666ffb5a2e6ea29b988"
+  },
+  {
+    "alias": "two-stage-online-grpo-174611/update.json",
+    "bytes": 2061,
+    "sha256": "2e7d172ef6977b87157709f36a4f24dfba2e1a6b65b004d005c0bbe95a98dbe9"
+  },
+  {
+    "alias": "two-stage-online-grpo-174611/reload-verification.json",
+    "bytes": 119,
+    "sha256": "fda084683b52504c482688d98d7b7a2eaf91da4b158306b10f519f6a032b56b5"
+  },
+  {
+    "alias": "two-stage-online-grpo-174611/development-summary",
+    "bytes": 1504,
+    "sha256": "af101c5390839c0f473d7784e1c039ad03b1fa0911ad1005a972c664889c435c"
+  },
+  {
+    "alias": "two-stage-online-grpo-174611/development-queries",
+    "bytes": 59856,
+    "sha256": "75b6b77679206904b25462026f977834161262cdf7f7f532789a59752d39c15f"
+  },
+  {
+    "alias": "two-stage-online-grpo-174611/checkpoint-complete",
+    "bytes": 1186,
+    "sha256": "270030b90effae4ccaa5fa0aa254f07987ce51ce8eb05cfa358f08dd1a9cabb2"
+  },
+  {
+    "alias": "two-stage-online-grpo-174611/resources",
+    "bytes": 171,
+    "sha256": "9ba9b07fde870521825d52b586c704c806a5b20fd4e20439d495dde6873b97d3"
+  },
+  {
+    "alias": "two-stage-online-grpo-174611/binding.json",
+    "bytes": 1861,
+    "sha256": "9053f6c1e49b5f5191f07009ec9ce120010e92e996cf1f615b915dbf949e540e"
+  },
+  {
+    "alias": "two-stage-online-grpo-174611/recipe.json",
+    "bytes": 13047,
+    "sha256": "cc6be13757f83c878f23e032b1e04338356196c74a5360adb65d2d0f543a23fe"
+  },
+  {
+    "alias": "two-stage-online-grpo-174611/sources.json",
+    "bytes": 3392,
+    "sha256": "e622257898196a04db74a9a1e6df04773be957ec7e849a90c12cc696aa2d84ad"
+  },
+  {
+    "alias": "two-stage-online-grpo-174611/effective-generation.json",
+    "bytes": 270,
+    "sha256": "f6e5f4be3c3ba81f78e2126ae498549f324e75b4caee8690f88243153535ca17"
+  },
+  {
+    "alias": "two-stage-online-grpo-174611/model-sources.json",
+    "bytes": 3133,
+    "sha256": "e2155b281830ea574e80e9e0a7aa2c852f77051c50ef913051b3d5209238f85a"
+  },
+  {
+    "alias": "two-stage-online-grpo-174611/retriever-sources.json",
+    "bytes": 2756,
+    "sha256": "5ab420ae333ab56c28de1012c60100e6acda1c2ab07a84a4bb43c03682ffb3e4"
+  },
+  {
+    "alias": "grpo/cross-process-reload",
+    "bytes": 748,
+    "sha256": "3f0e9ba9e047441a400ae9e2cb584009f4d4280c9a1b3d60b7d6381cb056b93b"
+  },
+  {
+    "alias": "ricepo/cross-process-reload",
+    "bytes": 748,
+    "sha256": "1c2137aa5b908aeb24a375fc434a5c0c56d0b19ba6b016e490b3a71923e70960"
+  },
+  {
+    "alias": "real-two-stage-batch",
+    "bytes": 2271,
+    "sha256": "0a27cf0c9fb3371736dc066cd710800afe285ea64ff0161bfa48725631e8bf2e"
+  },
+  {
+    "alias": "initial-baseline-summary",
+    "bytes": 1513,
+    "sha256": "2eacc2b1428d2338b17309293103107574263b2ca8937eb0bdd4f53a31efaff7"
+  },
+  {
+    "alias": "tests-174582/junit",
+    "bytes": 29493,
+    "sha256": "bef421d14e68a6f428379e4bd936f9ad05cffdd1f846a10819bd4a4dbbf4950b"
+  },
+  {
+    "alias": "tests-174583/junit",
+    "bytes": 3571,
+    "sha256": "994e932b10cdb10d81e049ac554856fd8da63adfc433ca3cabfba5fcb7f996f4"
+  },
+  {
+    "alias": "tests-174591/junit",
+    "bytes": 4139,
+    "sha256": "5b0ac1e4caeece08b144a82a4ee26902b26c0dcab78d5f27feab58e2ff952869"
+  },
+  {
+    "alias": "tests-174602/junit",
+    "bytes": 2789,
+    "sha256": "bf15de6a1ddb8c9a06da261f0ed4965b361338dde1d8752ce006ccd7026bfcbf"
+  },
+  {
+    "alias": "tests-174605/junit",
+    "bytes": 1443,
+    "sha256": "5c91a558c781fa0f4298319073a4579766b40e165bf02b4408cfa60b956134d4"
+  }
+]

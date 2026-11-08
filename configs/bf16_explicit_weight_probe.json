@@ -1,0 +1,19 @@
+{
+  "kind": "bf16_explicit_weight_probe_v1",
+  "execution": {"enabled": false},
+  "expected_requests": 16,
+  "expected_sampled_tokens": 2591,
+  "clip_epsilon": 0.2,
+  "acceptance": {
+    "mean_abs_log_error_max": 0.02,
+    "p99_abs_log_error_max": 0.10,
+    "clip_fraction_max": 0.01
+  },
+  "selection": "reuse immutable bf16-matched-175507 REQUEST_SELECTION.json",
+  "behavior": "saved vLLM BF16 FLASH_ATTN; no new generation",
+  "A": "reuse same-selection HF FP32 weights plus BF16 autocast evidence",
+  "B": "explicit torch.bfloat16 model parameters; no autocast; FP32 log_softmax",
+  "C": "HF FP32 IEEE scoring on exactly the same saved tokens",
+  "stop": "B probability FAIL forbids optimizer, synchronization and speed experiments",
+  "training_qualified": false
+}

@@ -1,0 +1,67 @@
+{
+  "kind": "offline_saved_trajectory_HF_diagnostic",
+  "execution": {
+    "enabled": false
+  },
+  "runtime_validated": false,
+  "maximum_gpus": 2,
+  "maximum_optimizer_steps": 1,
+  "no_generation": true,
+  "no_retrieval": true,
+  "no_reward_computation": true,
+  "warmups": 1,
+  "repeats": 2,
+  "candidates": {
+    "S0": {
+      "hf_projection_mode": "full_sequence",
+      "benchmark_matmul_precision": "highest"
+    },
+    "S1": {
+      "hf_projection_mode": "full_sequence",
+      "benchmark_matmul_precision": "high"
+    },
+    "S2": {
+      "hf_projection_mode": "action_positions_v1",
+      "benchmark_matmul_precision": "highest"
+    },
+    "S3": {
+      "hf_projection_mode": "action_positions_v1",
+      "requires": [
+        "S1_correctness_pass",
+        "S2_correctness_pass"
+      ],
+      "benchmark_matmul_precision": "high"
+    }
+  },
+  "projection_gates": {
+    "logprob_abs_max": 0.0001,
+    "KL_abs_max": 1e-06,
+    "loss_scaled_error_max": 1e-05,
+    "gradient_cosine_min": 0.99999,
+    "gradient_relative_L2_max": 0.001,
+    "significant_parameter_cosine_min": 0.999,
+    "significant_parameter_relative_L2_max": 0.01
+  },
+  "precision_gates": {
+    "logprob_mean_max": 0.02,
+    "logprob_p99_max": 0.1,
+    "logprob_abs_max": 0.5,
+    "KL_mean_abs_max": 0.0001,
+    "KL_abs_max": 0.001,
+    "loss_scaled_error_max": 0.01,
+    "gradient_cosine_min": 0.99,
+    "gradient_relative_L2_max": 0.1,
+    "significant_parameter_cosine_min": 0.95,
+    "significant_parameter_relative_L2_max": 0.2
+  },
+  "parameter_significance": "S0 tensor gradient norm >= 1e-6 * S0 global norm; report every tensor regardless",
+  "speed_gate": {
+    "median_HF_total_speedup_min": 1.1,
+    "each_repeat_speedup_min": 1.05
+  },
+  "loss_scaled_error": "abs(candidate - S0) / max(1, abs(S0))",
+  "private_plan": null,
+  "private_output": null,
+  "implementation_choice": "Engineering gates frozen before measurement, not paper constants or backend equivalence claims. FP32 Actor at saved32 step1, fixed initial Reference, real saved initial behavior probabilities and advantages; offline replay only.",
+  "scope": "Diagnostic reference: --scheme selects the recorded candidate in hf_compute_benchmark.py. Not a production deployment; hf_runtime rejects hf_matmul_precision. Only hf_projection_mode is an optional training deployment field."
+}

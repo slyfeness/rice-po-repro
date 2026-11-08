@@ -1,0 +1,156 @@
+{
+  "status": "PASS",
+  "mode": "cpu_saved_expandable_deferred_adam_v1",
+  "scope": "memory-only qualification for controlled recovery; no optimizer step or 128-query pass claimed",
+  "sampling_plan_sha256": "e77fa509ff364fe15377b702f071e52be2673554364d405d0becf5dff12b3c2d",
+  "modeling_normalized_source_sha256": "9a99900f2cbd6f9771c0cd4d81de9b4befe8812d0f09ea508c70a7c3f0c6f488",
+  "optimizer_residency_methods_sha256": "230b38161d83c7493f0385d79e3366b60d663e575a2ac6f650c245172c315451",
+  "evidence": {
+    "reports/biology-scale-memory-probe-176724/compare/RESULT.json": "f0d83c196525eb87de9480fa1de233365eccd0040e648eeca06d24ecb888172f",
+    "reports/biology-scale-memory-probe-176729/compare/RESULT.json": "fc8494a52e7c9496bc80bafcf5c2d719d92be996770e5aed518dec890a202198",
+    "reports/biology-scale-memory-probe-176735/worst-expandable/RESULT.json": "19b6c902e00e49f8fc610b4d2d7375fee6ee574de52eeaac2499df5e3e81d83b"
+  },
+  "short": {
+    "baseline": {
+      "finite": true,
+      "loss": 132.7736053466797,
+      "peak_allocated_bytes": 21354472448,
+      "peak_reserved_bytes": 24377294848,
+      "reference_has_gradient": false,
+      "seconds": 1.836693324148655
+    },
+    "candidate": {
+      "finite": true,
+      "loss": 132.7736053466797,
+      "peak_allocated_bytes": 21353392128,
+      "peak_reserved_bytes": 24092082176,
+      "reference_has_gradient": false,
+      "seconds": 2.6323652993887663
+    },
+    "checks": {
+      "KL_exact": true,
+      "finite": true,
+      "gradient_L2": true,
+      "gradient_cosine": true,
+      "gradient_max_abs": true,
+      "loss_exact": true,
+      "lp_exact": true,
+      "reference_frozen": true
+    },
+    "fixture": "short",
+    "gradient_global_L2": 0.0,
+    "gradient_global_cosine": 1.0,
+    "gradient_max_abs": 0.0
+  },
+  "median": {
+    "baseline": {
+      "finite": true,
+      "loss": -2085.62353515625,
+      "peak_allocated_bytes": 28650802176,
+      "peak_reserved_bytes": 29756489728,
+      "reference_has_gradient": false,
+      "seconds": 7.759289886802435
+    },
+    "candidate": {
+      "finite": true,
+      "loss": -2085.62353515625,
+      "peak_allocated_bytes": 26525062144,
+      "peak_reserved_bytes": 28280094720,
+      "reference_has_gradient": false,
+      "seconds": 13.150728907436132
+    },
+    "checks": {
+      "KL_exact": true,
+      "finite": true,
+      "gradient_L2": true,
+      "gradient_cosine": true,
+      "gradient_max_abs": true,
+      "loss_exact": true,
+      "lp_exact": true,
+      "reference_frozen": true
+    },
+    "fixture": "median",
+    "gradient_global_L2": 0.0,
+    "gradient_global_cosine": 1.0,
+    "gradient_max_abs": 0.0
+  },
+  "worst": {
+    "actual_layer_recomputation": true,
+    "allocated_after_moment_restoration": 35560898560,
+    "allocator_environment": "expandable_segments:True",
+    "allocator_settings": {
+      "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
+      "expandable_segments": true,
+      "garbage_collection_threshold": 0.0,
+      "graph_capture_record_stream_reuse": false,
+      "max_split_size": -1,
+      "pinned_num_register_threads": 1,
+      "pinned_use_cuda_host_register": false,
+      "release_lock_on_cudamalloc": false,
+      "roundup_power2_divisions": {
+        "1": 0,
+        "1024": 0,
+        "128": 0,
+        "16": 0,
+        "16384": 0,
+        "2": 0,
+        "2048": 0,
+        "256": 0,
+        "32": 0,
+        "32768": 0,
+        "4": 0,
+        "4096": 0,
+        "512": 0,
+        "64": 0,
+        "8": 0,
+        "8192": 0
+      }
+    },
+    "attention_implementation": "sdpa",
+    "fixtures": [
+      {
+        "finite": true,
+        "fixture": "largest_with_deferred_FP32_Adam_moment_capacity_reserves",
+        "loss": -5907.66162109375,
+        "peak_allocated_bytes": 76287229952,
+        "peak_reserved_bytes": 77097598976,
+        "reference_has_gradient": false,
+        "seconds": 54.80471209436655
+      }
+    ],
+    "model_state_sha256": "517a10e399f0fadbfe3a8b3e3ca7bbe3ccd5479bfa5a866f81f682520ccf0626",
+    "moments_restored_after_backward": true,
+    "new_optimizer_steps": 0,
+    "plan_sha256": "fa7eee0bbd0e9598cf8f2d55f64e730971d1eafabbe7b9e3eacd76335bebf464",
+    "precision": "IEEE FP32",
+    "projection": "full_sequence",
+    "reserve_bytes": 14216704000,
+    "role": "worst",
+    "status": "PASS"
+  },
+  "failed_probes_preserved": [
+    176724,
+    176729,
+    176734
+  ],
+  "control_issue_176734": "allocator flag was omitted by shell preparation; not a valid allocator-effect comparison",
+  "controls": {
+    "HF_dtype": "float32",
+    "HF_GEMM": "IEEE highest",
+    "head": "full_sequence",
+    "vocabulary": "full",
+    "sampler": "unchanged TF32 GEMM high; HF allocator must be isolated",
+    "max_native_context": 32768
+  },
+  "actual_tested_history": {
+    "native_tokens": 19538,
+    "scored_causal_horizon": 16947,
+    "not_a_guarantee_for_all_future_histories": true
+  },
+  "qualification_job": "176755",
+  "integration_CPU_job": "176762",
+  "fixed_execution_CPU_job": "176767",
+  "targeted_tests_executed": 9,
+  "formal_128_update_PASS": false,
+  "source_commit": "6c70342902c5b9aa0109523e465511510e55aea1"
+}

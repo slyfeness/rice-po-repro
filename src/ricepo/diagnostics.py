@@ -36,7 +36,7 @@ def credit_report(grouped, branches, parts, recipe, iteration):
                     reasoning_after=r.summary_advantage if r.propagate else before,
                     summary_tokens=a.summary_span.end-a.summary_span.start,
                     reasoning_tokens=a.reasoning_span.end-a.reasoning_span.start,
-                    terminal_anchor=a.depth == len(t.steps),
+                    terminal_anchor=a.depth == recipe["rollout_depth"],
                     constant_original_final_rewards=len({trajectory.final_reward for trajectory in grouped[a.query_id]})==1, outcomes=[
                         dict(id=o.branch_id, original=o.is_original, local=o.local_reward, final=o.final_reward,
                              residual=o.final_reward-o.local_reward) for o in branch.outcomes])

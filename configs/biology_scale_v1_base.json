@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "extends": "paper_reference.json",
+  "profile": "ablation",
+  "deviations": {
+    "max_new_tokens_per_step": {
+      "value": 4096,
+      "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe."
+    },
+    "native_span_parser": {
+      "value": "two_stage_env_summary_v1",
+      "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe."
+    },
+    "prompt_artifact": {
+      "value": "prompts/ricepo_prefilled_think_smoke.txt",
+      "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe."
+    },
+    "format_failure_policy": {
+      "value": "invalid_action_terminal_zero_v1",
+      "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe."
+    },
+    "query_composition": {
+      "value": {
+        "mode": "original_and_summary",
+        "separator": "\n"
+      },
+      "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe."
+    },
+    "checkpoint_every_updates": {
+      "value": 2,
+      "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe."
+    },
+    "development_every_updates": {
+      "value": 4,
+      "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe."
+    },
+    "eval_samples_per_query": {
+      "value": 4,
+      "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe."
+    },
+    "training_seeds": {
+      "value": [
+        20261108
+      ],
+      "reason": "Independent user-authorized Biology scale v1; fixed two-stage/failure-zero protocol and original+LF+Summary; ten updates are an engineering budget, not author recipe."
+    }
+  },
+  "execution": {
+    "enabled": false,
+    "runtime_validated": false,
+    "four_gpu_validated": false
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "extends": "biology_scale_v1_base.json",
+  "method": "ricepo",
+  "runtime_bindings": {
+    "total_updates": 10
+  }
+}

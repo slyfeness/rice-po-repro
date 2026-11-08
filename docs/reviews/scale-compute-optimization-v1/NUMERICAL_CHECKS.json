@@ -1,0 +1,2158 @@
+{
+  "paired": {
+    "status": "PASS",
+    "plan_sha256": "cabbbce854e862fde7a2271cc6ab2a75b65e8a95e69022cd80c38d4909e3fdbb",
+    "new_generation": 0,
+    "new_retrieval": 0,
+    "rows": [
+      {
+        "experiment": "A",
+        "fixture": "short",
+        "repeat": 0,
+        "baseline": {
+          "seconds": 3.5099482238292694,
+          "backward_wall_seconds": 1.0917264893651009,
+          "cuda_stage_seconds": {
+            "actor_forward": 0.9384314575195313,
+            "reference_forward": 0.2981160888671875,
+            "policy_normalization": 0.15478361797332765,
+            "exact_KL": 0.23161855792999267
+          },
+          "old_seconds": 0.690634697675705,
+          "loss": 132.7736053466797,
+          "risk": {
+            "tokens": 230,
+            "signed_delta": {
+              "mean": -0.00014283292841118175,
+              "min": -0.02506840229034424,
+              "p50": -3.3369287848472595e-06,
+              "p90": 0.003712892532348633,
+              "p99": 0.013088107109069824,
+              "max": 0.05003023147583008
+            },
+            "absolute_error": {
+              "mean": 0.0027292011030943327,
+              "min": 0.0,
+              "p50": 0.0011878013610839844,
+              "p90": 0.005958855152130127,
+              "p99": 0.023229777812957764,
+              "max": 0.05003023147583008
+            },
+            "ratio": {
+              "mean": 0.9998723602562564,
+              "min": 0.9752432008781783,
+              "p50": 0.9999966630767827,
+              "p90": 1.0037197938564753,
+              "p99": 1.0131741312710494,
+              "max": 1.0513028783331704
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.9999693190042385,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 21352562176,
+          "peak_reserved": 22552772608,
+          "finite": true
+        },
+        "candidate": {
+          "seconds": 2.6506549939513206,
+          "backward_wall_seconds": 1.0516197383403778,
+          "cuda_stage_seconds": {
+            "actor_forward": 0.852379638671875,
+            "reference_forward": 0.2979717102050781,
+            "policy_normalization": 0.14752656030654906,
+            "exact_KL": 0.22140416145324707
+          },
+          "old_seconds": 0,
+          "loss": 132.7736053466797,
+          "risk": {
+            "tokens": 230,
+            "signed_delta": {
+              "mean": -0.00014283292841118175,
+              "min": -0.02506840229034424,
+              "p50": -3.3369287848472595e-06,
+              "p90": 0.003712892532348633,
+              "p99": 0.013088107109069824,
+              "max": 0.05003023147583008
+            },
+            "absolute_error": {
+              "mean": 0.0027292011030943327,
+              "min": 0.0,
+              "p50": 0.0011878013610839844,
+              "p90": 0.005958855152130127,
+              "p99": 0.023229777812957764,
+              "max": 0.05003023147583008
+            },
+            "ratio": {
+              "mean": 0.9998723602562564,
+              "min": 0.9752432008781783,
+              "p50": 0.9999966630767827,
+              "p90": 1.0037197938564753,
+              "p99": 1.0131741312710494,
+              "max": 1.0513028783331704
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.9999693190042385,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 21352562176,
+          "peak_reserved": 22573744128,
+          "finite": true
+        },
+        "checks": {
+          "logprob_max": 0.0,
+          "KL_max": 0.0,
+          "loss_scaled": 0.0,
+          "gradient_L2": 0.0,
+          "gradient_cosine": 1.0,
+          "risk_same": true,
+          "finite": true
+        },
+        "passed": true,
+        "speedup": 1.3241814690477707
+      },
+      {
+        "experiment": "C1",
+        "fixture": "short",
+        "repeat": 0,
+        "baseline": {
+          "seconds": 3.5099482238292694,
+          "backward_wall_seconds": 1.0917264893651009,
+          "cuda_stage_seconds": {
+            "actor_forward": 0.9384314575195313,
+            "reference_forward": 0.2981160888671875,
+            "policy_normalization": 0.15478361797332765,
+            "exact_KL": 0.23161855792999267
+          },
+          "old_seconds": 0.690634697675705,
+          "loss": 132.7736053466797,
+          "risk": {
+            "tokens": 230,
+            "signed_delta": {
+              "mean": -0.00014283292841118175,
+              "min": -0.02506840229034424,
+              "p50": -3.3369287848472595e-06,
+              "p90": 0.003712892532348633,
+              "p99": 0.013088107109069824,
+              "max": 0.05003023147583008
+            },
+            "absolute_error": {
+              "mean": 0.0027292011030943327,
+              "min": 0.0,
+              "p50": 0.0011878013610839844,
+              "p90": 0.005958855152130127,
+              "p99": 0.023229777812957764,
+              "max": 0.05003023147583008
+            },
+            "ratio": {
+              "mean": 0.9998723602562564,
+              "min": 0.9752432008781783,
+              "p50": 0.9999966630767827,
+              "p90": 1.0037197938564753,
+              "p99": 1.0131741312710494,
+              "max": 1.0513028783331704
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.9999693190042385,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 21352562176,
+          "peak_reserved": 22552772608,
+          "finite": true
+        },
+        "candidate": {
+          "seconds": 2.8375128656625748,
+          "backward_wall_seconds": 1.0047448128461838,
+          "cuda_stage_seconds": {
+            "actor_forward": 0.8294297485351563,
+            "reference_forward": 0.2703319091796875,
+            "policy_normalization": 0.13754175853729247,
+            "exact_KL": 0.21574041652679446
+          },
+          "old_seconds": 0.3010590970516205,
+          "loss": 132.7736053466797,
+          "risk": {
+            "tokens": 230,
+            "signed_delta": {
+              "mean": -0.00014283292841118175,
+              "min": -0.02506840229034424,
+              "p50": -3.3369287848472595e-06,
+              "p90": 0.003712892532348633,
+              "p99": 0.013088107109069824,
+              "max": 0.05003023147583008
+            },
+            "absolute_error": {
+              "mean": 0.0027292011030943327,
+              "min": 0.0,
+              "p50": 0.0011878013610839844,
+              "p90": 0.005958855152130127,
+              "p99": 0.023229777812957764,
+              "max": 0.05003023147583008
+            },
+            "ratio": {
+              "mean": 0.9998723602562564,
+              "min": 0.9752432008781783,
+              "p50": 0.9999966630767827,
+              "p90": 1.0037197938564753,
+              "p99": 1.0131741312710494,
+              "max": 1.0513028783331704
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.9999693190042385,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 21352562176,
+          "peak_reserved": 22825402368,
+          "finite": true
+        },
+        "checks": {
+          "logprob_max": 0.0,
+          "KL_max": 0.0,
+          "loss_scaled": 0.0,
+          "gradient_L2": 0.0,
+          "gradient_cosine": 1.0,
+          "risk_same": true,
+          "finite": true
+        },
+        "passed": true,
+        "speedup": 1.2369805495171482
+      },
+      {
+        "experiment": "A",
+        "fixture": "short",
+        "repeat": 1,
+        "baseline": {
+          "seconds": 2.936885178089142,
+          "backward_wall_seconds": 1.0951284244656563,
+          "cuda_stage_seconds": {
+            "actor_forward": 0.8570634155273438,
+            "reference_forward": 0.29779046630859374,
+            "policy_normalization": 0.07961616134643555,
+            "exact_KL": 0.18537574386596675
+          },
+          "old_seconds": 0.34889305382966995,
+          "loss": 132.7736053466797,
+          "risk": {
+            "tokens": 230,
+            "signed_delta": {
+              "mean": -0.00014283292841118175,
+              "min": -0.02506840229034424,
+              "p50": -3.3369287848472595e-06,
+              "p90": 0.003712892532348633,
+              "p99": 0.013088107109069824,
+              "max": 0.05003023147583008
+            },
+            "absolute_error": {
+              "mean": 0.0027292011030943327,
+              "min": 0.0,
+              "p50": 0.0011878013610839844,
+              "p90": 0.005958855152130127,
+              "p99": 0.023229777812957764,
+              "max": 0.05003023147583008
+            },
+            "ratio": {
+              "mean": 0.9998723602562564,
+              "min": 0.9752432008781783,
+              "p50": 0.9999966630767827,
+              "p90": 1.0037197938564753,
+              "p99": 1.0131741312710494,
+              "max": 1.0513028783331704
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.9999693190042385,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 21352562176,
+          "peak_reserved": 22573744128,
+          "finite": true
+        },
+        "candidate": {
+          "seconds": 2.6530211195349693,
+          "backward_wall_seconds": 1.0291894674301147,
+          "cuda_stage_seconds": {
+            "actor_forward": 0.8849674072265625,
+            "reference_forward": 0.2978437194824219,
+            "policy_normalization": 0.14466768038272856,
+            "exact_KL": 0.22000332736968994
+          },
+          "old_seconds": 0,
+          "loss": 132.7736053466797,
+          "risk": {
+            "tokens": 230,
+            "signed_delta": {
+              "mean": -0.00014283292841118175,
+              "min": -0.02506840229034424,
+              "p50": -3.3369287848472595e-06,
+              "p90": 0.003712892532348633,
+              "p99": 0.013088107109069824,
+              "max": 0.05003023147583008
+            },
+            "absolute_error": {
+              "mean": 0.0027292011030943327,
+              "min": 0.0,
+              "p50": 0.0011878013610839844,
+              "p90": 0.005958855152130127,
+              "p99": 0.023229777812957764,
+              "max": 0.05003023147583008
+            },
+            "ratio": {
+              "mean": 0.9998723602562564,
+              "min": 0.9752432008781783,
+              "p50": 0.9999966630767827,
+              "p90": 1.0037197938564753,
+              "p99": 1.0131741312710494,
+              "max": 1.0513028783331704
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.9999693190042385,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 21352562176,
+          "peak_reserved": 22573744128,
+          "finite": true
+        },
+        "checks": {
+          "logprob_max": 0.0,
+          "KL_max": 0.0,
+          "loss_scaled": 0.0,
+          "gradient_L2": 0.0,
+          "gradient_cosine": 1.0,
+          "risk_same": true,
+          "finite": true
+        },
+        "passed": true,
+        "speedup": 1.1069965317893622
+      },
+      {
+        "experiment": "C1",
+        "fixture": "short",
+        "repeat": 1,
+        "baseline": {
+          "seconds": 2.936885178089142,
+          "backward_wall_seconds": 1.0951284244656563,
+          "cuda_stage_seconds": {
+            "actor_forward": 0.8570634155273438,
+            "reference_forward": 0.29779046630859374,
+            "policy_normalization": 0.07961616134643555,
+            "exact_KL": 0.18537574386596675
+          },
+          "old_seconds": 0.34889305382966995,
+          "loss": 132.7736053466797,
+          "risk": {
+            "tokens": 230,
+            "signed_delta": {
+              "mean": -0.00014283292841118175,
+              "min": -0.02506840229034424,
+              "p50": -3.3369287848472595e-06,
+              "p90": 0.003712892532348633,
+              "p99": 0.013088107109069824,
+              "max": 0.05003023147583008
+            },
+            "absolute_error": {
+              "mean": 0.0027292011030943327,
+              "min": 0.0,
+              "p50": 0.0011878013610839844,
+              "p90": 0.005958855152130127,
+              "p99": 0.023229777812957764,
+              "max": 0.05003023147583008
+            },
+            "ratio": {
+              "mean": 0.9998723602562564,
+              "min": 0.9752432008781783,
+              "p50": 0.9999966630767827,
+              "p90": 1.0037197938564753,
+              "p99": 1.0131741312710494,
+              "max": 1.0513028783331704
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.9999693190042385,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 21352562176,
+          "peak_reserved": 22573744128,
+          "finite": true
+        },
+        "candidate": {
+          "seconds": 2.9402602463960648,
+          "backward_wall_seconds": 1.056552566587925,
+          "cuda_stage_seconds": {
+            "actor_forward": 0.8731678466796875,
+            "reference_forward": 0.27239117431640625,
+            "policy_normalization": 0.13784576129913328,
+            "exact_KL": 0.2128465929031372
+          },
+          "old_seconds": 0.30909865349531174,
+          "loss": 132.7736053466797,
+          "risk": {
+            "tokens": 230,
+            "signed_delta": {
+              "mean": -0.00014283292841118175,
+              "min": -0.02506840229034424,
+              "p50": -3.3369287848472595e-06,
+              "p90": 0.003712892532348633,
+              "p99": 0.013088107109069824,
+              "max": 0.05003023147583008
+            },
+            "absolute_error": {
+              "mean": 0.0027292011030943327,
+              "min": 0.0,
+              "p50": 0.0011878013610839844,
+              "p90": 0.005958855152130127,
+              "p99": 0.023229777812957764,
+              "max": 0.05003023147583008
+            },
+            "ratio": {
+              "mean": 0.9998723602562564,
+              "min": 0.9752432008781783,
+              "p50": 0.9999966630767827,
+              "p90": 1.0037197938564753,
+              "p99": 1.0131741312710494,
+              "max": 1.0513028783331704
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.9999693190042385,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 21352562176,
+          "peak_reserved": 22825402368,
+          "finite": true
+        },
+        "checks": {
+          "logprob_max": 0.0,
+          "KL_max": 0.0,
+          "loss_scaled": 0.0,
+          "gradient_L2": 0.0,
+          "gradient_cosine": 1.0,
+          "risk_same": true,
+          "finite": true
+        },
+        "passed": true,
+        "speedup": 0.9988521191921498
+      },
+      {
+        "experiment": "A",
+        "fixture": "median",
+        "repeat": 0,
+        "baseline": {
+          "seconds": 15.71301345527172,
+          "backward_wall_seconds": 6.321095012128353,
+          "cuda_stage_seconds": {
+            "actor_forward": 2.573064208984375,
+            "reference_forward": 1.51090283203125,
+            "policy_normalization": 1.1957433439493181,
+            "exact_KL": 1.7947422811985014
+          },
+          "old_seconds": 1.690279595553875,
+          "loss": -2085.62353515625,
+          "risk": {
+            "tokens": 1889,
+            "signed_delta": {
+              "mean": 3.506729872685382e-05,
+              "min": -0.030910491943359375,
+              "p50": 4.180148243904114e-05,
+              "p90": 0.0036215782165527344,
+              "p99": 0.010720252990722656,
+              "max": 0.01942920684814453
+            },
+            "absolute_error": {
+              "mean": 0.0021959053258122194,
+              "min": 0.0,
+              "p50": 0.0009845495223999023,
+              "p90": 0.005835056304931641,
+              "p99": 0.013761520385742188,
+              "max": 0.030910491943359375
+            },
+            "ratio": {
+              "mean": 1.000041963698902,
+              "min": 0.9695623528342183,
+              "p50": 1.0000418023561333,
+              "p90": 1.0036281440547816,
+              "p99": 1.0107779207897207,
+              "max": 1.0196191822499967
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.999986224570865,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 26524151808,
+          "peak_reserved": 27919384576,
+          "finite": true
+        },
+        "candidate": {
+          "seconds": 13.466729439795017,
+          "backward_wall_seconds": 5.708437256515026,
+          "cuda_stage_seconds": {
+            "actor_forward": 2.727656494140625,
+            "reference_forward": 1.510433837890625,
+            "policy_normalization": 1.141203742146492,
+            "exact_KL": 1.763255295395851
+          },
+          "old_seconds": 0,
+          "loss": -2085.62353515625,
+          "risk": {
+            "tokens": 1889,
+            "signed_delta": {
+              "mean": 3.506729872685382e-05,
+              "min": -0.030910491943359375,
+              "p50": 4.180148243904114e-05,
+              "p90": 0.0036215782165527344,
+              "p99": 0.010720252990722656,
+              "max": 0.01942920684814453
+            },
+            "absolute_error": {
+              "mean": 0.0021959053258122194,
+              "min": 0.0,
+              "p50": 0.0009845495223999023,
+              "p90": 0.005835056304931641,
+              "p99": 0.013761520385742188,
+              "max": 0.030910491943359375
+            },
+            "ratio": {
+              "mean": 1.000041963698902,
+              "min": 0.9695623528342183,
+              "p50": 1.0000418023561333,
+              "p90": 1.0036281440547816,
+              "p99": 1.0107779207897207,
+              "max": 1.0196191822499967
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.999986224570865,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 26524151808,
+          "peak_reserved": 27919384576,
+          "finite": true
+        },
+        "checks": {
+          "logprob_max": 0.0,
+          "KL_max": 0.0,
+          "loss_scaled": 0.0,
+          "gradient_L2": 0.0,
+          "gradient_cosine": 1.0,
+          "risk_same": true,
+          "finite": true
+        },
+        "passed": true,
+        "speedup": 1.1668024909477126
+      },
+      {
+        "experiment": "C1",
+        "fixture": "median",
+        "repeat": 0,
+        "baseline": {
+          "seconds": 15.71301345527172,
+          "backward_wall_seconds": 6.321095012128353,
+          "cuda_stage_seconds": {
+            "actor_forward": 2.573064208984375,
+            "reference_forward": 1.51090283203125,
+            "policy_normalization": 1.1957433439493181,
+            "exact_KL": 1.7947422811985014
+          },
+          "old_seconds": 1.690279595553875,
+          "loss": -2085.62353515625,
+          "risk": {
+            "tokens": 1889,
+            "signed_delta": {
+              "mean": 3.506729872685382e-05,
+              "min": -0.030910491943359375,
+              "p50": 4.180148243904114e-05,
+              "p90": 0.0036215782165527344,
+              "p99": 0.010720252990722656,
+              "max": 0.01942920684814453
+            },
+            "absolute_error": {
+              "mean": 0.0021959053258122194,
+              "min": 0.0,
+              "p50": 0.0009845495223999023,
+              "p90": 0.005835056304931641,
+              "p99": 0.013761520385742188,
+              "max": 0.030910491943359375
+            },
+            "ratio": {
+              "mean": 1.000041963698902,
+              "min": 0.9695623528342183,
+              "p50": 1.0000418023561333,
+              "p90": 1.0036281440547816,
+              "p99": 1.0107779207897207,
+              "max": 1.0196191822499967
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.999986224570865,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 26524151808,
+          "peak_reserved": 27919384576,
+          "finite": true
+        },
+        "candidate": {
+          "seconds": 13.938437648117542,
+          "backward_wall_seconds": 4.953335449099541,
+          "cuda_stage_seconds": {
+            "actor_forward": 2.4412119140625,
+            "reference_forward": 1.414644775390625,
+            "policy_normalization": 1.1389390028119089,
+            "exact_KL": 1.7629613991975785
+          },
+          "old_seconds": 1.613776721060276,
+          "loss": -2085.62353515625,
+          "risk": {
+            "tokens": 1889,
+            "signed_delta": {
+              "mean": 3.506729872685382e-05,
+              "min": -0.030910491943359375,
+              "p50": 4.180148243904114e-05,
+              "p90": 0.0036215782165527344,
+              "p99": 0.010720252990722656,
+              "max": 0.01942920684814453
+            },
+            "absolute_error": {
+              "mean": 0.0021959053258122194,
+              "min": 0.0,
+              "p50": 0.0009845495223999023,
+              "p90": 0.005835056304931641,
+              "p99": 0.013761520385742188,
+              "max": 0.030910491943359375
+            },
+            "ratio": {
+              "mean": 1.000041963698902,
+              "min": 0.9695623528342183,
+              "p50": 1.0000418023561333,
+              "p90": 1.0036281440547816,
+              "p99": 1.0107779207897207,
+              "max": 1.0196191822499967
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.999986224570865,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 26524151808,
+          "peak_reserved": 28527558656,
+          "finite": true
+        },
+        "checks": {
+          "logprob_max": 0.0,
+          "KL_max": 0.0,
+          "loss_scaled": 0.0,
+          "gradient_L2": 0.0,
+          "gradient_cosine": 1.0,
+          "risk_same": true,
+          "finite": true
+        },
+        "passed": true,
+        "speedup": 1.12731525956884
+      },
+      {
+        "experiment": "A",
+        "fixture": "median",
+        "repeat": 1,
+        "baseline": {
+          "seconds": 15.159442357718945,
+          "backward_wall_seconds": 6.077513866126537,
+          "cuda_stage_seconds": {
+            "actor_forward": 2.37492529296875,
+            "reference_forward": 1.5077559814453125,
+            "policy_normalization": 1.1361473889946938,
+            "exact_KL": 1.7541949545145037
+          },
+          "old_seconds": 1.7034608945250511,
+          "loss": -2085.62353515625,
+          "risk": {
+            "tokens": 1889,
+            "signed_delta": {
+              "mean": 3.506729872685382e-05,
+              "min": -0.030910491943359375,
+              "p50": 4.180148243904114e-05,
+              "p90": 0.0036215782165527344,
+              "p99": 0.010720252990722656,
+              "max": 0.01942920684814453
+            },
+            "absolute_error": {
+              "mean": 0.0021959053258122194,
+              "min": 0.0,
+              "p50": 0.0009845495223999023,
+              "p90": 0.005835056304931641,
+              "p99": 0.013761520385742188,
+              "max": 0.030910491943359375
+            },
+            "ratio": {
+              "mean": 1.000041963698902,
+              "min": 0.9695623528342183,
+              "p50": 1.0000418023561333,
+              "p90": 1.0036281440547816,
+              "p99": 1.0107779207897207,
+              "max": 1.0196191822499967
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.999986224570865,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 26524151808,
+          "peak_reserved": 27919384576,
+          "finite": true
+        },
+        "candidate": {
+          "seconds": 13.009838193655014,
+          "backward_wall_seconds": 5.364583678543568,
+          "cuda_stage_seconds": {
+            "actor_forward": 2.712640625,
+            "reference_forward": 1.50740478515625,
+            "policy_normalization": 1.111506206035614,
+            "exact_KL": 1.719589886188507
+          },
+          "old_seconds": 0,
+          "loss": -2085.62353515625,
+          "risk": {
+            "tokens": 1889,
+            "signed_delta": {
+              "mean": 3.506729872685382e-05,
+              "min": -0.030910491943359375,
+              "p50": 4.180148243904114e-05,
+              "p90": 0.0036215782165527344,
+              "p99": 0.010720252990722656,
+              "max": 0.01942920684814453
+            },
+            "absolute_error": {
+              "mean": 0.0021959053258122194,
+              "min": 0.0,
+              "p50": 0.0009845495223999023,
+              "p90": 0.005835056304931641,
+              "p99": 0.013761520385742188,
+              "max": 0.030910491943359375
+            },
+            "ratio": {
+              "mean": 1.000041963698902,
+              "min": 0.9695623528342183,
+              "p50": 1.0000418023561333,
+              "p90": 1.0036281440547816,
+              "p99": 1.0107779207897207,
+              "max": 1.0196191822499967
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.999986224570865,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 26524151808,
+          "peak_reserved": 27919384576,
+          "finite": true
+        },
+        "checks": {
+          "logprob_max": 0.0,
+          "KL_max": 0.0,
+          "loss_scaled": 0.0,
+          "gradient_L2": 0.0,
+          "gradient_cosine": 1.0,
+          "risk_same": true,
+          "finite": true
+        },
+        "passed": true,
+        "speedup": 1.1652291236882797
+      },
+      {
+        "experiment": "C1",
+        "fixture": "median",
+        "repeat": 1,
+        "baseline": {
+          "seconds": 15.159442357718945,
+          "backward_wall_seconds": 6.077513866126537,
+          "cuda_stage_seconds": {
+            "actor_forward": 2.37492529296875,
+            "reference_forward": 1.5077559814453125,
+            "policy_normalization": 1.1361473889946938,
+            "exact_KL": 1.7541949545145037
+          },
+          "old_seconds": 1.7034608945250511,
+          "loss": -2085.62353515625,
+          "risk": {
+            "tokens": 1889,
+            "signed_delta": {
+              "mean": 3.506729872685382e-05,
+              "min": -0.030910491943359375,
+              "p50": 4.180148243904114e-05,
+              "p90": 0.0036215782165527344,
+              "p99": 0.010720252990722656,
+              "max": 0.01942920684814453
+            },
+            "absolute_error": {
+              "mean": 0.0021959053258122194,
+              "min": 0.0,
+              "p50": 0.0009845495223999023,
+              "p90": 0.005835056304931641,
+              "p99": 0.013761520385742188,
+              "max": 0.030910491943359375
+            },
+            "ratio": {
+              "mean": 1.000041963698902,
+              "min": 0.9695623528342183,
+              "p50": 1.0000418023561333,
+              "p90": 1.0036281440547816,
+              "p99": 1.0107779207897207,
+              "max": 1.0196191822499967
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.999986224570865,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 26524151808,
+          "peak_reserved": 27919384576,
+          "finite": true
+        },
+        "candidate": {
+          "seconds": 14.200298368930817,
+          "backward_wall_seconds": 5.304126031696796,
+          "cuda_stage_seconds": {
+            "actor_forward": 2.41405859375,
+            "reference_forward": 1.41496630859375,
+            "policy_normalization": 1.1194643556475636,
+            "exact_KL": 1.730230271577835
+          },
+          "old_seconds": 1.6143966987729073,
+          "loss": -2085.62353515625,
+          "risk": {
+            "tokens": 1889,
+            "signed_delta": {
+              "mean": 3.506729872685382e-05,
+              "min": -0.030910491943359375,
+              "p50": 4.180148243904114e-05,
+              "p90": 0.0036215782165527344,
+              "p99": 0.010720252990722656,
+              "max": 0.01942920684814453
+            },
+            "absolute_error": {
+              "mean": 0.0021959053258122194,
+              "min": 0.0,
+              "p50": 0.0009845495223999023,
+              "p90": 0.005835056304931641,
+              "p99": 0.013761520385742188,
+              "max": 0.030910491943359375
+            },
+            "ratio": {
+              "mean": 1.000041963698902,
+              "min": 0.9695623528342183,
+              "p50": 1.0000418023561333,
+              "p90": 1.0036281440547816,
+              "p99": 1.0107779207897207,
+              "max": 1.0196191822499967
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.999986224570865,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 26524151808,
+          "peak_reserved": 28527558656,
+          "finite": true
+        },
+        "checks": {
+          "logprob_max": 0.0,
+          "KL_max": 0.0,
+          "loss_scaled": 0.0,
+          "gradient_L2": 0.0,
+          "gradient_cosine": 1.0,
+          "risk_same": true,
+          "finite": true
+        },
+        "passed": true,
+        "speedup": 1.0675439320969946
+      },
+      {
+        "experiment": "A",
+        "fixture": "largest",
+        "repeat": 0,
+        "baseline": {
+          "seconds": 61.0828607454896,
+          "backward_wall_seconds": 28.18647265434265,
+          "cuda_stage_seconds": {
+            "actor_forward": 10.1204169921875,
+            "reference_forward": 7.98524951171875,
+            "policy_normalization": 2.0986150604486467,
+            "exact_KL": 3.1957893037796015
+          },
+          "old_seconds": 8.378370523452759,
+          "loss": -5907.66162109375,
+          "risk": {
+            "tokens": 3411,
+            "signed_delta": {
+              "mean": -7.475023793053075e-05,
+              "min": -0.07342720031738281,
+              "p50": 1.4567747712135315e-05,
+              "p90": 0.0043735504150390625,
+              "p99": 0.012666702270507812,
+              "max": 0.04655790328979492
+            },
+            "absolute_error": {
+              "mean": 0.002826310440292414,
+              "min": 0.0,
+              "p50": 0.0013657808303833008,
+              "p90": 0.007204413414001465,
+              "p99": 0.018095970153808594,
+              "max": 0.07342720031738281
+            },
+            "ratio": {
+              "mean": 0.9999384374705153,
+              "min": 0.9292037890702158,
+              "p50": 1.0000145678538224,
+              "p90": 1.004383128344751,
+              "p99": 1.0127472647379543,
+              "max": 1.0476587401999173
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.9999737756743046,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 76287406592,
+          "peak_reserved": 76824969216,
+          "finite": true
+        },
+        "candidate": {
+          "seconds": 52.73191559314728,
+          "backward_wall_seconds": 27.163732543587685,
+          "cuda_stage_seconds": {
+            "actor_forward": 11.38326953125,
+            "reference_forward": 7.9850341796875,
+            "policy_normalization": 2.0375215644836424,
+            "exact_KL": 3.0727526454925544
+          },
+          "old_seconds": 0,
+          "loss": -5907.66162109375,
+          "risk": {
+            "tokens": 3411,
+            "signed_delta": {
+              "mean": -7.475023793053075e-05,
+              "min": -0.07342720031738281,
+              "p50": 1.4567747712135315e-05,
+              "p90": 0.0043735504150390625,
+              "p99": 0.012666702270507812,
+              "max": 0.04655790328979492
+            },
+            "absolute_error": {
+              "mean": 0.002826310440292414,
+              "min": 0.0,
+              "p50": 0.0013657808303833008,
+              "p90": 0.007204413414001465,
+              "p99": 0.018095970153808594,
+              "max": 0.07342720031738281
+            },
+            "ratio": {
+              "mean": 0.9999384374705153,
+              "min": 0.9292037890702158,
+              "p50": 1.0000145678538224,
+              "p90": 1.004383128344751,
+              "p99": 1.0127472647379543,
+              "max": 1.0476587401999173
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.9999737756743046,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 76287406592,
+          "peak_reserved": 76824969216,
+          "finite": true
+        },
+        "checks": {
+          "logprob_max": 0.0,
+          "KL_max": 0.0,
+          "loss_scaled": 0.0,
+          "gradient_L2": 0.0,
+          "gradient_cosine": 1.0,
+          "risk_same": true,
+          "finite": true
+        },
+        "passed": true,
+        "speedup": 1.1583660494485726
+      },
+      {
+        "experiment": "C1",
+        "fixture": "largest",
+        "repeat": 0,
+        "baseline": {
+          "seconds": 61.0828607454896,
+          "backward_wall_seconds": 28.18647265434265,
+          "cuda_stage_seconds": {
+            "actor_forward": 10.1204169921875,
+            "reference_forward": 7.98524951171875,
+            "policy_normalization": 2.0986150604486467,
+            "exact_KL": 3.1957893037796015
+          },
+          "old_seconds": 8.378370523452759,
+          "loss": -5907.66162109375,
+          "risk": {
+            "tokens": 3411,
+            "signed_delta": {
+              "mean": -7.475023793053075e-05,
+              "min": -0.07342720031738281,
+              "p50": 1.4567747712135315e-05,
+              "p90": 0.0043735504150390625,
+              "p99": 0.012666702270507812,
+              "max": 0.04655790328979492
+            },
+            "absolute_error": {
+              "mean": 0.002826310440292414,
+              "min": 0.0,
+              "p50": 0.0013657808303833008,
+              "p90": 0.007204413414001465,
+              "p99": 0.018095970153808594,
+              "max": 0.07342720031738281
+            },
+            "ratio": {
+              "mean": 0.9999384374705153,
+              "min": 0.9292037890702158,
+              "p50": 1.0000145678538224,
+              "p90": 1.004383128344751,
+              "p99": 1.0127472647379543,
+              "max": 1.0476587401999173
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.9999737756743046,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 76287406592,
+          "peak_reserved": 76824969216,
+          "finite": true
+        },
+        "candidate": {
+          "seconds": 58.17831405252218,
+          "backward_wall_seconds": 25.366115018725395,
+          "cuda_stage_seconds": {
+            "actor_forward": 9.80855078125,
+            "reference_forward": 7.653982421875,
+            "policy_normalization": 2.0991651468276986,
+            "exact_KL": 3.1471298513412473
+          },
+          "old_seconds": 8.997039183974266,
+          "loss": -5907.66162109375,
+          "risk": {
+            "tokens": 3411,
+            "signed_delta": {
+              "mean": -7.475023793053075e-05,
+              "min": -0.07342720031738281,
+              "p50": 1.4567747712135315e-05,
+              "p90": 0.0043735504150390625,
+              "p99": 0.012666702270507812,
+              "max": 0.04655790328979492
+            },
+            "absolute_error": {
+              "mean": 0.002826310440292414,
+              "min": 0.0,
+              "p50": 0.0013657808303833008,
+              "p90": 0.007204413414001465,
+              "p99": 0.018095970153808594,
+              "max": 0.07342720031738281
+            },
+            "ratio": {
+              "mean": 0.9999384374705153,
+              "min": 0.9292037890702158,
+              "p50": 1.0000145678538224,
+              "p90": 1.004383128344751,
+              "p99": 1.0127472647379543,
+              "max": 1.0476587401999173
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.9999737756743046,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 76287406592,
+          "peak_reserved": 76824969216,
+          "finite": true
+        },
+        "checks": {
+          "logprob_max": 0.0,
+          "KL_max": 0.0,
+          "loss_scaled": 0.0,
+          "gradient_L2": 0.0,
+          "gradient_cosine": 1.0,
+          "risk_same": true,
+          "finite": true
+        },
+        "passed": true,
+        "speedup": 1.0499249031236149
+      },
+      {
+        "experiment": "A",
+        "fixture": "largest",
+        "repeat": 1,
+        "baseline": {
+          "seconds": 62.070946998894215,
+          "backward_wall_seconds": 28.224408976733685,
+          "cuda_stage_seconds": {
+            "actor_forward": 10.0926767578125,
+            "reference_forward": 7.98373876953125,
+            "policy_normalization": 2.112317990779877,
+            "exact_KL": 3.2016732168197626
+          },
+          "old_seconds": 9.322614252567291,
+          "loss": -5907.66162109375,
+          "risk": {
+            "tokens": 3411,
+            "signed_delta": {
+              "mean": -7.475023793053075e-05,
+              "min": -0.07342720031738281,
+              "p50": 1.4567747712135315e-05,
+              "p90": 0.0043735504150390625,
+              "p99": 0.012666702270507812,
+              "max": 0.04655790328979492
+            },
+            "absolute_error": {
+              "mean": 0.002826310440292414,
+              "min": 0.0,
+              "p50": 0.0013657808303833008,
+              "p90": 0.007204413414001465,
+              "p99": 0.018095970153808594,
+              "max": 0.07342720031738281
+            },
+            "ratio": {
+              "mean": 0.9999384374705153,
+              "min": 0.9292037890702158,
+              "p50": 1.0000145678538224,
+              "p90": 1.004383128344751,
+              "p99": 1.0127472647379543,
+              "max": 1.0476587401999173
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.9999737756743046,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 76287406592,
+          "peak_reserved": 76824969216,
+          "finite": true
+        },
+        "candidate": {
+          "seconds": 53.44701108336449,
+          "backward_wall_seconds": 27.664149962365627,
+          "cuda_stage_seconds": {
+            "actor_forward": 11.4445703125,
+            "reference_forward": 7.98283251953125,
+            "policy_normalization": 2.0961741156578064,
+            "exact_KL": 3.1477975053787235
+          },
+          "old_seconds": 0,
+          "loss": -5907.66162109375,
+          "risk": {
+            "tokens": 3411,
+            "signed_delta": {
+              "mean": -7.475023793053075e-05,
+              "min": -0.07342720031738281,
+              "p50": 1.4567747712135315e-05,
+              "p90": 0.0043735504150390625,
+              "p99": 0.012666702270507812,
+              "max": 0.04655790328979492
+            },
+            "absolute_error": {
+              "mean": 0.002826310440292414,
+              "min": 0.0,
+              "p50": 0.0013657808303833008,
+              "p90": 0.007204413414001465,
+              "p99": 0.018095970153808594,
+              "max": 0.07342720031738281
+            },
+            "ratio": {
+              "mean": 0.9999384374705153,
+              "min": 0.9292037890702158,
+              "p50": 1.0000145678538224,
+              "p90": 1.004383128344751,
+              "p99": 1.0127472647379543,
+              "max": 1.0476587401999173
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.9999737756743046,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 76287406592,
+          "peak_reserved": 76824969216,
+          "finite": true
+        },
+        "checks": {
+          "logprob_max": 0.0,
+          "KL_max": 0.0,
+          "loss_scaled": 0.0,
+          "gradient_L2": 0.0,
+          "gradient_cosine": 1.0,
+          "risk_same": true,
+          "finite": true
+        },
+        "passed": true,
+        "speedup": 1.1613548773022773
+      },
+      {
+        "experiment": "C1",
+        "fixture": "largest",
+        "repeat": 1,
+        "baseline": {
+          "seconds": 62.070946998894215,
+          "backward_wall_seconds": 28.224408976733685,
+          "cuda_stage_seconds": {
+            "actor_forward": 10.0926767578125,
+            "reference_forward": 7.98373876953125,
+            "policy_normalization": 2.112317990779877,
+            "exact_KL": 3.2016732168197626
+          },
+          "old_seconds": 9.322614252567291,
+          "loss": -5907.66162109375,
+          "risk": {
+            "tokens": 3411,
+            "signed_delta": {
+              "mean": -7.475023793053075e-05,
+              "min": -0.07342720031738281,
+              "p50": 1.4567747712135315e-05,
+              "p90": 0.0043735504150390625,
+              "p99": 0.012666702270507812,
+              "max": 0.04655790328979492
+            },
+            "absolute_error": {
+              "mean": 0.002826310440292414,
+              "min": 0.0,
+              "p50": 0.0013657808303833008,
+              "p90": 0.007204413414001465,
+              "p99": 0.018095970153808594,
+              "max": 0.07342720031738281
+            },
+            "ratio": {
+              "mean": 0.9999384374705153,
+              "min": 0.9292037890702158,
+              "p50": 1.0000145678538224,
+              "p90": 1.004383128344751,
+              "p99": 1.0127472647379543,
+              "max": 1.0476587401999173
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.9999737756743046,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 76287406592,
+          "peak_reserved": 76824969216,
+          "finite": true
+        },
+        "candidate": {
+          "seconds": 58.43277285248041,
+          "backward_wall_seconds": 25.711547523736954,
+          "cuda_stage_seconds": {
+            "actor_forward": 9.8148251953125,
+            "reference_forward": 7.654853515625,
+            "policy_normalization": 2.0932603602409365,
+            "exact_KL": 3.160738817214966
+          },
+          "old_seconds": 8.891365498304367,
+          "loss": -5907.66162109375,
+          "risk": {
+            "tokens": 3411,
+            "signed_delta": {
+              "mean": -7.475023793053075e-05,
+              "min": -0.07342720031738281,
+              "p50": 1.4567747712135315e-05,
+              "p90": 0.0043735504150390625,
+              "p99": 0.012666702270507812,
+              "max": 0.04655790328979492
+            },
+            "absolute_error": {
+              "mean": 0.002826310440292414,
+              "min": 0.0,
+              "p50": 0.0013657808303833008,
+              "p90": 0.007204413414001465,
+              "p99": 0.018095970153808594,
+              "max": 0.07342720031738281
+            },
+            "ratio": {
+              "mean": 0.9999384374705153,
+              "min": 0.9292037890702158,
+              "p50": 1.0000145678538224,
+              "p90": 1.004383128344751,
+              "p99": 1.0127472647379543,
+              "max": 1.0476587401999173
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.9999737756743046,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 76287406592,
+          "peak_reserved": 76824969216,
+          "finite": true
+        },
+        "checks": {
+          "logprob_max": 0.0,
+          "KL_max": 0.0,
+          "loss_scaled": 0.0,
+          "gradient_L2": 0.0,
+          "gradient_cosine": 1.0,
+          "risk_same": true,
+          "finite": true
+        },
+        "passed": true,
+        "speedup": 1.0622625620659616
+      }
+    ],
+    "NVML": {
+      "status": "MEASURED",
+      "peak_used_bytes": 83166822400
+    },
+    "initialization_seconds": 12.4844179302454,
+    "C2": "NOT_RUN: select threshold only after paired C1 measurements",
+    "offline_optimizer_step": "NOT_RUN_PENDING_FORWARD_GRADIENT_RESULTS"
+  },
+  "entropy": {
+    "status": "FAIL",
+    "plan_sha256": "cabbbce854e862fde7a2271cc6ab2a75b65e8a95e69022cd80c38d4909e3fdbb",
+    "new_generation": 0,
+    "new_retrieval": 0,
+    "rows": [
+      {
+        "experiment": "B",
+        "count": 8,
+        "repeat": 0,
+        "baseline": {
+          "seconds": 29.94821015559137,
+          "cpu_seconds": 26.900969978000006,
+          "peak_allocated": 7722641920,
+          "peak_reserved": 7916748800,
+          "native_tokens": 42613,
+          "summary_tokens": 2683
+        },
+        "candidate": {
+          "seconds": 25.049001628533006,
+          "cpu_seconds": 25.045895004000002,
+          "peak_allocated": 7697510400,
+          "peak_reserved": 7855931392,
+          "native_tokens": 42613,
+          "summary_tokens": 2683
+        },
+        "checks": {
+          "entropy_max_abs": 3.218650817871094e-05,
+          "all_rankings_and_top4_equal": true,
+          "passed": false
+        },
+        "speedup": 1.195584981777387
+      }
+    ],
+    "NVML": {
+      "status": "MEASURED",
+      "peak_used_bytes": 9256894464
+    },
+    "initialization_seconds": 27.578903088346124,
+    "error_type": "ValueError",
+    "error": "entropy/rank gate failed; no expansion"
+  },
+  "C2": {
+    "status": "IN_PROGRESS",
+    "plan_sha256": "cabbbce854e862fde7a2271cc6ab2a75b65e8a95e69022cd80c38d4909e3fdbb",
+    "new_generation": 0,
+    "new_retrieval": 0,
+    "rows": [
+      {
+        "native_tokens": 1357,
+        "action_tokens": 230,
+        "horizon": 1356,
+        "experiment": "C2",
+        "fixture": "short",
+        "repeat": 0,
+        "baseline": {
+          "seconds": 5.362187696620822,
+          "backward_wall_seconds": 2.2287852074950933,
+          "cuda_stage_seconds": {
+            "actor_forward": 0.95185302734375,
+            "reference_forward": 0.2689669189453125,
+            "policy_normalization": 0.20802435207366943,
+            "exact_KL": 0.29043712043762204
+          },
+          "old_seconds": 1.1157592236995697,
+          "loss": 132.7736053466797,
+          "risk": {
+            "tokens": 230,
+            "signed_delta": {
+              "mean": -0.00014283292841118175,
+              "min": -0.02506840229034424,
+              "p50": -3.3369287848472595e-06,
+              "p90": 0.003712892532348633,
+              "p99": 0.013088107109069824,
+              "max": 0.05003023147583008
+            },
+            "absolute_error": {
+              "mean": 0.0027292011030943327,
+              "min": 0.0,
+              "p50": 0.0011878013610839844,
+              "p90": 0.005958855152130127,
+              "p99": 0.023229777812957764,
+              "max": 0.05003023147583008
+            },
+            "ratio": {
+              "mean": 0.9998723602562564,
+              "min": 0.9752432008781783,
+              "p50": 0.9999966630767827,
+              "p90": 1.0037197938564753,
+              "p99": 1.0131741312710494,
+              "max": 1.0513028783331704
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.9999693190042385,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 21352562176,
+          "peak_reserved": 21860712448,
+          "nvml_peak_bytes": 22538158080,
+          "finite": true
+        },
+        "candidate": {
+          "seconds": 1.5609268378466368,
+          "backward_wall_seconds": 0.6958074290305376,
+          "cuda_stage_seconds": {
+            "actor_forward": 0.26901400756835936,
+            "reference_forward": 0.2686904296875,
+            "policy_normalization": 0.0014725119769573212,
+            "exact_KL": 0.0035287040323019026
+          },
+          "old_seconds": 0.3160185869783163,
+          "loss": 132.7736053466797,
+          "risk": {
+            "tokens": 230,
+            "signed_delta": {
+              "mean": -0.00014283292841118175,
+              "min": -0.02506840229034424,
+              "p50": -3.3369287848472595e-06,
+              "p90": 0.003712892532348633,
+              "p99": 0.013088107109069824,
+              "max": 0.05003023147583008
+            },
+            "absolute_error": {
+              "mean": 0.0027292011030943327,
+              "min": 0.0,
+              "p50": 0.0011878013610839844,
+              "p90": 0.005958855152130127,
+              "p99": 0.023229777812957764,
+              "max": 0.05003023147583008
+            },
+            "ratio": {
+              "mean": 0.9998723602562564,
+              "min": 0.9752432008781783,
+              "p50": 0.9999966630767827,
+              "p90": 1.0037197938564753,
+              "p99": 1.0131741312710494,
+              "max": 1.0513028783331704
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.9999693190042385,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 21352562176,
+          "peak_reserved": 22070427648,
+          "nvml_peak_bytes": 23418961920,
+          "finite": true
+        },
+        "checks": {
+          "logprob_max": 0.0,
+          "KL_max": 0.0,
+          "loss_scaled": 0.0,
+          "gradient_L2": 0.0,
+          "gradient_cosine": 1.0,
+          "risk_same": true,
+          "finite": true,
+          "8GiB_headroom": true
+        },
+        "passed": true,
+        "speedup": 3.4352588261075594
+      },
+      {
+        "native_tokens": 1357,
+        "action_tokens": 230,
+        "horizon": 1356,
+        "experiment": "C2",
+        "fixture": "short",
+        "repeat": 1,
+        "baseline": {
+          "seconds": 2.870921291410923,
+          "backward_wall_seconds": 1.0143724828958511,
+          "cuda_stage_seconds": {
+            "actor_forward": 0.8551485595703125,
+            "reference_forward": 0.2698106994628906,
+            "policy_normalization": 0.12852313613891603,
+            "exact_KL": 0.20759449458122253
+          },
+          "old_seconds": 0.31746466644108295,
+          "loss": 132.7736053466797,
+          "risk": {
+            "tokens": 230,
+            "signed_delta": {
+              "mean": -0.00014283292841118175,
+              "min": -0.02506840229034424,
+              "p50": -3.3369287848472595e-06,
+              "p90": 0.003712892532348633,
+              "p99": 0.013088107109069824,
+              "max": 0.05003023147583008
+            },
+            "absolute_error": {
+              "mean": 0.0027292011030943327,
+              "min": 0.0,
+              "p50": 0.0011878013610839844,
+              "p90": 0.005958855152130127,
+              "p99": 0.023229777812957764,
+              "max": 0.05003023147583008
+            },
+            "ratio": {
+              "mean": 0.9998723602562564,
+              "min": 0.9752432008781783,
+              "p50": 0.9999966630767827,
+              "p90": 1.0037197938564753,
+              "p99": 1.0131741312710494,
+              "max": 1.0513028783331704
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.9999693190042385,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 21352562176,
+          "peak_reserved": 22825402368,
+          "nvml_peak_bytes": 22286499840,
+          "finite": true
+        },
+        "candidate": {
+          "seconds": 1.5518713388592005,
+          "backward_wall_seconds": 0.69493224658072,
+          "cuda_stage_seconds": {
+            "actor_forward": 0.268969970703125,
+            "reference_forward": 0.26870681762695314,
+            "policy_normalization": 0.0014878719747066498,
+            "exact_KL": 0.0034897920489311215
+          },
+          "old_seconds": 0.3081000354140997,
+          "loss": 132.7736053466797,
+          "risk": {
+            "tokens": 230,
+            "signed_delta": {
+              "mean": -0.00014283292841118175,
+              "min": -0.02506840229034424,
+              "p50": -3.3369287848472595e-06,
+              "p90": 0.003712892532348633,
+              "p99": 0.013088107109069824,
+              "max": 0.05003023147583008
+            },
+            "absolute_error": {
+              "mean": 0.0027292011030943327,
+              "min": 0.0,
+              "p50": 0.0011878013610839844,
+              "p90": 0.005958855152130127,
+              "p99": 0.023229777812957764,
+              "max": 0.05003023147583008
+            },
+            "ratio": {
+              "mean": 0.9998723602562564,
+              "min": 0.9752432008781783,
+              "p50": 0.9999966630767827,
+              "p90": 1.0037197938564753,
+              "p99": 1.0131741312710494,
+              "max": 1.0513028783331704
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.9999693190042385,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 21352562176,
+          "peak_reserved": 22070427648,
+          "nvml_peak_bytes": 22559129600,
+          "finite": true
+        },
+        "checks": {
+          "logprob_max": 0.0,
+          "KL_max": 0.0,
+          "loss_scaled": 0.0,
+          "gradient_L2": 0.0,
+          "gradient_cosine": 1.0,
+          "risk_same": true,
+          "finite": true,
+          "8GiB_headroom": true
+        },
+        "passed": true,
+        "speedup": 1.8499737829563707
+      },
+      {
+        "native_tokens": 6158,
+        "action_tokens": 1889,
+        "horizon": 5535,
+        "experiment": "C2",
+        "fixture": "median",
+        "repeat": 0,
+        "baseline": {
+          "seconds": 14.478276094421744,
+          "backward_wall_seconds": 5.3754018023610115,
+          "cuda_stage_seconds": {
+            "actor_forward": 2.4669921875,
+            "reference_forward": 1.4111846923828124,
+            "policy_normalization": 1.2029139798879618,
+            "exact_KL": 1.784016897559166
+          },
+          "old_seconds": 1.6098376605659723,
+          "loss": -2085.62353515625,
+          "risk": {
+            "tokens": 1889,
+            "signed_delta": {
+              "mean": 3.506729872685382e-05,
+              "min": -0.030910491943359375,
+              "p50": 4.180148243904114e-05,
+              "p90": 0.0036215782165527344,
+              "p99": 0.010720252990722656,
+              "max": 0.01942920684814453
+            },
+            "absolute_error": {
+              "mean": 0.0021959053258122194,
+              "min": 0.0,
+              "p50": 0.0009845495223999023,
+              "p90": 0.005835056304931641,
+              "p99": 0.013761520385742188,
+              "max": 0.030910491943359375
+            },
+            "ratio": {
+              "mean": 1.000041963698902,
+              "min": 0.9695623528342183,
+              "p50": 1.0000418023561333,
+              "p90": 1.0036281440547816,
+              "p99": 1.0107779207897207,
+              "max": 1.0196191822499967
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.999986224570865,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 26524151808,
+          "peak_reserved": 28527558656,
+          "nvml_peak_bytes": 29878190080,
+          "finite": true
+        },
+        "candidate": {
+          "seconds": 8.304231524467468,
+          "backward_wall_seconds": 3.818501401692629,
+          "cuda_stage_seconds": {
+            "actor_forward": 1.4114539794921874,
+            "reference_forward": 1.41119482421875,
+            "policy_normalization": 0.009653247997164728,
+            "exact_KL": 0.02229657597839832
+          },
+          "old_seconds": 1.6130552887916565,
+          "loss": -2085.62353515625,
+          "risk": {
+            "tokens": 1889,
+            "signed_delta": {
+              "mean": 3.506729872685382e-05,
+              "min": -0.030910491943359375,
+              "p50": 4.180148243904114e-05,
+              "p90": 0.0036215782165527344,
+              "p99": 0.010720252990722656,
+              "max": 0.01942920684814453
+            },
+            "absolute_error": {
+              "mean": 0.0021959053258122194,
+              "min": 0.0,
+              "p50": 0.0009845495223999023,
+              "p90": 0.005835056304931641,
+              "p99": 0.013761520385742188,
+              "max": 0.030910491943359375
+            },
+            "ratio": {
+              "mean": 1.000041963698902,
+              "min": 0.9695623528342183,
+              "p50": 1.0000418023561333,
+              "p90": 1.0036281440547816,
+              "p99": 1.0107779207897207,
+              "max": 1.0196191822499967
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.999986224570865,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 26524196352,
+          "peak_reserved": 28527558656,
+          "nvml_peak_bytes": 29878190080,
+          "finite": true
+        },
+        "checks": {
+          "logprob_max": 0.0,
+          "KL_max": 0.0,
+          "loss_scaled": 0.0,
+          "gradient_L2": 0.0,
+          "gradient_cosine": 1.0,
+          "risk_same": true,
+          "finite": true,
+          "8GiB_headroom": true
+        },
+        "passed": true,
+        "speedup": 1.7434817480417255
+      },
+      {
+        "native_tokens": 6158,
+        "action_tokens": 1889,
+        "horizon": 5535,
+        "experiment": "C2",
+        "fixture": "median",
+        "repeat": 1,
+        "baseline": {
+          "seconds": 14.355777500197291,
+          "backward_wall_seconds": 5.145770121365786,
+          "cuda_stage_seconds": {
+            "actor_forward": 2.4891279296875,
+            "reference_forward": 1.4111231689453125,
+            "policy_normalization": 1.2145036556720734,
+            "exact_KL": 1.8338969554901121
+          },
+          "old_seconds": 1.6109178140759468,
+          "loss": -2085.62353515625,
+          "risk": {
+            "tokens": 1889,
+            "signed_delta": {
+              "mean": 3.506729872685382e-05,
+              "min": -0.030910491943359375,
+              "p50": 4.180148243904114e-05,
+              "p90": 0.0036215782165527344,
+              "p99": 0.010720252990722656,
+              "max": 0.01942920684814453
+            },
+            "absolute_error": {
+              "mean": 0.0021959053258122194,
+              "min": 0.0,
+              "p50": 0.0009845495223999023,
+              "p90": 0.005835056304931641,
+              "p99": 0.013761520385742188,
+              "max": 0.030910491943359375
+            },
+            "ratio": {
+              "mean": 1.000041963698902,
+              "min": 0.9695623528342183,
+              "p50": 1.0000418023561333,
+              "p90": 1.0036281440547816,
+              "p99": 1.0107779207897207,
+              "max": 1.0196191822499967
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.999986224570865,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 26524151808,
+          "peak_reserved": 28527558656,
+          "nvml_peak_bytes": 29878190080,
+          "finite": true
+        },
+        "candidate": {
+          "seconds": 8.297340324148536,
+          "backward_wall_seconds": 3.812804404646158,
+          "cuda_stage_seconds": {
+            "actor_forward": 1.4118870849609375,
+            "reference_forward": 1.4111702880859376,
+            "policy_normalization": 0.009710592076182365,
+            "exact_KL": 0.02236211194097996
+          },
+          "old_seconds": 1.610501168295741,
+          "loss": -2085.62353515625,
+          "risk": {
+            "tokens": 1889,
+            "signed_delta": {
+              "mean": 3.506729872685382e-05,
+              "min": -0.030910491943359375,
+              "p50": 4.180148243904114e-05,
+              "p90": 0.0036215782165527344,
+              "p99": 0.010720252990722656,
+              "max": 0.01942920684814453
+            },
+            "absolute_error": {
+              "mean": 0.0021959053258122194,
+              "min": 0.0,
+              "p50": 0.0009845495223999023,
+              "p90": 0.005835056304931641,
+              "p99": 0.013761520385742188,
+              "max": 0.030910491943359375
+            },
+            "ratio": {
+              "mean": 1.000041963698902,
+              "min": 0.9695623528342183,
+              "p50": 1.0000418023561333,
+              "p90": 1.0036281440547816,
+              "p99": 1.0107779207897207,
+              "max": 1.0196191822499967
+            },
+            "outside_clip_fraction": 0.0,
+            "extreme_tail_fraction": 0.0,
+            "ess_fraction": 0.999986224570865,
+            "ratio_mean_in_diagnostic_band": true,
+            "historical_consistency_pass": true,
+            "matched_consistency_pass": true,
+            "effective_clip_fraction": 0.0,
+            "zero_advantage_fraction": 0.0
+          },
+          "peak_allocated": 26524196352,
+          "peak_reserved": 28527558656,
+          "nvml_peak_bytes": 29878190080,
+          "finite": true
+        },
+        "checks": {
+          "logprob_max": 0.0,
+          "KL_max": 0.0,
+          "loss_scaled": 0.0,
+          "gradient_L2": 0.0,
+          "gradient_cosine": 1.0,
+          "risk_same": true,
+          "finite": true,
+          "8GiB_headroom": true
+        },
+        "passed": true,
+        "speedup": 1.73016616643002
+      }
+    ],
+    "NVML": {
+      "status": "MEASURED",
+      "peak_used_bytes": 29878190080
+    },
+    "initialization_seconds": 10.805840730667114
+  },
+  "C2_terminal_override": "controlled cancelled after four completed short/median comparisons; raw IN_PROGRESS retained; longest device mode NOT_RUN",
+  "offline_optimizer_step": {
+    "scope": "offline three fixed saved trajectories; no online training or generation",
+    "status": "PASS",
+    "rows": [
+      {
+        "fused": false,
+        "diagnostics": {
+          "optimizer_steps": 1,
+          "steps": [
+            {
+              "epoch": 0,
+              "minibatch_start": 0,
+              "generated_tokens": 5530,
+              "sequences": 3,
+              "loss_denominator": 3,
+              "normalized_loss": -2620.1705169677734,
+              "policy_loss": -2620.1705169677734,
+              "reference_kl": 0.0,
+              "reference_kl_token_mean": 0.0,
+              "grad_norm_before_clip": 6197.10400390625,
+              "ratio_min": 0.9292038083076477,
+              "ratio_max": 1.0513029098510742,
+              "ratio_mean": 0.999971062268314,
+              "outside_clip_count": 0,
+              "effective_clip_count": 0,
+              "outside_clip_fraction": 0.0,
+              "effective_clip_fraction": 0.0,
+              "positive_advantages": 5300,
+              "negative_advantages": 230,
+              "zero_advantages": 0
+            }
+          ],
+          "global_sequences": 3,
+          "global_generated_tokens": 5530,
+          "normalized_loss": -2620.1705169677734,
+          "policy_loss": -2620.1705169677734,
+          "reference_kl": 0.0,
+          "grad_norm_before_clip": 6197.10400390625,
+          "ratio_min": 0.9292038083076477,
+          "ratio_max": 1.0513029098510742,
+          "ratio_mean": 0.999971062268314,
+          "positive_advantages": 5300,
+          "negative_advantages": 230,
+          "zero_advantages": 0,
+          "positive_advantages_fraction": 0.9584086799276673,
+          "negative_advantages_fraction": 0.04159132007233273,
+          "zero_advantages_fraction": 0.0,
+          "outside_clip_fraction": 0.0,
+          "effective_clip_fraction": 0.0,
+          "parameter_probe_coordinates": "first, per-axis midpoint, last of every trainable tensor",
+          "parameter_probe_changed": true,
+          "parameter_probe_max_abs_delta": 1.9073486328125e-06,
+          "zero_gradient_all_steps": false
+        },
+        "risk": {
+          "tokens": 5530,
+          "signed_delta": {
+            "mean": -4.0069169587809276e-05,
+            "min": -0.07342720031738281,
+            "p50": 1.9166618585586548e-05,
+            "p90": 0.004072666168212891,
+            "p99": 0.012338638305664062,
+            "max": 0.05003023147583008
+          },
+          "absolute_error": {
+            "mean": 0.0026069306195313567,
+            "min": 0.0,
+            "p50": 0.0012366771697998047,
+            "p90": 0.006798267364501953,
+            "p99": 0.01688385009765625,
+            "max": 0.07342720031738281
+          },
+          "ratio": {
+            "mean": 0.9999710528929642,
+            "min": 0.9292037890702158,
+            "p50": 1.0000191668022664,
+            "p90": 1.004080970743165,
+            "p99": 1.0124150733478912,
+            "max": 1.0513028783331704
+          },
+          "outside_clip_fraction": 0.0,
+          "extreme_tail_fraction": 0.0,
+          "ess_fraction": 0.9999778405740022,
+          "ratio_mean_in_diagnostic_band": true,
+          "historical_consistency_pass": true,
+          "matched_consistency_pass": true,
+          "effective_clip_fraction": 0.0,
+          "zero_advantage_fraction": 0.0
+        },
+        "parameter_changed": true,
+        "Adam_steps": [
+          1
+        ],
+        "wall_including_gradient_diagnostic_seconds": 79.2773066777736,
+        "gradient_global_L2": null,
+        "gradient_cosine": null
+      },
+      {
+        "fused": true,
+        "diagnostics": {
+          "optimizer_steps": 1,
+          "steps": [
+            {
+              "epoch": 0,
+              "minibatch_start": 0,
+              "generated_tokens": 5530,
+              "sequences": 3,
+              "loss_denominator": 3,
+              "normalized_loss": -2620.1705169677734,
+              "policy_loss": -2620.1705169677734,
+              "reference_kl": 0.0,
+              "reference_kl_token_mean": 0.0,
+              "grad_norm_before_clip": 6197.10400390625,
+              "ratio_min": 0.9292038083076477,
+              "ratio_max": 1.0513029098510742,
+              "ratio_mean": 0.999971062268314,
+              "outside_clip_count": 0,
+              "effective_clip_count": 0,
+              "outside_clip_fraction": 0.0,
+              "effective_clip_fraction": 0.0,
+              "positive_advantages": 5300,
+              "negative_advantages": 230,
+              "zero_advantages": 0
+            }
+          ],
+          "global_sequences": 3,
+          "global_generated_tokens": 5530,
+          "normalized_loss": -2620.1705169677734,
+          "policy_loss": -2620.1705169677734,
+          "reference_kl": 0.0,
+          "grad_norm_before_clip": 6197.10400390625,
+          "ratio_min": 0.9292038083076477,
+          "ratio_max": 1.0513029098510742,
+          "ratio_mean": 0.999971062268314,
+          "positive_advantages": 5300,
+          "negative_advantages": 230,
+          "zero_advantages": 0,
+          "positive_advantages_fraction": 0.9584086799276673,
+          "negative_advantages_fraction": 0.04159132007233273,
+          "zero_advantages_fraction": 0.0,
+          "outside_clip_fraction": 0.0,
+          "effective_clip_fraction": 0.0,
+          "parameter_probe_coordinates": "first, per-axis midpoint, last of every trainable tensor",
+          "parameter_probe_changed": true,
+          "parameter_probe_max_abs_delta": 1.9073486328125e-06,
+          "zero_gradient_all_steps": false
+        },
+        "risk": {
+          "tokens": 5530,
+          "signed_delta": {
+            "mean": -4.0069169587809276e-05,
+            "min": -0.07342720031738281,
+            "p50": 1.9166618585586548e-05,
+            "p90": 0.004072666168212891,
+            "p99": 0.012338638305664062,
+            "max": 0.05003023147583008
+          },
+          "absolute_error": {
+            "mean": 0.0026069306195313567,
+            "min": 0.0,
+            "p50": 0.0012366771697998047,
+            "p90": 0.006798267364501953,
+            "p99": 0.01688385009765625,
+            "max": 0.07342720031738281
+          },
+          "ratio": {
+            "mean": 0.9999710528929642,
+            "min": 0.9292037890702158,
+            "p50": 1.0000191668022664,
+            "p90": 1.004080970743165,
+            "p99": 1.0124150733478912,
+            "max": 1.0513028783331704
+          },
+          "outside_clip_fraction": 0.0,
+          "extreme_tail_fraction": 0.0,
+          "ess_fraction": 0.9999778405740022,
+          "ratio_mean_in_diagnostic_band": true,
+          "historical_consistency_pass": true,
+          "matched_consistency_pass": true,
+          "effective_clip_fraction": 0.0,
+          "zero_advantage_fraction": 0.0
+        },
+        "parameter_changed": true,
+        "Adam_steps": [
+          1
+        ],
+        "wall_including_gradient_diagnostic_seconds": 88.76123565714806,
+        "gradient_global_L2": 0.0,
+        "gradient_cosine": 1.0
+      }
+    ],
+    "post_update_all_parameters_bitwise_equal": true,
+    "branches": "not applicable: saved GRPO-original fixtures; online RICE branch integration not qualified by this test"
+  },
+  "source_commits": {
+    "paired_and_entropy": "1acc132e16bee876244e2edc31fca82334121761",
+    "step_and_C2": "27626998d54b7eb036a6a29360a382b768f699e4",
+    "optional_runtime_wiring_CPU_tests": "3bf369a2d3205d39a95c2cdb1cc889602ab2c17a"
+  },
+  "private_result_sha256": {
+    "scale-compute-live.json": "53f398cc35caec0f38c5b3e9bd303cb8e0c43dc40b2e4042a866b22f256751bb",
+    "scale-entropy-176892.json": "039cbf7aed02daa5313b6987ce924760fc717f61de691f097cc5b0c758f0a9b8",
+    "scale-residency-176901.json": "056b352334d1a269365491de4177d62bb604c5e14e093160ea934b326118f071",
+    "scale-step-176900.json": "984e22f298c24173e952867a2312641dc5150556def10963dd222cfe6865fff2"
+  }
+}

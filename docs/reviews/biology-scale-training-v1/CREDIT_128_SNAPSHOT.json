@@ -1,0 +1,125 @@
+{
+  "observed_at_utc": "2026-11-08T01:05:08.616407+00:00",
+  "run_alias": "biology-scale-v2-training-ricepo",
+  "source_credit_sha256": "24a0017c4b2fb96e258eafcac8fc70f8d23a6bb4409555fb0734dd52d7f7a9f8",
+  "stage": "completed credit before first optimizer update",
+  "originals": 512,
+  "new_branches": 2555,
+  "selected_anchors": 511,
+  "estimable_anchors": 295,
+  "nonzero_local_credit": 190,
+  "think_propagation": 8,
+  "original_failures": 223,
+  "summary_replaced_tokens": 31428,
+  "summary_changed_tokens": 28808,
+  "think_terminal": 5,
+  "think_nonterminal": 3,
+  "by_depth": [
+    {
+      "anchors": 77,
+      "constant_branch_final_groups": 0.16883116883116883,
+      "constant_local_groups": 0.33766233766233766,
+      "constant_original_final_groups": 0.24675324675324675,
+      "depth": 1,
+      "domain": "biology",
+      "gate_rates": {
+        "joint": 0.0,
+        "local": 0.15584415584415584,
+        "residual": 0.2727272727272727
+      },
+      "iteration": 0,
+      "local_final_covariance": 0.07935839600549031,
+      "mean_abs_local_advantage": 0.09675373268085877,
+      "negative": 0.3116883116883117,
+      "positive": 0.35064935064935066,
+      "sign_conflicts": 0.22077922077922077,
+      "terminal_anchors": 0,
+      "zero": 0.33766233766233766
+    },
+    {
+      "anchors": 73,
+      "constant_branch_final_groups": 0.1780821917808219,
+      "constant_local_groups": 0.410958904109589,
+      "constant_original_final_groups": 0.2054794520547945,
+      "depth": 2,
+      "domain": "biology",
+      "gate_rates": {
+        "joint": 0.0,
+        "local": 0.136986301369863,
+        "residual": 0.273972602739726
+      },
+      "iteration": 0,
+      "local_final_covariance": 0.08486797519715404,
+      "mean_abs_local_advantage": 0.09030525691179977,
+      "negative": 0.273972602739726,
+      "positive": 0.3150684931506849,
+      "sign_conflicts": 0.2328767123287671,
+      "terminal_anchors": 0,
+      "zero": 0.410958904109589
+    },
+    {
+      "anchors": 53,
+      "constant_branch_final_groups": 0.16981132075471697,
+      "constant_local_groups": 0.2830188679245283,
+      "constant_original_final_groups": 0.24528301886792453,
+      "depth": 3,
+      "domain": "biology",
+      "gate_rates": {
+        "joint": 0.03773584905660377,
+        "local": 0.16981132075471697,
+        "residual": 0.39622641509433965
+      },
+      "iteration": 0,
+      "local_final_covariance": 0.08797929356719453,
+      "mean_abs_local_advantage": 0.11162575641684117,
+      "negative": 0.39622641509433965,
+      "positive": 0.32075471698113206,
+      "sign_conflicts": 0.20754716981132076,
+      "terminal_anchors": 0,
+      "zero": 0.2830188679245283
+    },
+    {
+      "anchors": 49,
+      "constant_branch_final_groups": 0.20408163265306123,
+      "constant_local_groups": 0.3469387755102041,
+      "constant_original_final_groups": 0.12244897959183673,
+      "depth": 4,
+      "domain": "biology",
+      "gate_rates": {
+        "joint": 0.02040816326530612,
+        "local": 0.08163265306122448,
+        "residual": 0.4489795918367347
+      },
+      "iteration": 0,
+      "local_final_covariance": 0.10605243338304884,
+      "mean_abs_local_advantage": 0.07871679717703625,
+      "negative": 0.3673469387755102,
+      "positive": 0.2857142857142857,
+      "sign_conflicts": 0.24489795918367346,
+      "terminal_anchors": 0,
+      "zero": 0.3469387755102041
+    },
+    {
+      "anchors": 43,
+      "constant_branch_final_groups": 0.3953488372093023,
+      "constant_local_groups": 0.3953488372093023,
+      "constant_original_final_groups": 0.16279069767441862,
+      "depth": 5,
+      "domain": "biology",
+      "gate_rates": {
+        "joint": 0.11627906976744186,
+        "local": 0.11627906976744186,
+        "residual": 1.0
+      },
+      "iteration": 0,
+      "local_final_covariance": 0.16543528693246826,
+      "mean_abs_local_advantage": 0.08578510478237868,
+      "negative": 0.2558139534883721,
+      "positive": 0.3488372093023256,
+      "sign_conflicts": 0.11627906976744186,
+      "terminal_anchors": 43,
+      "zero": 0.3953488372093023
+    }
+  ],
+  "optimizer_step_committed": false
+}

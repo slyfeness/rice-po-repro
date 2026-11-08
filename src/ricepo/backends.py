@@ -96,13 +96,15 @@ class TransformersEntropyProvider:
         chunk_size: int,
         max_context_tokens: int,
         model_call_kwargs: Mapping[str, Any],
+        projection_mode: str = "full_sequence",
     ) -> None:
         """Teacher-force a supplied eval-mode causal LM using its KV cache.
 
         Chunking limits full-vocabulary logits to chunk_size positions per call.
         No vocabulary top-k approximation or context-window truncation is used.
         Token zero has no preceding causal context, so its entropy is NaN. All
-        generated tokens must follow a nonempty prompt and have finite entries.
+        generated tokens must follow a nonempty prompt. Default entries are finite;
+        summary_positions_v1 leaves unrequested entries NaN at their native offsets.
         The model must implement the standard causal-LM logits/KV-cache contract.
         """
         if type(chunk_size) is not int or chunk_size <= 0:
@@ -116,6 +118,11 @@ class TransformersEntropyProvider:
         }
         if reserved.intersection(model_call_kwargs):
             raise ValueError("model_call_kwargs overrides an entropy alignment argument")
+        if projection_mode not in ("full_sequence", "summary_positions_v1"):
+            raise ValueError("unknown entropy projection mode")
+        if projection_mode == "summary_positions_v1" and (type(model).__name__ != "Qwen2ForCausalLM" or model_call_kwargs):
+            raise ValueError("summary projection requires bare Qwen2 and empty kwargs")
+        self.projection_mode = projection_mode
         self.model = model
         self._policy_version_getter = policy_version_getter
         self.device = device
@@ -144,6 +151,8 @@ class TransformersEntropyProvider:
         # Optional dependency is imported only when explicitly invoked by caller.
         import torch
 
+        if self.projection_mode == "summary_positions_v1":
+            return self._summary_entropies(trajectory, ids, torch)
         values = [nan]
         cache = None
         with torch.inference_mode():
@@ -177,4 +186,40 @@ class TransformersEntropyProvider:
                     raise BackendContractError("causal LM did not return the required KV cache")
                 if self.policy_version != trajectory.policy_version:
                     raise PolicyVersionError("entropy model policy changed during teacher forcing")
+        return tuple(values)
+
+    def _summary_entropies(self, trajectory, ids, torch):
+        # Native-aligned output; unrequested positions are explicitly undefined.
+        requested = set()
+        for step in trajectory.steps:
+            span = step.summary_span
+            if not 0 < span.start < span.end <= len(ids):
+                raise BackendContractError("invalid native Summary span")
+            if not all(trajectory.generated_mask[span.start:span.end]):
+                raise BackendContractError("Summary contains environment tokens")
+            requested.update(range(span.start, span.end))
+        values = [nan] * len(ids)
+        cache = None
+        with torch.inference_mode():
+            for start in range(0, len(ids)-1, self.chunk_size):
+                stop = min(start+self.chunk_size, len(ids)-1)
+                inputs = torch.tensor([ids[start:stop]], device=self.device)
+                attention = torch.ones((1,stop), dtype=torch.long, device=self.device)
+                output = self.model.model(input_ids=inputs, attention_mask=attention,
+                    past_key_values=cache, use_cache=True, return_dict=True,
+                    output_hidden_states=False, output_attentions=False)
+                positions = [i for i in range(start,stop) if i+1 in requested]
+                if positions:
+                    selected = torch.tensor([i-start for i in positions], device=self.device)
+                    logits = self.model.lm_head(output.last_hidden_state.index_select(1,selected))
+                    if not torch.isfinite(logits).all():
+                        raise BackendContractError("nonfinite Summary logits")
+                    if logits.dtype in (torch.float16,torch.bfloat16):logits=logits.float()
+                    lp=torch.log_softmax(logits,dim=-1)
+                    entropy=-(lp.exp()*lp).sum(-1)
+                    if not torch.isfinite(entropy).all():raise BackendContractError("nonfinite entropy")
+                    for i,value in zip(positions,entropy[0].cpu().tolist(),strict=True):values[i+1]=value
+                cache=output.past_key_values
+                if stop < len(ids)-1 and cache is None:raise BackendContractError("missing KV cache")
+                if self.policy_version != trajectory.policy_version:raise PolicyVersionError("entropy policy changed")
         return tuple(values)

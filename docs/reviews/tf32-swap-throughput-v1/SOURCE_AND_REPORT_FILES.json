@@ -1,0 +1,169 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-11-07T07:51:12.293010+00:00",
+  "git_parent": "6483d7ed7efef88a0b71ff7eb07f1383588677d7",
+  "content_basis": "Git index blobs; normalized LF; excludes this self-referential manifest",
+  "archives_created": false,
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 6974,
+      "sha256": "e9b6dab269fe42dac29d44ef1d2ff456a6e3bdb655ee5c6fbec2276e2f1b898b"
+    },
+    {
+      "path": "docs/IMPLEMENTATION_LEDGER.md",
+      "bytes": 4631,
+      "sha256": "2789a75ccb98b853f884f8719061f6040fa7d7c7fe0385900d06741d68f6e174"
+    },
+    {
+      "path": "docs/VALIDATION.md",
+      "bytes": 5490,
+      "sha256": "0aed2cfefb55803a1d1148baf4e5bdd82f9efac87e887c68475cd4653118e9e5"
+    },
+    {
+      "path": "docs/reviews/tf32-swap-throughput-v1/BEST_RUNTIME_CONFIG.json",
+      "bytes": 3971,
+      "sha256": "f64c94ec20dbb0ccddf92f66df28da7882089706ee3f3699ae19c35652ce3c23"
+    },
+    {
+      "path": "docs/reviews/tf32-swap-throughput-v1/BOTTLENECK_TIMING.csv",
+      "bytes": 21811,
+      "sha256": "94f4d34b7ceb8fcf66b2ca3eaba8c3eac51cad87d20fe21d56106279ae58eb06"
+    },
+    {
+      "path": "docs/reviews/tf32-swap-throughput-v1/COEXISTENCE.json",
+      "bytes": 13312,
+      "sha256": "6108ccff64ca3b7563e644c7ecadc007028c0c29946afc06b9bbec58ee32910a"
+    },
+    {
+      "path": "docs/reviews/tf32-swap-throughput-v1/CORRECTNESS_CHECKS.md",
+      "bytes": 8795,
+      "sha256": "bf0fc3a815e6496fcaee96b9710c1b9499602e00d833f4bc69fc47676761fd44"
+    },
+    {
+      "path": "docs/reviews/tf32-swap-throughput-v1/DUAL_ENGINE_RESULTS.json",
+      "bytes": 108492,
+      "sha256": "158b36cb1c145d1f3a212d55fa0556885e1a0435dc1e6ca8b9a9aa570f385e6d"
+    },
+    {
+      "path": "docs/reviews/tf32-swap-throughput-v1/ENGINE_LIFECYCLE.csv",
+      "bytes": 5833,
+      "sha256": "7b48b1f92c8b6ac976026ec0493dc668ebed60e69f68dd51a5588bda36679535"
+    },
+    {
+      "path": "docs/reviews/tf32-swap-throughput-v1/ENVIRONMENT.json",
+      "bytes": 982,
+      "sha256": "aa2bfff36de724fa0eb07a6ab44dc323195394eb838c200710bf5be28335d221"
+    },
+    {
+      "path": "docs/reviews/tf32-swap-throughput-v1/EVIDENCE_INDEX.json",
+      "bytes": 48947,
+      "sha256": "526d005b5cbf7ec70411be5eeee652c7cdda7cf8fd0b82a5e88417bb29a29f01"
+    },
+    {
+      "path": "docs/reviews/tf32-swap-throughput-v1/FOUR_GPU_RESULTS.json",
+      "bytes": 121045,
+      "sha256": "6848961aa644cbca2e12bec1998d785bfc0c7da1bd536f0b9a4755ea8710c672"
+    },
+    {
+      "path": "docs/reviews/tf32-swap-throughput-v1/FOUR_WORKERS.csv",
+      "bytes": 1029,
+      "sha256": "bb25fcb08824fb25f8a2ba086db3dcf0e7066e651b767e64d743345e50cc42e1"
+    },
+    {
+      "path": "docs/reviews/tf32-swap-throughput-v1/LONG_CONFIRMATION.json",
+      "bytes": 453,
+      "sha256": "fa7b51e21cdb2d4c04641c4bc5cac5b8059549211e8f22231a94b85c0d46b258"
+    },
+    {
+      "path": "docs/reviews/tf32-swap-throughput-v1/POST_EXPORT_METADATA.json",
+      "bytes": 378,
+      "sha256": "5766de17af148dfb12d5a291a625008d1a7496378b5b0dd0d36199c2aa222ae3"
+    },
+    {
+      "path": "docs/reviews/tf32-swap-throughput-v1/PUBLIC_MANIFEST.json",
+      "bytes": 1497,
+      "sha256": "feff9e246b3f8a4abfb52ac3980f98f249893b474270065bacbb7dd8ba05b2d9"
+    },
+    {
+      "path": "docs/reviews/tf32-swap-throughput-v1/RUNTIME_SCREEN.csv",
+      "bytes": 2763,
+      "sha256": "881a2512233fe29565889bba9646556e9cc8cb2725d49f58b77c7e5000fac2e5"
+    },
+    {
+      "path": "docs/reviews/tf32-swap-throughput-v1/SLURM_JOBS.csv",
+      "bytes": 2059,
+      "sha256": "dd09804fc944244c6b62ac6d6961c96c66a6c2dfd7a4b7cf72cc75e1a5fa1ef6"
+    },
+    {
+      "path": "docs/reviews/tf32-swap-throughput-v1/SUMMARY.md",
+      "bytes": 8085,
+      "sha256": "7a13f7a07f1ef478186fc296b039826a1bcef4f7da1a0acc164d17269b42b153"
+    },
+    {
+      "path": "scripts/benchmarks/README.md",
+      "bytes": 4451,
+      "sha256": "b45a90e9f48e36bcf331d499b2ad4d939d7490619bb9eb43da51d3f80ea061f9"
+    },
+    {
+      "path": "scripts/benchmarks/tf32_coexist_isolated.py",
+      "bytes": 3262,
+      "sha256": "50780957811cea178bab0e5132faf54dfed1ccef06c0e9d57ce0144d49fb192b"
+    },
+    {
+      "path": "scripts/benchmarks/tf32_dual_engine.py",
+      "bytes": 6723,
+      "sha256": "d085a001e618d21f6c89cb4f17607af3b818ba5f827feabaac733b52c067a456"
+    },
+    {
+      "path": "scripts/benchmarks/tf32_four_workers.py",
+      "bytes": 2187,
+      "sha256": "8e9100451f61d792386d25ffbd1a4b0d056043ea61d1a6c20509387c4de5869b"
+    },
+    {
+      "path": "scripts/benchmarks/tf32_runtime_screen.py",
+      "bytes": 3959,
+      "sha256": "1f8866a81b3c519146f129e44ab12a03d061b5ce19f1afcd279f99c3d419bbed"
+    },
+    {
+      "path": "slurm/tf32_inference_benchmark.sbatch",
+      "bytes": 1422,
+      "sha256": "780062c7d5f114b6ab079baea0781439068d708c6d5f89432472307e1f4df281"
+    },
+    {
+      "path": "src/ricepo/inference_benchmark.py",
+      "bytes": 10727,
+      "sha256": "b25dc3f2a1362757b46a7acd2137ab7c7b32940a479848d2a8169574d860573a"
+    },
+    {
+      "path": "src/ricepo/inference_pool.py",
+      "bytes": 5727,
+      "sha256": "5b4f40c1d0fb56cd84eb38f1e7f37c7b495d6057a78aa975e649360dfc1fbd67"
+    },
+    {
+      "path": "src/ricepo/inference_retrieval_probe.py",
+      "bytes": 2304,
+      "sha256": "55a366025e899db86fe5b1dbbd627c0bf7c2ef2b4a5f633e7b23935daaf92d49"
+    },
+    {
+      "path": "src/ricepo/inference_scheduling.py",
+      "bytes": 2301,
+      "sha256": "ffab4950486e7c879c5a8eed2bfade480af7433715f07c45bbdd77150b8b28f5"
+    },
+    {
+      "path": "src/ricepo/inference_timing.py",
+      "bytes": 1246,
+      "sha256": "789bdcace0e66e1c77aff878def8b0ac1cc463d222a1eeadba4ea9c8493276e2"
+    },
+    {
+      "path": "src/ricepo/vllm_two_stage.py",
+      "bytes": 12620,
+      "sha256": "485f940a14f0096cb7eb0d9926dff0138f8356c38c0e7c17611853cd8dec81dc"
+    },
+    {
+      "path": "tests/test_inference_timing.py",
+      "bytes": 2273,
+      "sha256": "623ea28ffd457f7561182855ef21be702bf0ed6f089b65d39d17db17f42e44b8"
+    }
+  ]
+}

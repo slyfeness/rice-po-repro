@@ -1,0 +1,32 @@
+{
+  "versions": {
+    "torch": "2.10.0",
+    "vllm": "0.19.1",
+    "transformers": "5.5.1",
+    "numpy": "1.26.4",
+    "pytrec-eval-terrier": "0.5.11",
+    "gensim": "4.3.3",
+    "pyserini": "0.22.1"
+  },
+  "python": "3.11.16",
+  "installed_source": [
+    {
+      "alias": "installed/vllm/v1/worker/gpu_worker.py",
+      "sha256": "ffbd4567a25e0a82ca5c714b75e86c7353cedb6fc5c2814b22f3c91afb1c88b1"
+    },
+    {
+      "alias": "installed/vllm/model_executor/layers/linear.py",
+      "sha256": "db35d8070e734f2a5d4f705213bcc30a44cab2642c4d29cefd83a14339bef346"
+    },
+    {
+      "alias": "installed/vllm/model_executor/layers/utils.py",
+      "sha256": "67bc1e3c6983387005ee5a4e7ec9e7993650dcca524bfc67eb90a6a01714973a"
+    },
+    {
+      "alias": "installed/vllm/envs.py",
+      "sha256": "0878b5ca5379317b3f9f0fe65d9414c62f0a3a3400f79baeb07419507b933e5d"
+    }
+  ],
+  "packages_modified": false,
+  "dependencies_installed": false
+}

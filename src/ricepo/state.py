@@ -148,6 +148,18 @@ def selected_so_far(root, rule):
     if rule not in {"last","best_development_macro"}:
         raise ValueError("unsupported checkpoint selection rule")
     choices = []
+    initial = root / 'initial-selection.json'
+    if initial.exists():
+        choice=read_json(initial)
+        report=Path(choice['report_path'])
+        frozen=read_json(root/'binding.json').get('common_initial',{})
+        if (choice.get('kind')!='frozen_initial_source' or choice.get('iteration')!=-1
+                or frozen.get('report_sha256')!=choice['report_sha256']
+                or frozen.get('policy_version')!=choice['policy_version'] or frozen.get('actor_path')!=choice['checkpoint']
+                or file_sha256(report)!=choice['report_sha256']
+                or development_score(root,report,choice['policy_version'])!=choice['development_macro']):
+            raise ValueError('Initial selection identity or score changed')
+        choices.append(choice)
     for path in sorted(root.glob("iteration-*/development_complete.receipt.json")):
         value = read_json(path)
         ref = value["artifacts"]

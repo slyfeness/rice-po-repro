@@ -1,0 +1,92 @@
+{
+  "A": {
+    "decision": "ADOPT_CANDIDATE",
+    "scope": "single complete-batch, one-epoch, actual q denominator; original-risk finish and unchanged branch checks before optimizer.step",
+    "probability_and_full_gradient_parity": true,
+    "offline_post_update_all_parameters_bitwise_equal": true,
+    "runtime_option": {
+      "original_probability_mode": "fused_actor_v1"
+    },
+    "online_RICE_branch_integration": "source wired and reviewed; no new online branch generation/128 update tested"
+  },
+  "B": {
+    "decision": "REJECT",
+    "reason": "entropy max3.218650817871094e-5 exceeds frozen1e-5; ranking unchanged; no32 expansion",
+    "observed_speedup": 1.195584981777387,
+    "error_source": "projection row shape differs; rounding attribution plausible but not isolated by another GPU experiment"
+  },
+  "C1": {
+    "decision": "REJECT_FOR_SPEED",
+    "numerical_pass": true,
+    "reason": "aggregate speed below1.10x; longest allocated peak unchanged"
+  },
+  "C2": {
+    "decision": "ADOPT_BOUNDED_CANDIDATE",
+    "policy": "action_positions_v1; device saved tensors only within both measured bounds, otherwise exact CPU saved tensors",
+    "factory_options": {
+      "projection_mode": "action_positions_v1",
+      "saved_tensor_policy": "cpu_above_budget_v1",
+      "device_residency_budget": {
+        "horizon": 5535,
+        "action_tokens": 1889
+      }
+    },
+    "measured_points": [
+      {
+        "horizon": 1356,
+        "action_tokens": 230
+      },
+      {
+        "horizon": 5535,
+        "action_tokens": 1889
+      }
+    ],
+    "scope_limit": "only these saved short/median numerical GPU pairs tested; routing boundary covered on CPU; unseen workload not qualified at128",
+    "longest_policy": "retain CPU offload; 16947 causal horizon/3411 actions qualified by C1; device mode not attempted",
+    "required_margin_bytes": 8589934592,
+    "runtime_deployment_factory": "make_forward explicit opt-in; production memory-repair binding must be requalified for a new lineage"
+  },
+  "aggregate_measurements": {
+    "A": {
+      "paired_seconds": [
+        [
+          80.30582242459059,
+          68.84930002689362
+        ],
+        [
+          80.1672745347023,
+          69.10987039655447
+        ]
+      ],
+      "speedup": 1.163192678433345
+    },
+    "C1": {
+      "paired_seconds": [
+        [
+          80.30582242459059,
+          74.9542645663023
+        ],
+        [
+          80.1672745347023,
+          75.5733314678073
+        ]
+      ],
+      "speedup": 1.0660709477013746
+    }
+  },
+  "GRPO_A_estimate": {
+    "label": "ESTIMATED_NOT_MEASURED",
+    "reference_update_seconds": 8949.470675963908,
+    "reference_HF_seconds": 6881.03494987078,
+    "saved_seconds_if_entire_HF_phase_scales_like_fixtures": 965.3899518825235,
+    "saved_fraction": 0.10787117884807702,
+    "estimated_update_seconds": 7984.080724081385,
+    "limitation": "paired timing excludes optimizer-step itself and identity/checkpoint I/O; uses three representative histories, not all512 cost weights"
+  },
+  "RICE_end_to_end_saving": "UNKNOWN:11901s recovery cost is not a clean production update",
+  "C2_end_to_end_saving": "UNKNOWN: runtime fraction within measured device budget not measured; cannot apply short/median speed to entire update",
+  "combined_A_C2_speed": "NOT_MEASURED; do not multiply individual gains",
+  "production_defaults_changed": false,
+  "resume_original_training": false,
+  "READY_FOR_128_WITH_NEW_OPTIONS": false
+}

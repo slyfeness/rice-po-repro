@@ -5,19 +5,48 @@ on import. A causal logit at position t-1 scores the native token at position t.
 The two models must share the exact tokenizer vocabulary and token semantics;
 equal vocabulary dimensions alone cannot establish that deployment invariant.
 
-Each call forwards one complete sequence through each supplied model wrapper.
-Logit-row chunking bounds temporary normalization work, but the model still
-materializes full-sequence logits and retains the policy's training graph.
-This does NOT guarantee long-context memory feasibility or implement streamed
-training/FSDP sharding. There is no .module bypass or detached policy KV cache.
+The default forwards the sequence through each supplied model wrapper and
+materializes full-sequence logits. Opt-in action_positions_v1 supports bare
+Qwen2 only: it retains the same Transformer context and training graph but
+projects selected causal predecessor states through the original full-vocabulary
+head. Neither path guarantees long-context memory feasibility or implements
+FSDP sharding. There is no .module bypass or detached policy KV cache.
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any
+from contextlib import nullcontext
 
-from .objective import _log_probabilities, exact_reference_kl
+from .objective import _conditional_kl, _log_probabilities, exact_reference_kl
+
+
+def enable_eval_layer_checkpointing(model):
+    """Recompute decoder layers while preserving eval/dropout and context gradients."""
+    import torch
+    from torch.utils.checkpoint import checkpoint
+    if model.training:raise ValueError('eval layer checkpointing requires eval mode')
+    layers=getattr(getattr(model,'model',None),'layers',None)
+    if layers is None:raise ValueError('model does not expose supported decoder layers')
+    if hasattr(model,'_rice_checkpoint_statistics'):raise ValueError('checkpoint wrappers already installed')
+    statistics=dict(mode='eval_layers_v1',checkpoint_forwards=0,layer_executions=0)
+    for layer in layers:
+        original=layer.forward
+        def wrap(fn):
+            def forward(*args,**kwargs):
+                if not torch.is_grad_enabled():return fn(*args,**kwargs)
+                if kwargs.get('past_key_values') is not None or kwargs.get('use_cache',False):
+                    raise ValueError('training recomputation cannot reuse an inference KV cache')
+                statistics['checkpoint_forwards']+=1
+                def recompute(*a,**k):
+                    statistics['layer_executions']+=1
+                    return fn(*a,**k)
+                return checkpoint(recompute,*args,use_reentrant=False,**kwargs)
+            return forward
+        layer.forward=wrap(original)
+    model._rice_checkpoint_statistics=statistics
+    return statistics
 
 if TYPE_CHECKING:
     from torch import Tensor
@@ -35,6 +64,23 @@ def _validate_kwargs(kwargs: Mapping[str, Any], label: str) -> dict[str, Any]:
     return dict(kwargs)
 
 
+def _validate_projection(mode):
+    if mode not in ('full_sequence', 'action_positions_v1'):
+        raise ValueError('unsupported LM-head projection mode')
+
+
+def _action_logits(model, inputs, attention, positions, kwargs):
+    # Opt-in bare-model capability, never an implicit DDP/FSDP/PEFT bypass.
+    if (type(model).__name__ != 'Qwen2ForCausalLM'
+            or getattr(getattr(model, 'config', None), 'model_type', None) != 'qwen2'
+            or kwargs):
+        raise ValueError('action_positions_v1 requires bare Qwen2ForCausalLM and empty call kwargs')
+    output = model.model(input_ids=inputs, attention_mask=attention, use_cache=False,
+                         return_dict=True, output_hidden_states=False, output_attentions=False)
+    hidden = output.last_hidden_state.index_select(1, positions)
+    return model.lm_head(hidden)
+
+
 def _native_scores(
     policy_model: Any,
     reference_model: Any,
@@ -47,6 +93,8 @@ def _native_scores(
     policy_call_kwargs: Mapping[str, Any],
     reference_call_kwargs: Mapping[str, Any],
     compact: bool,
+    projection_mode: str = 'full_sequence',
+    measure: Any = None,
 ) -> tuple[Tensor, Tensor | None]:
     """Return [1,N] sampled policy log-probabilities and exact KL(policy||ref).
 
@@ -60,6 +108,8 @@ def _native_scores(
     All limits and model call options are explicit. No context is truncated and
     no token sequence is decoded, re-encoded, sampled, or reformatted here.
     """
+    _validate_projection(projection_mode)
+    timed = measure if measure is not None else lambda name: nullcontext()
     if type(logit_chunk_size) is not int or logit_chunk_size <= 0:
         raise ValueError("logit_chunk_size must be an explicit positive integer")
     if type(max_context_tokens) is not int or max_context_tokens <= 0:
@@ -92,23 +142,26 @@ def _native_scores(
     horizon = max(i for i, scored in enumerate(mask_values) if scored) if compact else len(ids) - 1
     inputs = torch.tensor([ids[:horizon]], dtype=torch.long, device=device)
     attention = torch.ones_like(inputs)
-    # Call the supplied wrapper itself, preserving DDP/FSDP hooks and gradients.
-    policy_output = policy_model(
-        input_ids=inputs, attention_mask=attention, use_cache=False,
-        return_dict=True, **policy_kwargs,
-    )
-    logits = policy_output.logits
+    action_positions = torch.tensor([i-1 for i in range(1,horizon+1) if mask_values[i]],
+                                    dtype=torch.long, device=device)
+    selected = projection_mode == 'action_positions_v1'
+    def project(model, kwargs):
+        if selected:
+            return _action_logits(model, inputs, attention, action_positions, kwargs)
+        # Default calls the supplied wrapper, preserving distributed hooks.
+        return model(input_ids=inputs, attention_mask=attention, use_cache=False,
+                     return_dict=True, **kwargs).logits
+    with timed('actor_forward'):
+        logits = project(policy_model, policy_kwargs)
     reference_logits = None
     if reference_model is not None:
-        with torch.no_grad():
-            reference_logits = reference_model(
-                input_ids=inputs, attention_mask=attention, use_cache=False,
-                return_dict=True, **reference_kwargs,
-            ).logits.detach()
+        with torch.no_grad(), timed('reference_forward'):
+            reference_logits = project(reference_model, reference_kwargs).detach()
         if (reference_logits.shape != logits.shape or not reference_logits.is_floating_point()
                 or reference_logits.device != logits.device):
             raise ValueError("policy and reference must return identical full-vocabulary shapes on one device")
-    if logits.ndim != 3 or tuple(logits.shape[:2]) != (1, horizon):
+    expected_rows = len(action_positions) if selected else horizon
+    if logits.ndim != 3 or tuple(logits.shape[:2]) != (1, expected_rows):
         raise ValueError("policy logits must cover every native causal predecessor")
     if not logits.is_floating_point() or logits.shape[-1] == 0 or logits.device != inputs.device:
         raise ValueError("expected full-vocabulary floating-point logits on the explicit device")
@@ -123,6 +176,7 @@ def _native_scores(
     kl_dtype = torch.promote_types(score_dtype, reference_dtype)
     sampled_chunks = [torch.zeros(1, dtype=score_dtype, device=logits.device)]
     kl_chunks = [torch.zeros(1, dtype=kl_dtype, device=logits.device)] if reference_model is not None else []
+    row_offset = 0
     for start in range(0, horizon, logit_chunk_size):
         stop = min(start + logit_chunk_size, horizon)
         positions = torch.nonzero(mask[start:stop], as_tuple=False).flatten()
@@ -130,20 +184,26 @@ def _native_scores(
         if reference_logits is not None:
             divergence = torch.zeros(stop - start, dtype=kl_dtype, device=logits.device)
         if positions.numel():
-            policy_rows = logits[0, start:stop].index_select(0, positions)
-            log_probabilities = _log_probabilities(policy_rows)
+            count = positions.numel()
+            policy_rows = (logits[0, row_offset:row_offset+count] if selected
+                           else logits[0, start:stop].index_select(0, positions))
+            with timed('policy_normalization'):
+                log_probabilities = _log_probabilities(policy_rows)
             selected_targets = targets[start:stop].index_select(0, positions)
             selected_scores = log_probabilities.gather(1, selected_targets[:, None]).squeeze(1)
             # index_copy remains differentiable with respect to the policy rows.
             sampled = sampled.index_copy(0, positions, selected_scores)
             if reference_logits is not None:
-                reference_rows = reference_logits[0, start:stop].index_select(0, positions)
-                if compact:
-                    ref_lp = _log_probabilities(reference_rows)
-                    selected_kl = (log_probabilities.exp() * (log_probabilities - ref_lp)).sum(-1)
-                else:
-                    selected_kl = exact_reference_kl(policy_rows, reference_rows, chunk_size=logit_chunk_size)
+                reference_rows = (reference_logits[0, row_offset:row_offset+count] if selected
+                                  else reference_logits[0, start:stop].index_select(0, positions))
+                with timed('exact_KL'):
+                    if compact:
+                        ref_lp = _log_probabilities(reference_rows)
+                        selected_kl = _conditional_kl(log_probabilities, ref_lp)
+                    else:
+                        selected_kl = exact_reference_kl(policy_rows, reference_rows, chunk_size=logit_chunk_size)
                 divergence = divergence.index_copy(0, positions, selected_kl)
+            row_offset += count
         sampled_chunks.append(sampled)
         if reference_logits is not None:
             kl_chunks.append(divergence)
@@ -154,24 +214,26 @@ def _native_scores(
 
 
 def causal_token_scores(policy_model, reference_model, token_ids, generated_mask, *, device, logit_chunk_size,
-                       max_context_tokens, policy_call_kwargs, reference_call_kwargs) -> tuple[Tensor, Tensor]:
+                       max_context_tokens, policy_call_kwargs, reference_call_kwargs,
+                       projection_mode='full_sequence') -> tuple[Tensor, Tensor]:
     """Full-sequence comparator with independent full-vocabulary KL normalization."""
     if reference_model is None:
         raise ValueError("causal_token_scores requires a frozen reference")
     return _native_scores(policy_model, reference_model, token_ids, generated_mask, device=device,
                           logit_chunk_size=logit_chunk_size, max_context_tokens=max_context_tokens,
                           policy_call_kwargs=policy_call_kwargs, reference_call_kwargs=reference_call_kwargs,
-                          compact=False)
+                          compact=False, projection_mode=projection_mode)
 
 
 def sampled_old_log_probs(policy, token_ids, generated_mask, *, device, logit_chunk_size, max_context_tokens,
-                          policy_call_kwargs) -> Tensor:
+                          policy_call_kwargs, projection_mode='full_sequence', measure=None) -> Tensor:
     """Cache detached sampled action log probabilities with one policy-only forward."""
     import torch
     with torch.no_grad():
         scores, _ = _native_scores(policy, None, token_ids, generated_mask, device=device,
                                    logit_chunk_size=logit_chunk_size, max_context_tokens=max_context_tokens,
-                                   policy_call_kwargs=policy_call_kwargs, reference_call_kwargs={}, compact=True)
+                                   policy_call_kwargs=policy_call_kwargs, reference_call_kwargs={}, compact=True,
+                                   projection_mode=projection_mode, measure=measure)
     return scores
 
 
@@ -183,6 +245,10 @@ def make_forward(
     max_context_tokens: int,
     policy_call_kwargs: Mapping[str, Any],
     reference_call_kwargs: Mapping[str, Any],
+    projection_mode: str = 'full_sequence',
+    measure: Any = None,
+    saved_tensor_policy: str = 'device',
+    device_residency_budget: Mapping[str, int] | None = None,
 ) -> Callable[[Any, UpdateItem], tuple[Tensor, Tensor]]:
     """Build training.ppo_update's forward(model, UpdateItem) callback.
 
@@ -190,17 +256,39 @@ def make_forward(
     captures or unwraps a potentially different policy module. No forward,
     optional-framework import, model mutation, or allocation occurs here.
     """
+    _validate_projection(projection_mode)
+    if saved_tensor_policy not in ('device','cpu_exact_v1','cpu_above_budget_v1'):
+        raise ValueError('unknown saved tensor residency policy')
+    budget = None if device_residency_budget is None else dict(device_residency_budget)
+    if saved_tensor_policy == 'cpu_above_budget_v1':
+        if projection_mode != 'action_positions_v1' or budget is None or set(budget) != {'horizon','action_tokens'} or any(type(v) is not int or v<1 for v in budget.values()):
+            raise ValueError('selective residency requires explicit measured S2 horizon/action budget')
+    elif budget is not None:raise ValueError('residency budget requires selective policy')
     policy_kwargs = _validate_kwargs(policy_call_kwargs, "policy_call_kwargs")
     reference_kwargs = _validate_kwargs(reference_call_kwargs, "reference_call_kwargs")
     if reference_model is None:
         raise ValueError("PPO scoring requires a separate frozen reference")
 
     def forward(model: Any, item: UpdateItem) -> tuple[Tensor, Tensor]:
-        return _native_scores(
-            model, reference_model, item.token_ids, item.generated_mask,
-            device=device, logit_chunk_size=logit_chunk_size,
-            max_context_tokens=max_context_tokens,
-            policy_call_kwargs=policy_kwargs, reference_call_kwargs=reference_kwargs, compact=True,
-        )
+        # Official autograd saved-tensor hooks preserve the graph and tensor
+        # values; only residency changes. This is neither a detached context
+        # nor a sampled/partial-vocabulary objective. Unpacking happens during
+        # backward after this scope exits. Existing decoder recomputation stays.
+        scope=nullcontext()
+        use_cpu = saved_tensor_policy=='cpu_exact_v1'
+        if budget is not None:
+            use_cpu = (max(i for i,m in enumerate(item.generated_mask) if m)>budget['horizon']
+                       or sum(item.generated_mask)>budget['action_tokens'])
+        if use_cpu:
+            import torch
+            scope=torch.autograd.graph.save_on_cpu(pin_memory=False)
+        with scope:
+            return _native_scores(
+                model, reference_model, item.token_ids, item.generated_mask,
+                device=device, logit_chunk_size=logit_chunk_size,
+                max_context_tokens=max_context_tokens,
+                policy_call_kwargs=policy_kwargs, reference_call_kwargs=reference_kwargs, compact=True,
+                projection_mode=projection_mode, measure=measure,
+            )
 
     return forward
