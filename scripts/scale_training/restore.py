@@ -50,10 +50,20 @@ def main():
     if any(not torch.equal(a,b) for a,b in zip(torch.cuda.get_rng_state_all(),state['cuda_rng_all'],strict=True)):raise ValueError('all CUDA RNG states differ')
     probe=rng_probe(state,'cuda:0')
     if probe!=json.loads((cp/'rng-probe.json').read_text()):raise ValueError('RNG restoration mismatch')
+    rank1_rng_verified=None
+    if 'hf_rank1_rng' in state:
+        from ricepo.hf_data_parallel import rng_state_from_bytes
+        child=state['hf_rank1_rng']
+        cpu=rng_state_from_bytes(child['cpu_rng']);cuda=rng_state_from_bytes(child['cuda_rng'])
+        with torch.random.fork_rng(devices=[1]):
+            torch.random.set_rng_state(cpu);torch.cuda.set_rng_state(cuda,'cuda:1')
+            if not torch.equal(torch.random.get_rng_state(),cpu) or not torch.equal(torch.cuda.get_rng_state('cuda:1'),cuda):
+                raise ValueError('rank1 RNG state differs after independent restoration')
+        rank1_rng_verified=True
     atomic_json(out,dict(status='PASS',scope='independent read-only checkpoint restore; zero optimizer steps',
         training_run_alias=run.name,completed_updates=record['iteration']+1,policy_version=version,actor_state_dict_sha256=identity['state_dict_sha256'],
         binding_sha256=bound,checkpoint_complete_sha256=file_sha256(cp/'complete.json'),
-        optimizer_state_sha256=digest,restored_optimizer_steps=steps,rng_probe=probe,
+        optimizer_state_sha256=digest,restored_optimizer_steps=steps,rng_probe=probe,rank1_rng_verified=rank1_rng_verified,
         newly_executed_optimizer_steps=0,checkpoint_modified=False,elapsed_seconds=time.monotonic()-start,
         hf_matmul_allow_tf32=torch.backends.cuda.matmul.allow_tf32,hf_precision=torch.get_float32_matmul_precision()))
     print('INDEPENDENT_RESTORE_PASS',out.name,flush=True)
