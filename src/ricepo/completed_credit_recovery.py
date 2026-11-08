@@ -53,6 +53,14 @@ def reject_committed_source(root):
         raise ValueError('cannot reuse a source with a committed optimizer step')
 
 
+def reselect_anchors(grouped,entropies,budget):
+    selected=[]
+    for group in grouped.values():
+        scoped={t.trajectory_id:entropies[t.trajectory_id] for t in group}
+        selected.extend(select_anchors(group,scoped,top_k=sum(len(t.steps) for t in group))[:budget])
+    return tuple(selected)
+
+
 class CompletedCreditRecovery:
     def __init__(self,spec,binding,recipe,expected_queries):
         from .scale_training import verify_initial_state
@@ -120,10 +128,8 @@ class CompletedCreditRecovery:
             entropies={t.trajectory_id:[float('nan')]*len(t.token_ids) for t in self.originals}
             for item in read_json(self.directory/'summary-entropies.json'):
                 span=item['span'];entropies[item['trajectory_id']][span['start']:span['end']]=item['values']
-            selected=[]
-            for group in groups.values():
-                selected.extend(select_anchors(group,entropies,top_k=sum(len(t.steps) for t in group))[:recipe['anchors_per_query']])
-            if tuple(selected)!=self.anchors:raise ValueError('saved Top-k anchors differ from saved full-vocabulary Summary entropy')
+            selected=reselect_anchors(groups,entropies,recipe['anchors_per_query'])
+            if selected!=self.anchors:raise ValueError('saved Top-k anchors differ from saved full-vocabulary Summary entropy')
         elif recipe['method']!='grpo':raise ValueError('unsupported credit recovery method')
         comparable=[x.group for x in self.collections if all(o.local_reward is not None for o in x.group.outcomes)]
         parts=[]
