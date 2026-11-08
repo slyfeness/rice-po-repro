@@ -1,5 +1,5 @@
 {
-  "observed_at_utc": "2026-11-08T04:23:46.520853+00:00",
+  "observed_at_utc": "2026-11-08T05:19:18Z",
   "sampling_plan_source_commit": "b0ee0bb0f789f803770566572ef8fd1499f14550",
   "runs": {
     "capacity_ricepo": {
@@ -657,7 +657,7 @@
       "method": "ricepo",
       "computed_updates": 1,
       "persisted_updates": 0,
-      "status": "RUNNING",
+      "status": "CANCELLED_BY_USER",
       "execution_source_commits": [
         "b11e9ec47434d168618d292e456a0f24f8043bc4"
       ],
@@ -708,11 +708,7 @@
         },
         "scope": "prior paid sampling and failed/stopped attempt costs; not new sampling or completed optimizer updates"
       },
-      "active": {
-        "phase": "model_lifecycle",
-        "utc": "2026-11-08T04:19:53.234481+00:00",
-        "iteration": 1
-      },
+      "active": null,
       "phase_seconds": {
         "initialization": {
           "unattributed": 59.16365763545036,
@@ -791,14 +787,21 @@
           "zero_advantages_fraction": 0.21089287786473276,
           "zero_gradient_all_steps": false
         }
-      }
+      },
+      "last_observed_active_at_performance_snapshot": {
+        "phase": "model_lifecycle",
+        "utc": "2026-11-08T04:19:53.234481+00:00",
+        "iteration": 1
+      },
+      "stop_reason": "latest user instruction: cancel task",
+      "automatic_resume": false
     },
     "training_grpo": {
       "stage": "training",
       "method": "grpo",
       "computed_updates": 2,
       "persisted_updates": 2,
-      "status": "RUNNING",
+      "status": "CANCELLED_BY_USER",
       "execution_source_commits": [
         "6c70342902c5b9aa0109523e465511510e55aea1"
       ],
@@ -842,11 +845,7 @@
         "unfinished_span_at_stop": null,
         "scope": "prior paid sampling and failed/stopped attempt costs; not new sampling or completed optimizer updates"
       },
-      "active": {
-        "phase": "original_generation_batch",
-        "utc": "2026-11-08T04:19:41.172226+00:00",
-        "iteration": 2
-      },
+      "active": null,
       "phase_seconds": {
         "0": {
           "HF_scoring_PPO": 7259.133949333802,
@@ -935,7 +934,14 @@
           "zero_advantages_fraction": 0.20633585921379244,
           "zero_gradient_all_steps": false
         }
-      }
+      },
+      "last_observed_active_at_performance_snapshot": {
+        "phase": "original_generation_batch",
+        "utc": "2026-11-08T04:19:41.172226+00:00",
+        "iteration": 2
+      },
+      "stop_reason": "latest user instruction: cancel task",
+      "automatic_resume": false
     }
   },
   "raw_assets_public": false,
@@ -1207,10 +1213,10 @@
     },
     {
       "job_id": "176768",
-      "state": "RUNNING",
+      "state": "CANCELLED",
       "allocated_gpus": 2,
-      "elapsed_seconds": 17411,
-      "GPU_hours": 9.672777777777778
+      "elapsed_seconds": 20724,
+      "GPU_hours": 11.513333333333334
     },
     {
       "job_id": "176790",
@@ -1235,14 +1241,30 @@
     },
     {
       "job_id": "176798",
-      "state": "RUNNING",
+      "state": "CANCELLED",
       "allocated_gpus": 2,
-      "elapsed_seconds": 12913,
-      "GPU_hours": 7.1738888888888885
+      "elapsed_seconds": 16226,
+      "GPU_hours": 9.014444444444445
     }
   ],
-  "measured_GPU_hours_at_snapshot": 31.60972222222222,
+  "measured_GPU_hours_at_snapshot": 35.29083333333333,
   "sampling_note": "training generation tokens exclude reused branch history and environment markers; submitted input counts include full repeated native context, not measured uncached prefill FLOPs",
   "timing_note": "main-process exclusive spans only; evaluation includes its nested generation/tools. Uninstrumented verification/serialization remains unattributed. In-flight spans excluded from completed-phase totals.",
-  "collection_started_at_utc": "2026-11-08T04:20:31.351667+00:00"
+  "collection_started_at_utc": "2026-11-08T04:20:31.351667+00:00",
+  "performance_statistics_as_of_utc": "2026-11-08T04:23:46.520853+00:00",
+  "slurm_records_as_of_utc": "2026-11-08T04:23:46.520853+00:00",
+  "cancellation": {
+    "requested_by_user": true,
+    "stopped_at_utc": "2026-11-08T05:18:59Z",
+    "verified_at_utc": "2026-11-08T05:19:18Z",
+    "jobs": {
+      "176768": "CANCELLED",
+      "176798": "CANCELLED"
+    },
+    "future_submissions_authorized": false,
+    "automatic_resume": false,
+    "completed_artifacts_retained": true,
+    "in_flight_unpersisted_outputs": "not guaranteed recoverable; not fabricated",
+    "other_preexisting_held_job": "left unchanged; not part of these scale allocations"
+  }
 }

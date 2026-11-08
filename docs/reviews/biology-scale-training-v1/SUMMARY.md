@@ -1,6 +1,6 @@
 # Biology 单领域规模训练 v1
 
-容量验收两方法均 PASS，共同 Initial 已完成。UTC2026-11-08 04:23快照：RICE-PO176798已完成首个128查询PPO更新，computed=1、persisted=0，新P1推理快照已实际加载并开始下一批；GRPO176768已完成2/10个128查询更新，computed=2、persisted=2，checkpoint2完整并原子发布，正在同一进程采样第3批。两种方法均已真正进入128查询训练。各10次尚未完成，继续执行；不把当前部分曲线宣称完整复现。
+**已按用户“取消任务”指令停止。** 两条规模训练作业176768（GRPO）、176798（RICE-PO）于UTC2026-11-08 05:18:59取消，05:19:18已核对Slurm为CANCELLED，当前两条均不再运行，不自动恢复或提交后继。停止时GRPO computed=2/persisted=2，RICE computed=1/persisted=0；各10次目标未完成。已完成的轨迹、信用、模型快照、日志和完整检查点均保留，不删除或覆盖。容量验收和共同Initial仍为已完成历史结果。
 
 | 32查询容量批 | RICE-PO | GRPO |
 |---|---:|---:|
@@ -96,3 +96,10 @@ RICE首次全量复核也已完成：原轨迹939311 token，ratio越界2、极�
 训练任务效用0.309443806、last-valid均值0.563528262、正常完成条件最终真实NDCG0.548218784，均为128训练题统计，非开发性能。逻辑生成4100299 token、提交输入73687814 token、检索8165次；首批源于同P0、同未提交逻辑批次的已付费原生资产，当前恢复尝试新增生成/检索0，11901.121891秒是恢复校验、全量概率评分及PPO的完成尝试时间，排除此前生成/失败成本，不能当干净完整RICE更新时间。旧作业和成本仍保留。下一批已使用新P1、新update身份及预冻种子在线采样，没有跨更新复用旧轨迹。
 
 P1=f2846fcab66c5378c1bb2e08e4d5e97c583aeca897032826192009a93b58c023，Actor payload SHA-256=16d14677664b167db41cae673a56d52eae4e29ccf1ea70dab6daa70d47acc047；实际新vLLM worker同身份/同资产、GEMM high、无跨版本KV复用、HF allocator隔离，加载130.051425秒，见RICE_FIRST_128_SYNC.json。这里仍是推理快照，不是完整checkpoint1。checkpoint2、开发4/8/10及最终独立恢复继续按冻结计划执行。Initial的32×K4证据保持原样；尚无正式update4开发成绩。
+
+
+## 用户取消后的最终运行状态
+
+GRPO第3步的原生轨迹与概率复核已落盘，但反传中取消，没有第3次optimizer.step提交；完整Actor/Adam/CPU+CUDA RNG检查点仍为第2步。RICE第2批原始轨迹和熵阶段已有完成记录，未提交第2次optimizer.step；第1步仅有更新后Actor推理快照，没有完整Adam/RNG checkpoint1，不能承诺从第1步直接恢复。未持久化的在途计算不当作完成，后续若重新授权恢复必须按已有持久状态和重算规则核验。
+
+TRAINING_CURVES保留3行真实已完成更新，EVALUATION仍只有完整共同Initial，无update4/8/10开发成绩。RUN_STATUS的阶段成本/曲线来自04:23历史性能快照，取消状态和两条最终allocation时长另外按05:19核对，不把旧阶段统计冒充取消时的完整成本分解。本次取消后没有再提交CPU/GPU作业，没有补跑PPO或为保存而额外step；历史预先hold的旧任务未改动。仅同步GitHub，不生成压缩包。
