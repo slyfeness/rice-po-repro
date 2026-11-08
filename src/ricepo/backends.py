@@ -103,7 +103,8 @@ class TransformersEntropyProvider:
         Chunking limits full-vocabulary logits to chunk_size positions per call.
         No vocabulary top-k approximation or context-window truncation is used.
         Token zero has no preceding causal context, so its entropy is NaN. All
-        generated tokens must follow a nonempty prompt and have finite entries.
+        generated tokens must follow a nonempty prompt. Default entries are finite;
+        summary_positions_v1 leaves unrequested entries NaN at their native offsets.
         The model must implement the standard causal-LM logits/KV-cache contract.
         """
         if type(chunk_size) is not int or chunk_size <= 0:

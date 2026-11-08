@@ -248,6 +248,7 @@ def make_forward(
     projection_mode: str = 'full_sequence',
     measure: Any = None,
     saved_tensor_policy: str = 'device',
+    device_residency_budget: Mapping[str, int] | None = None,
 ) -> Callable[[Any, UpdateItem], tuple[Tensor, Tensor]]:
     """Build training.ppo_update's forward(model, UpdateItem) callback.
 
@@ -256,8 +257,13 @@ def make_forward(
     optional-framework import, model mutation, or allocation occurs here.
     """
     _validate_projection(projection_mode)
-    if saved_tensor_policy not in ('device','cpu_exact_v1'):
+    if saved_tensor_policy not in ('device','cpu_exact_v1','cpu_above_budget_v1'):
         raise ValueError('unknown saved tensor residency policy')
+    budget = None if device_residency_budget is None else dict(device_residency_budget)
+    if saved_tensor_policy == 'cpu_above_budget_v1':
+        if projection_mode != 'action_positions_v1' or budget is None or set(budget) != {'horizon','action_tokens'} or any(type(v) is not int or v<1 for v in budget.values()):
+            raise ValueError('selective residency requires explicit measured S2 horizon/action budget')
+    elif budget is not None:raise ValueError('residency budget requires selective policy')
     policy_kwargs = _validate_kwargs(policy_call_kwargs, "policy_call_kwargs")
     reference_kwargs = _validate_kwargs(reference_call_kwargs, "reference_call_kwargs")
     if reference_model is None:
@@ -269,7 +275,11 @@ def make_forward(
         # nor a sampled/partial-vocabulary objective. Unpacking happens during
         # backward after this scope exits. Existing decoder recomputation stays.
         scope=nullcontext()
-        if saved_tensor_policy=='cpu_exact_v1':
+        use_cpu = saved_tensor_policy=='cpu_exact_v1'
+        if budget is not None:
+            use_cpu = (max(i for i,m in enumerate(item.generated_mask) if m)>budget['horizon']
+                       or sum(item.generated_mask)>budget['action_tokens'])
+        if use_cpu:
             import torch
             scope=torch.autograd.graph.save_on_cpu(pin_memory=False)
         with scope:

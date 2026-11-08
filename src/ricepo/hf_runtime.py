@@ -771,10 +771,22 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
     def update(originals,batch,old_version,directory):
         if version["value"] != old_version:
             raise ValueError("behavior policy changed before old log probabilities were cached")
+        original_mode=deployment.get("original_probability_mode","separate")
+        if original_mode not in ("separate","fused_actor_v1"):
+            raise ValueError("unknown original probability mode")
+        fused=original_mode=="fused_actor_v1"
+        if fused and (not is_vllm or pilot is None):
+            raise ValueError("fused original checking requires explicit sampled-q risk pilot")
+        probability_guard=None
         items = []
         pilot_q=[];pilot_p=[];pilot_adv=[]
         with operation("old_log_probs"), torch.no_grad(), autocast():
             for t,adv,mask in zip(originals,batch.advantages,batch.generated_masks,strict=True):
+                if fused:
+                    sampled=trajectory_behavior_log_probs(t)
+                    if sampled is None:raise ValueError("fused PPO requires actual behavior q")
+                    items.append(UpdateItem(t.trajectory_id,old_version,t.token_ids,mask,adv,sampled))
+                    continue
                 length = max(i for i,flag in enumerate(mask) if flag)
                 with operation("old_probability_forward",input_tokens=length,model_passes=1,scored_tokens=sum(mask)):
                     logps = sampled_old_log_probs(actor,t.token_ids,mask,device=actor_device,
@@ -796,14 +808,14 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         atomic_json(directory/"old-policy-update-items.json",items)
         if pilot:
             from .precision_pilot import mismatch_statistics,risk_screen
-            original_pilot=mismatch_statistics(pilot_q,pilot_p,pilot_adv)
+            original_pilot=None if fused else mismatch_statistics(pilot_q,pilot_p,pilot_adv)
             index=global_start+int(directory.name.split('-')[-1])
             from .training_validation import update_risk_limit
             if scale:
                 from .scale_training import risk_limit
                 outside_max=risk_limit(index)
-                atomic_json(directory/"scale-original-probability-risk.json",dict(report=original_pilot,outside_limit=outside_max,pass_risk_screen=risk_screen(original_pilot,outside_max=outside_max)))
-                if not risk_screen(original_pilot,outside_max=outside_max):
+                if not fused:atomic_json(directory/"scale-original-probability-risk.json",dict(report=original_pilot,outside_limit=outside_max,pass_risk_screen=risk_screen(original_pilot,outside_max=outside_max)))
+                if not fused and not risk_screen(original_pilot,outside_max=outside_max):
                     raise ValueError("scale original probability risk failed; no branch dilution and no optimizer step")
             else:outside_max=update_risk_limit(index) if validation else (.01 if index==0 else .02)
             with torch.no_grad(),autocast():
@@ -832,15 +844,33 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                     for t in sampled_branches:
                         atomic_json(directory/'pilot-branch-probability-checks'/(fingerprint(t.trajectory_id)+'.json'),pilot_branch_score(t))
                     checked_branch_count=len(sampled_branches)
-            combined=mismatch_statistics(pilot_q,pilot_p)
-            passed=risk_screen(combined,outside_max=outside_max)
-            if validation or scale:passed=passed and risk_screen(original_pilot,outside_max=outside_max)
-            atomic_json(directory/'pilot-probability-risk.json',dict(originals=original_pilot,all_actual_tokens=combined,
-                branch_count=len(sampled_branches),checked_branch_count=checked_branch_count,outside_limit=outside_max,
-                coverage='originals plus selected branch records; reused prefix positions included',
-                strict_one_percent_pass=risk_screen(combined),risk_screen_pass=passed,legacy_thresholds_not_rewritten=True))
+            if fused:
+                from .fused_probability import FusedOriginalProbabilityGuard
+                audited_branch_count=len(sampled_branches)
+                def save_original(report):
+                    atomic_json(directory/'fused-original-probability-risk.json',dict(report=report,
+                        outside_limit=outside_max,pass_risk_screen=risk_screen(report,outside_max=outside_max)))
+                def branch_and_identity_gate():
+                    if version['value']!=old_version:raise ValueError('policy changed during fused risk accumulation')
+                    combined=mismatch_statistics(probability_guard.q+pilot_q,probability_guard.p+pilot_p)
+                    passed=risk_screen(combined,outside_max=outside_max)
+                    atomic_json(directory/'pilot-probability-risk.json',dict(originals=probability_guard.report,
+                        all_actual_tokens=combined,branch_count=audited_branch_count,checked_branch_count=checked_branch_count,
+                        outside_limit=outside_max,risk_screen_pass=passed,legacy_thresholds_not_rewritten=True,
+                        coverage='complete originals from current Actor plus unchanged branch audit; before optimizer.step'))
+                    if not passed:raise ValueError('combined probability risk failed; no optimizer step')
+                probability_guard=FusedOriginalProbabilityGuard(outside_max=outside_max,
+                    branch_gate=branch_and_identity_gate,save_report=save_original)
+            else:
+                combined=mismatch_statistics(pilot_q,pilot_p)
+                passed=risk_screen(combined,outside_max=outside_max)
+                if validation or scale:passed=passed and risk_screen(original_pilot,outside_max=outside_max)
+                atomic_json(directory/'pilot-probability-risk.json',dict(originals=original_pilot,all_actual_tokens=combined,
+                    branch_count=len(sampled_branches),checked_branch_count=checked_branch_count,outside_limit=outside_max,
+                    coverage='originals plus selected branch records; reused prefix positions included',
+                    strict_one_percent_pass=risk_screen(combined),risk_screen_pass=passed,legacy_thresholds_not_rewritten=True))
+                if not passed:raise ValueError('pilot online probability risk screen failed before optimizer step')
             sampled_branches.clear()
-            if not passed:raise ValueError('pilot online probability risk screen failed before optimizer step')
         elif is_vllm:
             from .probability_check import compare_log_probs
             from .branch_audit import branch_check_plan,execute_branch_checks,select_branch_checks
@@ -883,7 +913,8 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                     if previous_observer:previous_observer(stage)
                 observer=residency_observer
             diagnostics = ppo_plan_update(actor,optimizer,items,policy_version=old_version,forward=forward,
-                                          device=actor_device,recipe=plan,step_observer=observer)
+                                          device=actor_device,recipe=plan,step_observer=observer,probability_guard=probability_guard)
+            if fused:sampled_branches.clear()
             if validation or scale:
                 diagnostics['hf_precision']=dict(matmul_precision=torch.get_float32_matmul_precision(),
                     matmul_allow_tf32=torch.backends.cuda.matmul.allow_tf32,cudnn_allow_tf32=torch.backends.cudnn.allow_tf32)
