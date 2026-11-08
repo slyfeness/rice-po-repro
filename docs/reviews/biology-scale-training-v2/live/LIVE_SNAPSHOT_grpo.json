@@ -1,0 +1,35 @@
+{
+  "captured_utc": "2026-11-08T14:43:00Z",
+  "current_stage_inference": "rollout_active",
+  "job_id": "177623",
+  "latest_metadata_utc": "2026-11-08T14:32:00Z",
+  "method": "grpo",
+  "not_measured": [
+    "completed_request_count",
+    "generated_token_count",
+    "retrieval_count",
+    "per_engine_running_waiting",
+    "kv_cache",
+    "prefix_cache_hit_rate",
+    "per_engine_token_rate",
+    "diver_residency_transfers"
+  ],
+  "records": {
+    "batch_request_records": 15,
+    "event_records": 126,
+    "partial_trajectory_records": 6281
+  },
+  "slurm": [
+    "177623|RUNNING|03:02:06|0:0",
+    "177623.batch|RUNNING|03:02:06|0:0",
+    "177623.0|COMPLETED|00:00:00|0:0",
+    "177623.1|COMPLETED|00:00:00|0:0",
+    "177623.2|COMPLETED|00:00:00|0:0",
+    "177623.3|COMPLETED|00:00:01|0:0",
+    "177623.4|COMPLETED|00:00:00|0:0",
+    "177623.5|COMPLETED|00:01:14|0:0"
+  ],
+  "source_commit_expected": "f148a3d3aefd7b79247b6a28f0851b991e9ee4ea",
+  "source_commit_observed": "f148a3d3aefd7b79247b6a28f0851b991e9ee4ea",
+  "gpu_sample_window": "65 one-second samples on the job-allocated GPUs only"
+}

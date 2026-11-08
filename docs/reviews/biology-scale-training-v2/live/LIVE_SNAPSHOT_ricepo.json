@@ -1,0 +1,35 @@
+{
+  "captured_utc": "2026-11-08T14:42:00Z",
+  "current_stage_inference": "branch_generation_or_rollout_active",
+  "job_id": "177622",
+  "latest_metadata_utc": "2026-11-08T14:22:00Z",
+  "method": "ricepo",
+  "not_measured": [
+    "completed_request_count",
+    "generated_token_count",
+    "retrieval_count",
+    "per_engine_running_waiting",
+    "kv_cache",
+    "prefix_cache_hit_rate",
+    "per_engine_token_rate",
+    "diver_residency_transfers"
+  ],
+  "records": {
+    "batch_request_records": 10,
+    "event_records": 84,
+    "partial_trajectory_records": 9122
+  },
+  "slurm": [
+    "177622|RUNNING|03:01:34|0:0",
+    "177622.batch|RUNNING|03:01:34|0:0",
+    "177622.0|COMPLETED|00:00:00|0:0",
+    "177622.1|COMPLETED|00:00:00|0:0",
+    "177622.2|COMPLETED|00:00:00|0:0",
+    "177622.3|COMPLETED|00:00:00|0:0",
+    "177622.4|COMPLETED|00:00:00|0:0",
+    "177622.5|COMPLETED|00:01:13|0:0"
+  ],
+  "source_commit_expected": "f148a3d3aefd7b79247b6a28f0851b991e9ee4ea",
+  "source_commit_observed": "f148a3d3aefd7b79247b6a28f0851b991e9ee4ea",
+  "gpu_sample_window": "65 one-second samples on the job-allocated GPUs only"
+}
