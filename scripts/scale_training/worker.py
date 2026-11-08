@@ -3,6 +3,22 @@ import argparse,json,os,signal,time,threading
 from pathlib import Path
 
 
+def configure_v2_recipe(config, stage):
+    """Strip deployment-only declarations before recipe expansion.
+
+    The v1 recipe schema intentionally rejects runtime topology fields.  They
+    are consumed by the worker, never by the mathematical recipe resolver.
+    """
+    requirements=config.pop('deployment_requirements')
+    config.pop('systems_variant',None)
+    config.pop('implementation_note',None)
+    if stage=='smoke':
+        config.setdefault('runtime_bindings',{})['total_updates']=1
+        config.setdefault('deviations',{})['queries_per_update']=dict(value=4,
+            reason='Four-query v2 systems smoke; separate from the 128-query lineage.')
+    return requirements
+
+
 def main(args):
     if not os.environ.get('SLURM_JOB_ID'):raise RuntimeError('Slurm required')
     import torch
@@ -56,7 +72,7 @@ def main(args):
         if systems_variant==V2:
             if args.stage not in ('smoke','training'):raise ValueError('v2 supports smoke or training stages')
             config=load_config(source/f'configs/biology_scale_v2_{args.method}.json')
-            requirements=config['deployment_requirements']
+            requirements=configure_v2_recipe(config,args.stage)
             dep.update(systems_variant=systems_variant,hf_data_parallel=requirements['hf_data_parallel'],
                 original_probability_mode=requirements['original_probability_mode'],
                 hf_projection_mode=requirements['hf_projection_mode'],
@@ -67,9 +83,6 @@ def main(args):
                 vllm_secondary_runtime={**requirements['vllm_secondary_runtime'],"enforce_eager":False,
                     "enable_prefix_caching":True,"enable_chunked_prefill":True,"attention_backend":"TRITON_ATTN"})
             dep['vllm_runtime'].update(requirements['vllm_primary_runtime'])
-            if args.stage=='smoke':
-                config['runtime_bindings'].update(total_updates=1,queries_per_update=4,
-                    optimizer_minibatch_size=16,gradient_accumulation=16)
         else:
             stage='capacity' if args.stage=='capacity' else 'training'
             config=load_config(source/f'configs/biology_scale_v1_{stage}_{args.method}.json')
