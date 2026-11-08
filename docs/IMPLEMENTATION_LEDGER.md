@@ -1,3 +1,7 @@
+## 2026-11-08：规模计算优化候选短测完成
+
+[完整结果](reviews/scale-compute-optimization-v1/SUMMARY.md)：最终5项CPU测试实际通过；A融合风险复核配对约1.163×，两种路径离线step后的全参数逐位一致。B熵误差超过预登记容差，拒绝且未扩大。C1约1.066×，未达速度门槛；C2仅短/中已测范围保留候选，最长继续CPU卸载。原规模作业保持停止，GRPO computed/persisted=2/2、RICE=1/0；未运行新的128批次或切换正式配置。全局验证字段不因候选通过而升级。本阶段只同步GitHub，不生成压缩包；下文旧交付说明属于历史记录。
+
 ## 2026-11-07 HF compute optimization
 
 Added opt-in bare-Qwen2 action_positions_v1 full-vocabulary LM-head projection, native causal-index selection and disjoint optional scoring timers; default wrapper path and full-sequence comparator remain. Added isolated HF precision scope/benchmark only; HF TF32 rejected by measured gradients, no production adoption. Optional runtime projection wiring is statically reviewed, not newly online-qualified. Exact KL/objective/training math, entropy provider, reward and retrieval unchanged. [Measurements, preregistered gates and limits](reviews/hf-compute-optimization-v1/SUMMARY.md).
