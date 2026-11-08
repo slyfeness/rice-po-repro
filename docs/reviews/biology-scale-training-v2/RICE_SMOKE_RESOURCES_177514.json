@@ -1,0 +1,13 @@
+{
+  "HF_precision": "high",
+  "NVML_peak_bytes": [
+    79307603968,
+    50835816448
+  ],
+  "elapsed_seconds": 1397.5736254695803,
+  "parent_peak_allocated_bytes": [
+    42669251072,
+    0
+  ],
+  "scope": "actual run wall incl initialization/checkpoint/evaluation; not queue"
+}

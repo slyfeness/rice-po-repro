@@ -1,13 +1,14 @@
 {
-  "status": "GRPO_SMOKE_COMPLETE_RICE_SMOKE_RUNNING",
+  "status": "BOTH_SMOKE_AND_INDEPENDENT_RESTORE_COMPLETE",
   "new_lineage_started": false,
-  "four_query_smoke": "GRPO_COMPLETE_RICE_RETRY_RUNNING",
+  "four_query_smoke": "BOTH_COMPLETE",
   "latest_observed_smoke": {
     "ricepo": {"job_id": "177481", "computed_updates": 1, "complete_checkpoints": 0, "rank_weights_equal": true},
     "grpo": {"job_id": "177482", "computed_updates": 1, "complete_checkpoints": 0, "rank_weights_equal": true, "state": "FAILED", "reason": "RNG bytes unsupported in checkpoint digest"},
     "grpo_retry": {"job_id": "177505", "state_at_snapshot": "COMPLETED", "computed_updates": 1, "complete_checkpoints": 1, "post_update_risk_check": true, "source_commit": "23da708a63c5e4ff5b6c35bf2971d66c207822af"},
-    "ricepo_retry": {"job_id": "177514", "state_at_snapshot": "RUNNING", "source_commit": "23da708a63c5e4ff5b6c35bf2971d66c207822af"},
-    "grpo_independent_restore": {"job_id": "177536", "state_at_snapshot": "SUBMITTED"}
+    "ricepo_retry": {"job_id": "177514", "state_at_snapshot": "COMPLETED", "computed_updates": 1, "complete_checkpoints": 1, "post_update_risk_check": true, "source_commit": "23da708a63c5e4ff5b6c35bf2971d66c207822af"},
+    "grpo_independent_restore": {"job_id": "177536", "state_at_snapshot": "COMPLETED", "rank1_rng_verified": true},
+    "ricepo_independent_restore": {"job_id": "177578", "state_at_snapshot": "COMPLETED", "rank1_rng_verified": true}
   },
   "smoke_attempts": "SMOKE_ATTEMPTS.csv",
   "formal_128_query_updates": {

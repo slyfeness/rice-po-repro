@@ -1,0 +1,24 @@
+{
+  "actor_state_dict_sha256": "4d9df4d490bffcbf2eb0387b2449e1fba661b11d2509493e090630853e0f1579",
+  "binding_sha256": "56c605aa08c60af82cd44c348da5153462b7879dce21ecdbfa7d2158bc6c5ab9",
+  "checkpoint_complete_sha256": "2fc099b4f52ca783a471f8bd62bce22c50a64063a61acd02b96a26eab5da44d3",
+  "checkpoint_modified": false,
+  "completed_updates": 1,
+  "elapsed_seconds": 398.58186351135373,
+  "hf_matmul_allow_tf32": false,
+  "hf_precision": "highest",
+  "newly_executed_optimizer_steps": 0,
+  "optimizer_state_sha256": "a096942a25c8ec7dc5b9cdcfdd089844c732a9fbcf1f3cc02e0e699c5202c459",
+  "policy_version": "9a34c825c478fc8e000e6251d58cb3307fde5bb649619783e0e9e8082de3ddea",
+  "rank1_rng_verified": true,
+  "restored_optimizer_steps": [
+    1
+  ],
+  "rng_probe": {
+    "cpu_draw_sha256": "5ace6e2e6249a96968ffb222e9e22d947bf0ca99a7d1b7f7c2f38045e6e65d60",
+    "cuda_draw_sha256": "0cf9be4288d5f1a7559df89c3e6d0d57abf3434542ec64d3dbdb8cc08541e6a7"
+  },
+  "scope": "independent read-only checkpoint restore; zero optimizer steps",
+  "status": "PASS",
+  "training_run_alias": "biology-scale-v2-smoke-r7-grpo"
+}

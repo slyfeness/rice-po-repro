@@ -1,0 +1,41 @@
+{
+  "fresh_worker_snapshot": true,
+  "outside_limit": 0.01,
+  "pass_risk_screen": true,
+  "policy_version": "857a87489491b56a5e41643525e72882dd535ff4e44f8d956eb7714bd1b70d88",
+  "statistics": {
+    "absolute_error": {
+      "max": 0.07396459579467773,
+      "mean": 0.004823229285101264,
+      "min": 0.0,
+      "p50": 0.0029168128967285156,
+      "p90": 0.012205421924591064,
+      "p99": 0.028045177459716797
+    },
+    "effective_clip_fraction": null,
+    "ess_fraction": 0.9999365467297646,
+    "extreme_tail_fraction": 0.0,
+    "historical_consistency_pass": true,
+    "matched_consistency_pass": true,
+    "outside_clip_fraction": 0.0,
+    "ratio": {
+      "max": 1.0328208999409152,
+      "mean": 1.0002759679873188,
+      "min": 0.9287045733066451,
+      "p50": 1.000007931174497,
+      "p90": 1.0083537194748218,
+      "p99": 1.0238314781123952
+    },
+    "ratio_mean_in_diagnostic_band": true,
+    "signed_delta": {
+      "max": 0.03229379653930664,
+      "mean": 0.0002440037448521406,
+      "min": -0.07396459579467773,
+      "p50": 7.931143045425415e-06,
+      "p90": 0.00831902027130127,
+      "p99": 0.02355194091796875
+    },
+    "tokens": 557,
+    "zero_advantage_fraction": null
+  }
+}

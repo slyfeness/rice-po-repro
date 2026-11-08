@@ -18,3 +18,4 @@ job_id,method,state,exit_code,allocation_seconds,gpus,last_stage,optimizer_steps
 177482,grpo,FAILED,1:0,537,2,checkpoint_digest_after_optimizer_step,1
 177481,ricepo,FAILED,1:0,929,2,checkpoint_digest_after_optimizer_step,1
 177505,grpo,COMPLETED,0:0,893,2,smoke_update_complete,1
+177514,ricepo,COMPLETED,0:0,1406,2,smoke_update_complete,1

@@ -102,18 +102,35 @@ def main(args):
         frozen_sampling_plan_source_commit=frozen['execution_source_commit'],
         scale_sampling_response_timeout_seconds=43200,initialization_response_timeout_seconds=1800,
         plan_sha256=file_sha256(plan_path),resume=args.resume,slurm_job_id=os.environ['SLURM_JOB_ID']))
-    stop=threading.Event();memory=[0,0]
+    stop=threading.Event();memory=[0,0];utilization=[];monitor_errors=[];monitor=None
     try:
         import pynvml
-        pynvml.nvmlInit();handles=[]
+        pynvml.nvmlInit();handles=[];uuids=[]
         for i in range(2):
             uuid=str(torch.cuda.get_device_properties(i).uuid)
             handles.append(pynvml.nvmlDeviceGetHandleByUUID(uuid if uuid.startswith('GPU-') else 'GPU-'+uuid))
+            uuids.append(uuid if uuid.startswith('GPU-') else 'GPU-'+uuid)
         def sample():
-            while not stop.is_set():
-                for i,h in enumerate(handles):memory[i]=max(memory[i],pynvml.nvmlDeviceGetMemoryInfo(h).used)
-                stop.wait(1)
-        threading.Thread(target=sample,daemon=True).start()
+            import csv,subprocess
+            path=R/'reports'/f'{tag}-gpu-samples-{os.environ["SLURM_JOB_ID"]}.csv'
+            with path.open('x',newline='') as output:
+                writer=csv.writer(output);writer.writerow(['unix_seconds','logical_gpu','utilization_percent','memory_MiB','power_W'])
+                while not stop.is_set():
+                    started=time.monotonic()
+                    for i,h in enumerate(handles):memory[i]=max(memory[i],pynvml.nvmlDeviceGetMemoryInfo(h).used)
+                    try:
+                        raw=subprocess.run(['nvidia-smi','--id='+','.join(uuids),
+                            '--query-gpu=uuid,utilization.gpu,memory.used,power.draw',
+                            '--format=csv,noheader,nounits'],check=True,capture_output=True,text=True,timeout=5)
+                        now=time.time()
+                        for row in csv.reader(raw.stdout.splitlines()):
+                            i=uuids.index(row[0].strip());values=[float(x.strip()) for x in row[1:]]
+                            writer.writerow([now,i,*values]);utilization.append((i,*values))
+                        output.flush()
+                    except Exception as exc:
+                        monitor_errors.append(type(exc).__name__)
+                    stop.wait(max(0,1-(time.monotonic()-started)))
+        monitor=threading.Thread(target=sample,daemon=True);monitor.start()
     except Exception:memory=None
     start=time.monotonic()
     try:
@@ -127,8 +144,16 @@ def main(args):
         return 0
     finally:
         stop.set()
+        if monitor is not None:monitor.join(timeout=6)
+        gpu_util=[]
+        for i in range(2):
+            rows=[r for r in utilization if r[0]==i]
+            gpu_util.append(dict(logical_gpu=i,samples=len(rows),
+                utilization_mean=sum(r[1] for r in rows)/len(rows) if rows else None,
+                utilization_peak=max((r[1] for r in rows),default=None)))
         atomic_json(R/'reports'/f'{tag}-resources-{os.environ["SLURM_JOB_ID"]}.json',dict(elapsed_seconds=time.monotonic()-start,
             parent_peak_allocated_bytes=[torch.cuda.max_memory_allocated(i) for i in range(2)],NVML_peak_bytes=memory,
+            gpu_utilization=gpu_util,monitor_errors=monitor_errors,
             scope='actual run wall incl initialization/checkpoint/evaluation; not queue',HF_precision=torch.get_float32_matmul_precision()))
 
 

@@ -1,4 +1,10 @@
-# Biology scale v2: phase-offload preflight complete, online smoke pending
+# Biology scale v2: both online smoke and independent restore complete
+
+Both corrected four-query smokes are complete. GRPO 177505: 885.186 s runtime / 893 s allocation; RICE 177514: 1397.574 s runtime / 1406 s allocation. Each completed one real two-rank PPO update on 16 original trajectories, published a complete checkpoint, reloaded Actor weights, and sampled using fresh worker processes at the updated weight version. Independent restore jobs 177536 (GRPO) and 177578 (RICE) completed with zero new optimizer steps, verifying Actor, Adam, update position, query schedule, CPU/CUDA RNG and the separate rank1 RNG. Raw outputs remain private; bounded update, resource, risk and restoration statistics are provided in the job-numbered JSON files.
+
+The authorized formal run uses the unchanged v2 systems recipe in fresh `biology-scale-v3-training-*` output namespaces because the v2 training namespaces already contain the old paused lineages. The namespace change is not an algorithm/configuration change. Formal-run GPU utilization is sampled once per second with nvidia-smi; the earlier smoke monitor only measured memory peaks, so its mean utilization remains unavailable. CPU job 177587 verified launcher syntax, 14 DP tests, 9 scheduling tests and both formal/smoke recipe expansions. Model, dataset, retriever, prompt and behavior identities match the common Initial baseline.
+
+The following snapshots are historical, and are superseded by the completed results above.
 
 **Latest terminal result:** corrected GRPO smoke job 177505 completed, exit 0:0, with 4 queries / 16 original trajectories, one PPO update, complete checkpoint publication, Actor reload and a fresh-process post-update sampling risk check. Actual runtime wall was 885.186 s including initialization/checkpoint/probe; Slurm allocation was 893 s. Sampled whole-device memory peaks were 75,878,825,984 and 48,178,724,864 bytes. The monitor recorded peaks only, so whole-run average utilization is unavailable. Public update/resource/post-update-risk records are named with job 177505. Independent read-only Actor/Adam/two-rank RNG restoration is submitted as 177536. Corrected RICE smoke 177514 is still running. Neither formal 128-query lineage has started.
 
