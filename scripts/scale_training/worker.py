@@ -51,13 +51,15 @@ def main(args):
         for key in ('parent_run_root','parent_source_root','continuation_schedule_path','native_replay_sources',
                     'native_action_replay_sources','frozen_schedule_path','initial_evaluation_only','hf_matmul_precision'):
             dep.pop(key,None)
-        rpc_root=Path(os.environ.get('RICE_RPC_ROOT',f'/tmp/ricepo-{os.environ["SLURM_JOB_ID"]}'))
-        if len(str(rpc_root))>48:raise ValueError('RICE_RPC_ROOT is too long for local NCCL file-store sockets')
-        rpc_root.mkdir(parents=True,exist_ok=True)
+        hf_dp_init_root=Path(os.environ.get('RICE_HF_DP_INIT_ROOT',f'/dev/shm/ricepo-{os.environ["SLURM_JOB_ID"]}'))
+        if len(str(hf_dp_init_root))>48:raise ValueError('RICE_HF_DP_INIT_ROOT is too long for local NCCL file-store sockets')
+        hf_dp_init_root.mkdir(parents=True,exist_ok=True)
+        vllm_rpc_root=R.parent.parent/'i'/f'bs{os.environ["SLURM_JOB_ID"]}'
+        vllm_rpc_root.mkdir(parents=True,exist_ok=True)
         dep.update(output_root=str(root),cache_root=str(R/'cache'/tag),checkpoint_staging_root=str(R/'tmp'/tag),
             actor_device='cuda:0',retriever_device='cuda:1',actor_precision='float32',hf_projection_mode='full_sequence',
             prompt_path=str(source/'prompts/ricepo_prefilled_think_smoke.txt'),
-            vllm_rpc_root=str(rpc_root),
+            vllm_rpc_root=str(vllm_rpc_root),hf_dp_init_root=str(hf_dp_init_root),
             sampling_backend='vllm_mixed_precision_pilot_v1',checkpoint_io='local_verified_v1',
             compare_grpo_credit_gradients=False,stop_after_checkpoint_diagnostic=False,
             branch_probability_audit='stratified_five_percent_v1',initial_evaluation_only=args.stage=='initial',

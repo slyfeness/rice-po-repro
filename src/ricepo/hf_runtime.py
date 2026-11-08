@@ -658,11 +658,14 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         # This is part of the runtime ordering, not merely a configuration note.
         if retrieval_service is not None:
             retrieval_service.set_residency('hf')
+        dp_init_root=Path(deployment.get('hf_dp_init_root',deployment['vllm_rpc_root']))
+        if not dp_init_root.is_absolute() or len(str(dp_init_root))>48:
+            raise ValueError('HF DP local rendezvous path must be an absolute short path')
         dp=HFDataParallel(actor=actor,reference=reference,optimizer=optimizer,device=actor_device,spec=dp_spec,
             worker_spec=dict(device=str(retriever_device),actor_path=str(actor_load),reference_path=str(actor_path),
                 **optimizer_source,optimizer_sha256=state_digest(canonical_optimizer),
                 rng=rank1_rng or dict(cpu_rng=torch.random.get_rng_state(),cuda_rng=torch.cuda.get_rng_state(retriever_device))),
-            rpc_root=require_cluster_storage(deployment['vllm_rpc_root']),precision=deployment.get('hf_matmul_precision','ieee'),
+            rpc_root=dp_init_root,precision=deployment.get('hf_matmul_precision','ieee'),
             scoring_options=scoring_options,recipe=plan,behavior=behavior)
         cleanup.callback(dp.close)
     def phase_callback(phase):
