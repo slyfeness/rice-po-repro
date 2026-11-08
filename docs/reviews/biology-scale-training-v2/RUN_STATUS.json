@@ -1,5 +1,5 @@
 {
-  "status": "PHASE_RESIDENCY_PREFLIGHT_COMPLETE_RETRIEVAL_RECHECK_RUNNING",
+  "status": "PREFLIGHT_AND_RETRIEVAL_RECHECK_COMPLETE_SMOKE_PENDING",
   "new_lineage_started": false,
   "four_query_smoke": "NOT_RUN",
   "formal_128_query_updates": {
@@ -71,6 +71,24 @@
       "report": "PHASE_RESIDENCY_PREFLIGHT.json"
     },
     {
+      "job_id": "177409",
+      "purpose": "48-request retrieval recheck initial wrapper attempt",
+      "state": "FAILED",
+      "exit_code": "1:0",
+      "elapsed_seconds": 151,
+      "gpus": 2,
+      "failure": "JVM environment variable absent before BM25 initialization; no retrieval comparison completed"
+    },
+    {
+      "job_id": "177412",
+      "purpose": "48-request retrieval recheck after Diver restored from CPU to GPU1",
+      "state": "COMPLETED",
+      "exit_code": "0:0",
+      "elapsed_seconds": 49,
+      "gpus": 2,
+      "report": "RETRIEVAL_RECHECK.json"
+    },
+    {
       "job_id": "177287",
       "purpose": "CPU TDD red check for new v2 smoke namespace",
       "state": "FAILED",
@@ -107,5 +125,5 @@
   ],
   "queue_visibility": "squeue returned permission denied; terminal states established by sacct.",
   "automatic_restart": false,
-  "implementation_status": "The longest-history phase-offload preflight completed without OOM. Retrieval restoration, online two-rank NCCL, dual-engine validation, four-query smoke, and 128-query training remain unrun."
+  "implementation_status": "The longest-history phase-offload preflight and saved 48-request Diver restoration recheck completed. Online two-rank NCCL, dual-engine validation, four-query smoke, and 128-query training remain unrun."
 }
