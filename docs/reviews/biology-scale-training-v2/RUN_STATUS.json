@@ -1,6 +1,11 @@
 {
-  "status": "BOTH_SMOKE_AND_INDEPENDENT_RESTORE_COMPLETE",
-  "new_lineage_started": false,
+  "status": "FORMAL_JOBS_RUNNING_INITIALIZATION",
+  "new_lineage_started": true,
+  "formal_jobs": [
+    {"job_id":"177622","method":"ricepo","state_at_snapshot":"RUNNING","output_alias":"biology-scale-v3-training-ricepo","gpus":2},
+    {"job_id":"177623","method":"grpo","state_at_snapshot":"RUNNING","output_alias":"biology-scale-v3-training-grpo","gpus":2}
+  ],
+  "formal_execution_source_commit": "f148a3d3aefd7b79247b6a28f0851b991e9ee4ea",
   "four_query_smoke": "BOTH_COMPLETE",
   "latest_observed_smoke": {
     "ricepo": {"job_id": "177481", "computed_updates": 1, "complete_checkpoints": 0, "rank_weights_equal": true},
@@ -134,5 +139,5 @@
   ],
   "queue_visibility": "squeue returned permission denied; terminal states established by sacct.",
   "automatic_restart": false,
-  "implementation_status": "Phase residency, online original sampling, RICE branches/credit and both two-rank optimizer steps have executed. Complete checkpoint validation is outstanding; no v2 128-query training has started. RNG-byte digest fix passed CPU save/reload test in Slurm 177498."
+  "implementation_status": "Both corrected four-query smokes and independent checkpoint restorations completed. Two fresh formal jobs are running initialization with frozen v2 systems recipes and v3 output aliases. Zero formal updates have completed at this snapshot; running is not a completion claim."
 }
