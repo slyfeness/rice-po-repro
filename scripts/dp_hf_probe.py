@@ -21,7 +21,8 @@ def main(a):
     base_grad=base_post=None
     try:
         phases=[(64,rep,kind) for rep in range(2) for kind in ('single','dual')]
-        if a.full512:phases += [(512,0,kind) for kind in ('single','dual')]
+        if a.dual512_only:phases=[(512,0,'dual')]
+        elif a.full512:phases += [(512,0,kind) for kind in ('single','dual')]
         for count,rep,kind in phases:
             indices=plan['sub64_indices'] if count==64 else list(range(512))
             items=[UpdateItem(**{k:tuple(v) if isinstance(v,list) else v for k,v in plan['items'][i].items()}) for i in indices]
@@ -82,4 +83,4 @@ def main(a):
         if dist.is_initialized():dist.destroy_process_group()
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--plan',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--full512',action='store_true');main(p.parse_args())
+    p=argparse.ArgumentParser();p.add_argument('--plan',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--full512',action='store_true');p.add_argument('--dual512-only',action='store_true');main(p.parse_args())

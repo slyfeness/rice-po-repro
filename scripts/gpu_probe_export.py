@@ -35,13 +35,15 @@ def main(a):
             timing.append(dict(rank=r.get('rank'),count=row.get('count',r.get('count')),kind=row.get('kind',row.get('precision')),repeat=row['repeat'],HF_wall_seconds=row['HF_wall_seconds'],allocated_peak_bytes=row['allocated_peak_bytes'],reserved_peak_bytes=row['reserved_peak_bytes'],optimizer_step_seconds=row.get('optimizer_step_seconds'),OOM=row['OOM']))
             numeric.append({k:v for k,v in row.items() if k not in ['GPU_util','rank_forward_backward_seconds','rank_gradient_sum_seconds']})
     pairs=[]
-    for result in results:
-        if result.get('rank')!=0:continue
-        baseline={(r['count'],r['repeat']):r for r in result['rows'] if r['kind']=='single'}
-        for row in result['rows']:
-            key=(row['count'],row['repeat'])
-            if row['kind']=='dual' and key in baseline:
-                b=baseline[key];pairs.append(dict(count=row['count'],repeat=row['repeat'],single_seconds=b['HF_wall_seconds'],dual_seconds=row['HF_wall_seconds'],speedup=b['HF_wall_seconds']/row['HF_wall_seconds'],loss_difference=row['normalized_loss']-b['normalized_loss']))
+    dprows=[row for result in results if result.get('rank')==0 for row in result['rows']]
+    baseline={(r['count'],r['repeat']):r for r in dprows if r['kind']=='single'}
+    seen=set()
+    for row in dprows:
+        key=(row['count'],row['repeat'])
+        if row['kind']=='dual' and key in baseline:
+            if key in seen:raise ValueError('ambiguous duplicate dual measurement')
+            seen.add(key);b=baseline[key]
+            pairs.append(dict(count=row['count'],repeat=row['repeat'],single_seconds=b['HF_wall_seconds'],dual_seconds=row['HF_wall_seconds'],speedup=b['HF_wall_seconds']/row['HF_wall_seconds'],loss_difference=row['normalized_loss']-b['normalized_loss']))
     write(a.output/'RESULT.json',dict(paired_measurements=pairs,results=results,private_result_sha256=hashes,measurement_scope='saved native GRPO update2, actual P1 Actor and P0 Reference, A fused observation and C2; no training-resume or numerical acceptance thresholds',notes=['precision gradients are sums; DP gradients divide by global sequence count','first measured repetition includes any first-use effects; both repetitions reported','noise half differences reuse per-item IEEE gradients with CPUfloat64 summation; no inference-generation costs included']))
     csvwrite(a.output/'TIMING.csv',timing,fields=['rank','count','kind','repeat','HF_wall_seconds','allocated_peak_bytes','reserved_peak_bytes','optimizer_step_seconds','OOM'])
     csvwrite(a.output/'GPU_UTIL.csv',util,fields=['rank','label','seconds','utilization_percent','memory_MiB','power_W','error'])
