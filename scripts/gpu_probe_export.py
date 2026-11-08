@@ -16,7 +16,7 @@ def jobs(ids):
         job,state,seconds,tres,exitcode=line.split('|')[:5]
         allocated=dict(x.split('=',1) for x in tres.split(',') if '=' in x)
         gpu=int(allocated.get('gres/gpu','0'));elapsed=int(seconds)
-        out.append(dict(job_id=job,state=state,elapsed_seconds=elapsed,allocated_gpus=gpu,GPU_hours=elapsed*gpu/3600,exit_code=exitcode))
+        out.append(dict(job_id=job,state=state.split()[0],elapsed_seconds=elapsed,allocated_gpus=gpu,GPU_hours=elapsed*gpu/3600,exit_code=exitcode))
     return out
 
 def main(a):
