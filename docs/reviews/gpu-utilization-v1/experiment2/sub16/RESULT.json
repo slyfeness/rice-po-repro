@@ -1,0 +1,826 @@
+{
+  "results": [
+    {
+      "state": "COMPLETED",
+      "count": 16,
+      "metadata": {
+        "source_items_sha256": "70e43534682c3e960b7fab1aad67acf2d52a85aa68e6652c0132e460d833c612",
+        "source_trajectories_sha256": "90b6c5026c73db3e8ab81cca93344ac24c46137415eea85cf64e941f797e6f62",
+        "checkpoint2_receipt_sha256": "f757b1c719070600af160df88700db2bc81dbb12570b6693aba2aac97b86c599",
+        "sub64_sha256": "49599927702efbeea9adf517df458a0f2f7a4cb26245decbb5dc09d0e93f4be0",
+        "sub16_sha256": "b9c45556cd8ee13263629f4cf57eed3c14315cd91f8b415ce80700e8797784b7",
+        "selected_identity_sha256": [
+          "0cce67de771bfa6cab7ebc92ce2d7bf7eb667c9fe92acf8736ebed03e5133d5c",
+          "7fce64acbd5c74bc49aa2d0fff976731ae3c65b58433fd89aa1d5a350ed093ed",
+          "89eb35cd50900fd7c2ffc0a7a395cb2bd3cc717672a80a172e41f2a1a657df72",
+          "e503d52395104a88c2171b60ae1b0937079ab6c0299a5518ca13663b6428eafc",
+          "72fd57a9de33092eeff9cd7fdb5b06b769cfa81c68033e03f8a2da6936a39e1b",
+          "9236d5361b156a24b04015b4c4a5c5cead7a3123918c3b7846fbbe7b1c962089",
+          "6885eec63c46d10cfe0bc4ae0f222e26bae10b89e1b872ab9b6c4342475598fe",
+          "81b6424be88a79476ef8167eeede25e8359226171481f3c758378355f247287c",
+          "b6695d2399cfc6a4a1267ac351a5f5b6763555b9ca192a652a42fa39f1d89613",
+          "fb24c00dc96cdebe3c16b6e38fffab17044ebe57fb601c0786b3968dd63d7724",
+          "66b47f5dbc38e86d48080f31abcd9c3eb5940ece911f05955f1d9aa86e574be6",
+          "8161950ee6f30bcae1ddffa232c35b3eeb55d0f58e2d4d09f2b0b95d2b3ea016",
+          "c5565e048c79160e81ae44dc611c47abacf7c006300c73c52caf6d9416ccac3b",
+          "11195c96b9ea3c24fcebb366a19c6e04a81bbde716c682b7d09506b46f116877",
+          "6fc3552ec44478e3afd81ef8b8fd18042da2eb63b6f4ae2aa166bb49177ab5ab",
+          "95a7650f5e062a7ff10eda2fd835339460ff515dd6fa8e20291ce60503be6b3e",
+          "8e5f78976db3b7fcf8d5409f6a57231ce7e160a3c3bcabb3f75ae91419c02351",
+          "bb9d5527d872b46857852987ed2b8700b4455417b79013d41787d4b1013446a2",
+          "6540cb80f6b2b40946495efddb89882e64f559b1878389f1a9e07fc17f6bc53f",
+          "051427d1ed2efcb1fd255d788a1e13060c739dd02308145b0cb7a67dca27280c",
+          "e753e5b86fcce5b7855b7486fa23611eeefb0cc94d0956621f4ed69736d5ef62",
+          "fbe27ed47e1b1fdaab81784e66bfe1b522da4d3e0117f94ba30d0a1549ba076a",
+          "ea4a43dafccec6b9599b7e4cd00ca1a3e3aa0c09c8a0c6ef3b1d0ba37565c23b",
+          "02cb4dfd1c128af51c45b9e4e8d0eb9352dd60f466dc13fc6e2b341d5eba8ba0",
+          "d66956aefb8755cb242a7a18483991bb04f598fd768115609bf0e0050cbdf337",
+          "0bc6c0c51f0a7614ecb5933fd709f8c410b14710dd26bd0674c6a892507527cf",
+          "fe773e528ac9bd82968b40ebcc41d14feb2a160f6f2926570ec054644ffd2df9",
+          "d29b0a726d027d6b255a875d6142d878f3777d7a26f3eac19b1927bed2872ed0",
+          "b736eed8886726d7f66cb1e7549550a1b88d69d42846dee9055356ca80b311a2",
+          "7cac681ab702a63c7693a384dbb441aa8ca50cadc0e7bc8b0ae9bf53f0aa3b69",
+          "020149866fdbb46aa446b0b4ff19e5c9c07cfd077ac16c40e90273d0b8dd7661",
+          "eff86469d7b59b0ca0184944a9474e658a01b0192f78910df8dcb8ab4aa243bb",
+          "007ebb53333f82dff0916de739d0da51f07dd6ef0c5469cc981dbcefeaa17897",
+          "84f2ab74ce565bf8f21de23309641016e44fa06b255e78c5380bf5189edd5d61",
+          "6b28c2823acd1a94c08ed43e7e0f49935671f6b3f9f7d7528691bc739da3a02d",
+          "5649fd5e94683d8eb89c97ba12a1c624621b7c78e476df8800927153370cb0d7",
+          "9fce5c48d33e25e663ce00683d9bbf8f94c154f02315429d2af2421d9c3ba5a0",
+          "c43322d5f2f06bbfe5d6f004a77f10eb7e07037e532149419e5b7a0a6b34feb0",
+          "f50e3957c67970ac3cb755e6b04ad8f1162fae16d6a0156f48022b8e46e73711",
+          "0031b80b8d4b58c9409c3ab1f9fe9622aa6c36fe64d316b77220b239c197f6b5",
+          "bda3f8b3a6a9cdfcba9e062a90dc83aa2547caaa5a5a32e2bb8006f875a0ec25",
+          "addd3c4200267b7523c619ca8b03aa99e8af20f64611b0a3a8ee48bf0e4d945a",
+          "be450ae8a2ee0f5318253552dc70ceff2bf8ea512895df8ac9aaef8f3d2c8873",
+          "0d2ea5e98175ab57aa3b21c4383d3523e1125fd6bc8363b5689b780ca06e6095",
+          "a568de8a035fb2f3c5d43b19edfc6a725307b663c02770d54fd4cc4a8332583c",
+          "9e530da926f09b76011e2fd4fa11903515e967523cd7511f6e0c8c5cb45f9e65",
+          "3ead09dc09018a842930751aa21e2d0cbdae04330df9fc9dbcca044c38546b61",
+          "543be518ab9dbd1e49c5ec0f5ad51923a5169502badde012016a052438837d26",
+          "1e00ea1f6d668e147a6cb903771cdf88fe23a39ae3e9e7f98ddaf7eb4d664c65",
+          "83b8789aa202e06f059bedd5db2c4e070c5ec7ef746a4f9c83704776dc011efc",
+          "fc0459c71135f4012d67021881986ced0fe169412d398d579e8c6ff7e6c42e14",
+          "d2d12caea1de20dcd65a94607d1c586ae843f4b9417b2685caa453bd0c3f54e8",
+          "9758c01cbe9e4e82129a2b83f5810e9fc7a0dcc13c8b608390b6e763153b3f2d",
+          "9f2b2b4abe0ba895e249f5ebe217156d1f9a844666a8a1c70a7c3695c55a5718",
+          "5921f380563f8391a04ed6d9adae7c235c132b3e74c091869a1fbf81a53c5fdb",
+          "1d7a6580b871d79534b07fd0eb9e933723b39c1025e521eef2cb0aa470be330f",
+          "9c0dfc90ec4ca7b2a8b08b748d69f6ed59aca7aabd7a05ea7d1d44005f9b201b",
+          "b5c4e0324219bdee03d7cb60a53c79d2c79f6f8832be54ec15670ad275db392a",
+          "40f6b625027c21f1579f1d6f0add915b6d262d0c6119aa1112af7f81a16dae8a",
+          "a79af1c7b05a647dd1369fea1d462c96886fb4e1762846783c99d005d77c013c",
+          "7d17368175e177f3066fdba50d57f8db4a24b2cd7b3a82e192ab6b8c6f6628f3",
+          "2fed4f33d1144407e6cd73f464806367dc9c06f5c63f986c79578573f14a3d5d",
+          "d4c5f6ff62bb4e5d322ec9de83ab5aface2af793459152f1bd2ee39735969e35",
+          "883b3df02d3429684a1765dfe944e4caaed8be24c9d51b23c76d016f4b347194"
+        ],
+        "horizons": [
+          1957,
+          1856,
+          2470,
+          1598,
+          1419,
+          1404,
+          2459,
+          1520,
+          2610,
+          2635,
+          3985,
+          3048,
+          3539,
+          3072,
+          3779,
+          3197,
+          4429,
+          4746,
+          4774,
+          4597,
+          4973,
+          4983,
+          4332,
+          4289,
+          5135,
+          5240,
+          5352,
+          5431,
+          5390,
+          5151,
+          5341,
+          5079,
+          5544,
+          5518,
+          5625,
+          5572,
+          5514,
+          5801,
+          5582,
+          5575,
+          6067,
+          6049,
+          6107,
+          6105,
+          5853,
+          5944,
+          5901,
+          6165,
+          6451,
+          6218,
+          6673,
+          6651,
+          6594,
+          6848,
+          6738,
+          6585,
+          7499,
+          7306,
+          6964,
+          13151,
+          6928,
+          7200,
+          6915,
+          17143
+        ],
+        "action_counts": [
+          740,
+          611,
+          472,
+          394,
+          341,
+          208,
+          497,
+          341,
+          798,
+          850,
+          1178,
+          934,
+          935,
+          1229,
+          1127,
+          808,
+          1141,
+          1596,
+          878,
+          800,
+          1304,
+          1789,
+          720,
+          795,
+          1791,
+          2326,
+          1944,
+          1776,
+          1645,
+          1744,
+          1616,
+          1347,
+          1582,
+          1963,
+          1628,
+          1810,
+          1788,
+          2108,
+          1659,
+          1498,
+          2548,
+          2196,
+          1991,
+          2372,
+          2121,
+          2125,
+          2820,
+          2546,
+          2378,
+          2433,
+          2932,
+          2455,
+          2300,
+          2989,
+          1844,
+          2692,
+          3189,
+          2578,
+          3121,
+          3611,
+          3118,
+          2206,
+          3356,
+          3598
+        ],
+        "longest_horizon": 17143,
+        "selection": "8 horizon quantile strata;8 identity-SHA sorted per stratum;force global maximum replacing eighth in final stratum;Sub16 first16 in this order",
+        "optimizer": "fresh AdamW at P1 for offline comparison; not a resumed P1 Adam state"
+      },
+      "initialization": {
+        "seconds": 130.1190419755876,
+        "actor_state_sha256": "7a98746582ad125a9a84e52cfdea68fc03e71fed992404849a6f3e267a76b312",
+        "reference_state_sha256": "517a10e399f0fadbfe3a8b3e3ca7bbe3ccd5479bfa5a866f81f682520ccf0626",
+        "matmul_precision": "highest",
+        "allow_tf32": false,
+        "actor_dtype": "torch.float32",
+        "attention": "sdpa",
+        "diver_idle": false
+      },
+      "rows": [
+        {
+          "precision": "ieee",
+          "repeat": 0,
+          "HF_wall_seconds": 42.17925154790282,
+          "loss_sum": 7597.124909993749,
+          "risk": {
+            "tokens": 11463,
+            "logprob_mean_abs": 0.007768181461449897,
+            "logprob_p99_abs": 0.05378106355667088,
+            "logprob_max_abs": 0.367673397064209,
+            "ratio_min": 0.6923432661100896,
+            "ratio_max": 1.2008995465060557,
+            "ratio_outside_fraction": 0.0003489487917648085,
+            "effective_clip_fraction": 0.00017447439588240426,
+            "extreme_logratio_fraction": 0.0,
+            "ESS_fraction": 0.9997843055279982,
+            "KL_sum": 1.4833737581439919,
+            "KL_token_mean": 0.0001294053701599923
+          },
+          "allocated_peak_bytes": 26238124032,
+          "reserved_peak_bytes": 26625441792,
+          "GPU_util": {
+            "utilization_percent": {
+              "mean": 97.02631578947368,
+              "max": 100.0
+            },
+            "memory_MiB": {
+              "mean": 24199.473684210527,
+              "max": 25913.0
+            },
+            "power_W": {
+              "mean": 318.3515789473684,
+              "max": 369.45
+            }
+          },
+          "OOM": false,
+          "matmul_precision": "highest",
+          "allow_tf32": false,
+          "parameter_dtype": "torch.float32",
+          "autocast_dtype": null,
+          "gradient_vs_IEEE": {
+            "reference_norm": 14359.791890680812,
+            "candidate_norm": 14359.791890680812,
+            "difference_L2": 0.0,
+            "relative_L2": 0.0,
+            "cosine": 1.0,
+            "max_abs": 0.0,
+            "elements": 1777088000,
+            "absolute_difference_histogram": {
+              "upper_bounds": [
+                0.0,
+                1e-08,
+                1e-07,
+                1e-06,
+                1e-05,
+                0.0001,
+                "inf"
+              ],
+              "counts": [
+                1777088000,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "same_token_vs_IEEE": {
+            "logprob_mean_abs": 0.0,
+            "logprob_p99_abs": 0.0,
+            "logprob_max_abs": 0.0,
+            "KL_mean_abs": 0.0,
+            "KL_max_abs": 0.0
+          }
+        },
+        {
+          "precision": "ieee",
+          "repeat": 1,
+          "HF_wall_seconds": 41.38301812298596,
+          "loss_sum": 7597.124909993749,
+          "risk": {
+            "tokens": 11463,
+            "logprob_mean_abs": 0.007768181461449897,
+            "logprob_p99_abs": 0.05378106355667088,
+            "logprob_max_abs": 0.367673397064209,
+            "ratio_min": 0.6923432661100896,
+            "ratio_max": 1.2008995465060557,
+            "ratio_outside_fraction": 0.0003489487917648085,
+            "effective_clip_fraction": 0.00017447439588240426,
+            "extreme_logratio_fraction": 0.0,
+            "ESS_fraction": 0.9997843055279982,
+            "KL_sum": 1.4833737581439919,
+            "KL_token_mean": 0.0001294053701599923
+          },
+          "allocated_peak_bytes": 26238124032,
+          "reserved_peak_bytes": 26625441792,
+          "GPU_util": {
+            "utilization_percent": {
+              "mean": 99.52631578947368,
+              "max": 100.0
+            },
+            "memory_MiB": {
+              "mean": 24382.315789473683,
+              "max": 25913.0
+            },
+            "power_W": {
+              "mean": 313.8568421052631,
+              "max": 343.85
+            }
+          },
+          "OOM": false,
+          "matmul_precision": "highest",
+          "allow_tf32": false,
+          "parameter_dtype": "torch.float32",
+          "autocast_dtype": null,
+          "gradient_vs_IEEE": {
+            "reference_norm": 14359.791890680812,
+            "candidate_norm": 14359.791890680812,
+            "difference_L2": 0.0,
+            "relative_L2": 0.0,
+            "cosine": 1.0,
+            "max_abs": 0.0,
+            "elements": 1777088000,
+            "absolute_difference_histogram": {
+              "upper_bounds": [
+                0.0,
+                1e-08,
+                1e-07,
+                1e-06,
+                1e-05,
+                0.0001,
+                "inf"
+              ],
+              "counts": [
+                1777088000,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "same_token_vs_IEEE": {
+            "logprob_mean_abs": 0.0,
+            "logprob_p99_abs": 0.0,
+            "logprob_max_abs": 0.0,
+            "KL_mean_abs": 0.0,
+            "KL_max_abs": 0.0
+          }
+        },
+        {
+          "precision": "tf32",
+          "repeat": 0,
+          "HF_wall_seconds": 13.119067603722215,
+          "loss_sum": 7599.846000105837,
+          "risk": {
+            "tokens": 11463,
+            "logprob_mean_abs": 0.002663516207155414,
+            "logprob_p99_abs": 0.019232625961303512,
+            "logprob_max_abs": 0.1500082015991211,
+            "ratio_min": 0.8607009172722231,
+            "ratio_max": 1.1120742009570166,
+            "ratio_outside_fraction": 0.0,
+            "effective_clip_fraction": 0.0,
+            "extreme_logratio_fraction": 0.0,
+            "ESS_fraction": 0.9999720941645666,
+            "KL_sum": 0.05756146421698896,
+            "KL_token_mean": 5.021500847682889e-06
+          },
+          "allocated_peak_bytes": 26238124032,
+          "reserved_peak_bytes": 26625441792,
+          "GPU_util": {
+            "utilization_percent": {
+              "mean": 98.83333333333333,
+              "max": 100.0
+            },
+            "memory_MiB": {
+              "mean": 23981.0,
+              "max": 25913.0
+            },
+            "power_W": {
+              "mean": 349.4541666666666,
+              "max": 394.78
+            }
+          },
+          "OOM": false,
+          "matmul_precision": "high",
+          "allow_tf32": true,
+          "parameter_dtype": "torch.float32",
+          "autocast_dtype": null,
+          "gradient_vs_IEEE": {
+            "reference_norm": 14359.791890680812,
+            "candidate_norm": 14431.24815301472,
+            "difference_L2": 925.6489337252277,
+            "relative_L2": 0.06446116634363995,
+            "cosine": 0.9979449860033168,
+            "max_abs": 55.48286437988281,
+            "elements": 1777088000,
+            "absolute_difference_histogram": {
+              "upper_bounds": [
+                0.0,
+                1e-08,
+                1e-07,
+                1e-06,
+                1e-05,
+                0.0001,
+                "inf"
+              ],
+              "counts": [
+                227472300,
+                1821438,
+                16369500,
+                91921517,
+                87943605,
+                47426565,
+                1304133075
+              ]
+            }
+          },
+          "same_token_vs_IEEE": {
+            "logprob_mean_abs": 0.007641115560576807,
+            "logprob_p99_abs": 0.054020967483520504,
+            "logprob_max_abs": 0.37320899963378906,
+            "KL_mean_abs": 0.00012442344871123895,
+            "KL_max_abs": 0.03258465591352433
+          }
+        },
+        {
+          "precision": "tf32",
+          "repeat": 1,
+          "HF_wall_seconds": 12.893515013158321,
+          "loss_sum": 7599.846000105837,
+          "risk": {
+            "tokens": 11463,
+            "logprob_mean_abs": 0.002663516207155414,
+            "logprob_p99_abs": 0.019232625961303512,
+            "logprob_max_abs": 0.1500082015991211,
+            "ratio_min": 0.8607009172722231,
+            "ratio_max": 1.1120742009570166,
+            "ratio_outside_fraction": 0.0,
+            "effective_clip_fraction": 0.0,
+            "extreme_logratio_fraction": 0.0,
+            "ESS_fraction": 0.9999720941645666,
+            "KL_sum": 0.05756146421698896,
+            "KL_token_mean": 5.021500847682889e-06
+          },
+          "allocated_peak_bytes": 26238124032,
+          "reserved_peak_bytes": 26625441792,
+          "GPU_util": {
+            "utilization_percent": {
+              "mean": 89.75,
+              "max": 100.0
+            },
+            "memory_MiB": {
+              "mean": 24116.0,
+              "max": 25913.0
+            },
+            "power_W": {
+              "mean": 335.0066666666666,
+              "max": 389.64
+            }
+          },
+          "OOM": false,
+          "matmul_precision": "high",
+          "allow_tf32": true,
+          "parameter_dtype": "torch.float32",
+          "autocast_dtype": null,
+          "gradient_vs_IEEE": {
+            "reference_norm": 14359.791890680812,
+            "candidate_norm": 14431.24815301472,
+            "difference_L2": 925.6489337252277,
+            "relative_L2": 0.06446116634363995,
+            "cosine": 0.9979449860033168,
+            "max_abs": 55.48286437988281,
+            "elements": 1777088000,
+            "absolute_difference_histogram": {
+              "upper_bounds": [
+                0.0,
+                1e-08,
+                1e-07,
+                1e-06,
+                1e-05,
+                0.0001,
+                "inf"
+              ],
+              "counts": [
+                227472300,
+                1821438,
+                16369500,
+                91921517,
+                87943605,
+                47426565,
+                1304133075
+              ]
+            }
+          },
+          "same_token_vs_IEEE": {
+            "logprob_mean_abs": 0.007641115560576807,
+            "logprob_p99_abs": 0.054020967483520504,
+            "logprob_max_abs": 0.37320899963378906,
+            "KL_mean_abs": 0.00012442344871123895,
+            "KL_max_abs": 0.03258465591352433
+          }
+        },
+        {
+          "precision": "bf16",
+          "repeat": 0,
+          "HF_wall_seconds": 6.01299655996263,
+          "loss_sum": 7598.259235290898,
+          "risk": {
+            "tokens": 11463,
+            "logprob_mean_abs": 0.024621048430601415,
+            "logprob_p99_abs": 0.15227624893188405,
+            "logprob_max_abs": 0.9984285831451416,
+            "ratio_min": 0.593685207085327,
+            "ratio_max": 2.7140136290161285,
+            "ratio_outside_fraction": 0.003315013521765681,
+            "effective_clip_fraction": 0.000697897583529617,
+            "extreme_logratio_fraction": 0.0,
+            "ESS_fraction": 0.9980330344275871,
+            "KL_sum": 7.196957560390865,
+            "KL_token_mean": 0.0006278424112702491
+          },
+          "allocated_peak_bytes": 28247875072,
+          "reserved_peak_bytes": 28521267200,
+          "GPU_util": {
+            "utilization_percent": {
+              "mean": 98.5,
+              "max": 100.0
+            },
+            "memory_MiB": {
+              "mean": 24803.666666666668,
+              "max": 27729.0
+            },
+            "power_W": {
+              "mean": 276.55833333333334,
+              "max": 364.03
+            }
+          },
+          "OOM": false,
+          "matmul_precision": "highest",
+          "allow_tf32": false,
+          "parameter_dtype": "torch.float32",
+          "autocast_dtype": "bfloat16",
+          "gradient_vs_IEEE": {
+            "reference_norm": 14359.791890680812,
+            "candidate_norm": 14450.495011387613,
+            "difference_L2": 2114.050204114935,
+            "relative_L2": 0.14722011434489568,
+            "cosine": 0.9892509637399194,
+            "max_abs": 78.18708038330078,
+            "elements": 1777088000,
+            "absolute_difference_histogram": {
+              "upper_bounds": [
+                0.0,
+                1e-08,
+                1e-07,
+                1e-06,
+                1e-05,
+                0.0001,
+                "inf"
+              ],
+              "counts": [
+                227471283,
+                406125,
+                3578020,
+                31891945,
+                106483361,
+                73341213,
+                1333916053
+              ]
+            }
+          },
+          "same_token_vs_IEEE": {
+            "logprob_mean_abs": 0.026443276433782022,
+            "logprob_p99_abs": 0.16559418678283622,
+            "logprob_max_abs": 1.027240514755249,
+            "KL_mean_abs": 0.0005641403240510514,
+            "KL_max_abs": 0.012212597270263359
+          }
+        },
+        {
+          "precision": "bf16",
+          "repeat": 1,
+          "HF_wall_seconds": 5.688508061692119,
+          "loss_sum": 7598.259235290898,
+          "risk": {
+            "tokens": 11463,
+            "logprob_mean_abs": 0.024621048430601415,
+            "logprob_p99_abs": 0.15227624893188405,
+            "logprob_max_abs": 0.9984285831451416,
+            "ratio_min": 0.593685207085327,
+            "ratio_max": 2.7140136290161285,
+            "ratio_outside_fraction": 0.003315013521765681,
+            "effective_clip_fraction": 0.000697897583529617,
+            "extreme_logratio_fraction": 0.0,
+            "ESS_fraction": 0.9980330344275871,
+            "KL_sum": 7.196957560390865,
+            "KL_token_mean": 0.0006278424112702491
+          },
+          "allocated_peak_bytes": 28247875072,
+          "reserved_peak_bytes": 28521267200,
+          "GPU_util": {
+            "utilization_percent": {
+              "mean": 91.16666666666667,
+              "max": 98.0
+            },
+            "memory_MiB": {
+              "mean": 25222.666666666668,
+              "max": 27729.0
+            },
+            "power_W": {
+              "mean": 309.51000000000005,
+              "max": 359.6
+            }
+          },
+          "OOM": false,
+          "matmul_precision": "highest",
+          "allow_tf32": false,
+          "parameter_dtype": "torch.float32",
+          "autocast_dtype": "bfloat16",
+          "gradient_vs_IEEE": {
+            "reference_norm": 14359.791890680812,
+            "candidate_norm": 14451.29322744582,
+            "difference_L2": 2114.9508522122296,
+            "relative_L2": 0.14728283448068533,
+            "cosine": 0.9892427307315511,
+            "max_abs": 78.18708038330078,
+            "elements": 1777088000,
+            "absolute_difference_histogram": {
+              "upper_bounds": [
+                0.0,
+                1e-08,
+                1e-07,
+                1e-06,
+                1e-05,
+                0.0001,
+                "inf"
+              ],
+              "counts": [
+                227471283,
+                405863,
+                3578142,
+                31891429,
+                106484672,
+                73338755,
+                1333917856
+              ]
+            }
+          },
+          "same_token_vs_IEEE": {
+            "logprob_mean_abs": 0.026443276433782022,
+            "logprob_p99_abs": 0.16559418678283622,
+            "logprob_max_abs": 1.027240514755249,
+            "KL_mean_abs": 0.0005641403240510514,
+            "KL_max_abs": 0.012212597270263359
+          }
+        }
+      ],
+      "thresholds": null,
+      "gradient_normalization": "sum, denominator1, no clipping and no optimizer.step",
+      "half_split_noise": {
+        "rows": [
+          {
+            "seed": 202611080,
+            "half_a_count": 8,
+            "half_c_count": 8,
+            "half_difference_L2": 14419.979493735684,
+            "precision_difference_over_half_difference": {
+              "ieee": [
+                0.0,
+                0.0
+              ],
+              "tf32": [
+                0.06419211165503719,
+                0.06419211165503719
+              ],
+              "bf16": [
+                0.14660563179256383,
+                0.14666809014055845
+              ]
+            }
+          },
+          {
+            "seed": 202611081,
+            "half_a_count": 8,
+            "half_c_count": 8,
+            "half_difference_L2": 14696.673717876742,
+            "precision_difference_over_half_difference": {
+              "ieee": [
+                0.0,
+                0.0
+              ],
+              "tf32": [
+                0.0629835669957949,
+                0.0629835669957949
+              ],
+              "bf16": [
+                0.143845488080983,
+                0.14390677052588066
+              ]
+            }
+          },
+          {
+            "seed": 202611082,
+            "half_a_count": 8,
+            "half_c_count": 8,
+            "half_difference_L2": 14349.534621291228,
+            "precision_difference_over_half_difference": {
+              "ieee": [
+                0.0,
+                0.0
+              ],
+              "tf32": [
+                0.06450724418280362,
+                0.06450724418280362
+              ],
+              "bf16": [
+                0.14732534956068868,
+                0.14738811452980194
+              ]
+            }
+          },
+          {
+            "seed": 202611083,
+            "half_a_count": 8,
+            "half_c_count": 8,
+            "half_difference_L2": 14277.14633085884,
+            "precision_difference_over_half_difference": {
+              "ieee": [
+                0.0,
+                0.0
+              ],
+              "tf32": [
+                0.06483431018175642,
+                0.06483431018175642
+              ],
+              "bf16": [
+                0.14807232167576756,
+                0.1481354048771597
+              ]
+            }
+          },
+          {
+            "seed": 202611084,
+            "half_a_count": 8,
+            "half_c_count": 8,
+            "half_difference_L2": 14219.25775600201,
+            "precision_difference_over_half_difference": {
+              "ieee": [
+                0.0,
+                0.0
+              ],
+              "tf32": [
+                0.0650982596707277,
+                0.0650982596707277
+              ],
+              "bf16": [
+                0.14867514467993836,
+                0.1487384847018122
+              ]
+            }
+          }
+        ],
+        "wall_seconds": 196.83606410212815,
+        "forward_backward_seconds": 41.70110289379954,
+        "method": "same per-trajectory IEEE gradient used for all five fixed signed half-sums; CPUfloat64 accumulation; numerically not five separate FP32 accumulation orders",
+        "GPU_util": {
+          "utilization_percent": {
+            "mean": 22.44632768361582,
+            "max": 100.0
+          },
+          "memory_MiB": {
+            "mean": 23078.42372881356,
+            "max": 24559.0
+          },
+          "power_W": {
+            "mean": 118.67587570621478,
+            "max": 349.35
+          }
+        }
+      },
+      "optimizer_steps": 0,
+      "reference_has_gradient": false
+    }
+  ],
+  "private_result_sha256": {
+    "RESULT.json@0": "b6cbc0d1482c633816f9401fa131a65b3fe2fa0d760d2cdbd95343007f1c7925"
+  },
+  "measurement_scope": "saved native GRPO update2, actual P1 Actor and P0 Reference, A fused observation and C2; no training-resume or numerical acceptance thresholds",
+  "notes": [
+    "precision gradients are sums; DP gradients divide by global sequence count",
+    "first measured repetition includes any first-use effects; both repetitions reported",
+    "noise half differences reuse per-item IEEE gradients with CPUfloat64 summation; no inference-generation costs included"
+  ],
+  "source_commit": "9d518ea",
+  "additional_scope": "Sub16 is the first16 in the fixed stratified Sub64 order: horizon1404..3985 versus Sub64 up to17143. Differences between Sub16 and Sub64 are not a pure batch-size effect."
+}
