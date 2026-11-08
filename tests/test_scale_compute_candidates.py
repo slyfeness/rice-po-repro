@@ -8,7 +8,7 @@ from ricepo.backends import TransformersEntropyProvider
 class Candidates(unittest.TestCase):
  def test_fused_reject_clears_gradients_before_step(self):
   m=torch.nn.Linear(1,1,bias=False); opt=torch.optim.AdamW(m.parameters(),lr=1e-6)
-  items=[UpdateItem(str(i),'p',(1,2),(False,True),(0.,1.),(0.,-100.)) for i in range(2)]
+  items=[UpdateItem(str(i),'p',(1,2),(False,True),(0.,1.),(0.,-2.)) for i in range(2)]
   before=m.weight.detach().clone(); reports=[]
   guard=FusedOriginalProbabilityGuard(outside_max=.01,branch_gate=lambda:None,save_report=reports.append)
   def forward(model,item):

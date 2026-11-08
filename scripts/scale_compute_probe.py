@@ -1,5 +1,5 @@
 """Explicit Slurm-only saved-native probes. No generation/retrieval/scale training."""
-import argparse,json,os,time,gc,math
+import argparse,json,os,time,gc,math,threading
 from pathlib import Path
 
 def write(p,d):
@@ -34,13 +34,24 @@ def main(a):
  binding=json.loads((Path(plan['source_run'])/'binding.json').read_text())
  policy_id,evidence=identify(actor,binding['behavior'])
  if policy_id!=next(iter(plan['items'].values()))['policy_version']:raise ValueError('frozen actor identity mismatch')
- result={'status':'IN_PROGRESS','plan_sha256':file_sha256(a.plan),'new_generation':0,'new_retrieval':0,'rows':[],'initialization_seconds':time.perf_counter()-start}
+ nvml={'status':'NOT_MEASURED','peak_used_bytes':None}; stop_monitor=threading.Event()
+ try:
+  import pynvml
+  pynvml.nvmlInit();uid=str(torch.cuda.get_device_properties(0).uuid);handle=pynvml.nvmlDeviceGetHandleByUUID(uid if uid.startswith('GPU-') else 'GPU-'+uid)
+  def poll():
+   while not stop_monitor.is_set():
+    used=pynvml.nvmlDeviceGetMemoryInfo(handle).used
+    nvml.update(status='MEASURED',peak_used_bytes=max(used,nvml['peak_used_bytes'] or 0));stop_monitor.wait(.2)
+  threading.Thread(target=poll,daemon=True).start()
+ except Exception as exc:nvml['reason']=type(exc).__name__
+ result={'status':'IN_PROGRESS' ,'plan_sha256':file_sha256(a.plan),'new_generation':0,'new_retrieval':0,'rows':[],'NVML':nvml,'initialization_seconds':time.perf_counter()-start}
  try:
   if a.mode=='entropy':
    from ricepo.backends import TransformersEntropyProvider
    from ricepo.completed_credit_recovery import decode_trajectory
    from ricepo.credit import select_anchors
    ts=[decode_trajectory(x,5) for x in plan['trajectories']];policy=ts[0].policy_version
+   if any(t.policy_version!=policy_id for t in ts):raise ValueError('entropy behavior identity mismatch')
    opts=dict(model=actor,policy_version_getter=lambda:policy,device='cuda',chunk_size=plan['entropy_chunk_size'],max_context_tokens=32768,model_call_kwargs={})
    providers=[TransformersEntropyProvider(**opts),TransformersEntropyProvider(**opts,projection_mode='summary_positions_v1')]
    def run(provider,trajectories):
@@ -67,16 +78,18 @@ def main(a):
   reference=AutoModelForCausalLM.from_pretrained(plan['actor'],dtype=torch.float32,local_files_only=True).eval().requires_grad_(False).to('cuda');enable_eval_layer_checkpointing(actor)
   items=[UpdateItem(**{k:tuple(v) if isinstance(v,list) else v for k,v in plan['items'][label].items()}) for label in ('short','median','largest')]
   opts=dict(reference_model=reference,device='cuda',logit_chunk_size=plan['logit_chunk_size'],max_context_tokens=32768,policy_call_kwargs={},reference_call_kwargs={})
+  from scripts.hf_compute_benchmark import Timers
   def calculate(item,projection,offload,separate):
+   timers=Timers(torch)
    actor.zero_grad(set_to_none=True);gc.collect();torch.cuda.empty_cache();torch.cuda.reset_peak_memory_stats();torch.cuda.synchronize();start=time.perf_counter();old_seconds=0;teacher=None
    if separate:
     s=time.perf_counter();teacher=sampled_old_log_probs(actor,item.token_ids,item.generated_mask,device='cuda',logit_chunk_size=plan['logit_chunk_size'],max_context_tokens=32768,policy_call_kwargs={},projection_mode=projection).detach().cpu();torch.cuda.synchronize();old_seconds=time.perf_counter()-s
-   p,k=make_forward(**opts,projection_mode=projection,saved_tensor_policy=offload)(actor,item)
+   p,k=make_forward(**opts,projection_mode=projection,saved_tensor_policy=offload,measure=timers)(actor,item)
    old=torch.tensor([item.old_log_probs],device='cuda');adv=torch.tensor([item.advantages],device='cuda');mask=torch.tensor([item.generated_mask],device='cuda')
    lp=p.detach().cpu();kl=k.detach().cpu();score=lp if teacher is None else teacher
    risk=mismatch_statistics(old[mask].cpu().tolist(),score[0,mask[0].cpu()].tolist(),adv[mask].cpu().tolist())
-   loss=ppo_loss(p,old,adv,mask,clip_epsilon=.2,kl_coefficient=.001,reference_kl=k,reduction='sequence_mean');lossval=float(loss.detach());loss.backward();torch.cuda.synchronize()
-   row=dict(seconds=time.perf_counter()-start,old_seconds=old_seconds,loss=lossval,risk=risk,peak_allocated=torch.cuda.max_memory_allocated(),peak_reserved=torch.cuda.max_memory_reserved(),finite=all(v.grad is None or bool(torch.isfinite(v.grad).all()) for v in actor.parameters()))
+   loss=ppo_loss(p,old,adv,mask,clip_epsilon=.2,kl_coefficient=.001,reference_kl=k,reduction='sequence_mean');lossval=float(loss.detach());torch.cuda.synchronize();back_start=time.perf_counter();loss.backward();torch.cuda.synchronize();back_seconds=time.perf_counter()-back_start
+   row=dict(seconds=time.perf_counter()-start,backward_wall_seconds=back_seconds,cuda_stage_seconds=timers.totals(),old_seconds=old_seconds,loss=lossval,risk=risk,peak_allocated=torch.cuda.max_memory_allocated(),peak_reserved=torch.cuda.max_memory_reserved(),finite=all(v.grad is None or bool(torch.isfinite(v.grad).all()) for v in actor.parameters()))
    if not risk_screen(risk):actor.zero_grad(set_to_none=True);raise ValueError('saved original risk failed')
    return row,lp,kl
   for label,item in zip(('short','median','largest'),items):
@@ -90,7 +103,10 @@ def main(a):
      if not passed:raise ValueError(name+' numerical failure; stop expansion')
     del grad
   result['status']='PASS';result['C2']='NOT_RUN: select threshold only after paired C1 measurements';result['offline_optimizer_step']='NOT_RUN_PENDING_FORWARD_GRADIENT_RESULTS'
- finally:write(a.output/'RESULT.json',result)
+ except BaseException as exc:
+  result.update(status='FAIL',error_type=type(exc).__name__,error=str(exc));raise
+ finally:
+  stop_monitor.set();write(a.output/'RESULT.json',result)
 
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--mode',choices=['prepare','entropy','compute'],required=True);p.add_argument('--root');p.add_argument('--plan',type=Path);p.add_argument('--output',type=Path,required=True);main(p.parse_args())
