@@ -1,0 +1,25 @@
+method,query_count,precision,dual_HF,dual_generation,HF_speed_factor,generation_speed_factor,estimated_seconds,estimated_minutes,evidence,joint_HF_configuration_measured,full512_precision_measured,factor_source
+GRPO,128,ieee,False,False,1.0,1.0,8949.0,149.15,ESTIMATED,True,True,
+GRPO,128,ieee,False,True,1.0,1.575,8544.857142857143,142.4142857142857,ESTIMATED,True,True,
+GRPO,128,ieee,True,False,1.986531664936891,1.0,5531.825984479638,92.19709974132729,ESTIMATED,True,True,
+GRPO,128,ieee,True,True,1.986531664936891,1.575,5127.683127336781,85.46138545561301,ESTIMATED,True,True,
+GRPO,128,tf32,False,False,1.6264112411872915,1.0,6298.787285371209,104.97978808952014,ESTIMATED,True,False,
+GRPO,128,tf32,False,True,1.6264112411872915,1.575,5894.644428228352,98.24407380380586,ESTIMATED,True,False,
+GRPO,128,tf32,True,False,3.2309174308278656,1.0,4197.735639278428,69.96226065464046,ESTIMATED,False,False,
+GRPO,128,tf32,True,True,3.2309174308278656,1.575,3793.592782135571,63.22654636892618,ESTIMATED,False,False,
+GRPO,128,bf16,False,False,3.0259394312177137,1.0,4342.004538561076,72.36674230935127,ESTIMATED,True,False,
+GRPO,128,bf16,False,True,3.0259394312177137,1.575,3937.8616814182187,65.63102802363697,ESTIMATED,True,False,
+GRPO,128,bf16,True,False,6.011124496295113,1.0,3212.7109445563847,53.545182409273075,ESTIMATED,False,False,
+GRPO,128,bf16,True,True,6.011124496295113,1.575,2808.568087413528,46.809468123558794,ESTIMATED,False,False,
+RICE_PO_historical32_proxy,32,ieee,False,False,1.0,1.0,7614.265006929636,126.9044167821606,ESTIMATED,False,False,saved GRPO originals; RICE branch scoring not measured
+RICE_PO_historical32_proxy,32,ieee,False,True,1.0,1.575,6753.57150408497,112.55952506808283,ESTIMATED,False,False,saved GRPO originals; RICE branch scoring not measured
+RICE_PO_historical32_proxy,32,ieee,True,False,1.986531664936891,1.0,6517.907220400366,108.63178700667277,ESTIMATED,False,False,saved GRPO originals; RICE branch scoring not measured
+RICE_PO_historical32_proxy,32,ieee,True,True,1.986531664936891,1.575,5657.2137175557,94.286895292595,ESTIMATED,False,False,saved GRPO originals; RICE branch scoring not measured
+RICE_PO_historical32_proxy,32,tf32,False,False,1.6264112411872915,1.0,6763.977215776661,112.73295359627768,ESTIMATED,False,False,saved GRPO originals; RICE branch scoring not measured
+RICE_PO_historical32_proxy,32,tf32,False,True,1.6264112411872915,1.575,5903.283712931995,98.38806188219992,ESTIMATED,False,False,saved GRPO originals; RICE branch scoring not measured
+RICE_PO_historical32_proxy,32,tf32,True,False,3.2309174308278656,1.0,6089.880924036252,101.49801540060419,ESTIMATED,False,False,saved GRPO originals; RICE branch scoring not measured
+RICE_PO_historical32_proxy,32,tf32,True,True,3.2309174308278656,1.575,5229.187421191586,87.15312368652643,ESTIMATED,False,False,saved GRPO originals; RICE branch scoring not measured
+RICE_PO_historical32_proxy,32,bf16,False,False,3.0259394312177137,1.0,6136.167806227251,102.26946343712085,ESTIMATED,False,False,saved GRPO originals; RICE branch scoring not measured
+RICE_PO_historical32_proxy,32,bf16,False,True,3.0259394312177137,1.575,5275.474303382585,87.92457172304309,ESTIMATED,False,False,saved GRPO originals; RICE branch scoring not measured
+RICE_PO_historical32_proxy,32,bf16,True,False,6.011124496295113,1.0,5773.848000609705,96.23080001016176,ESTIMATED,False,False,saved GRPO originals; RICE branch scoring not measured
+RICE_PO_historical32_proxy,32,bf16,True,True,6.011124496295113,1.575,4913.154497765039,81.88590829608398,ESTIMATED,False,False,saved GRPO originals; RICE branch scoring not measured

@@ -1,0 +1,12 @@
+{
+  "type": "CPU arithmetic, no new model numerics",
+  "measured_DP_ratios": {
+    "64": 2.06677537231992,
+    "512": 1.986531664936891
+  },
+  "measured_precision_means": {
+    "ieee": 686.2428121864796,
+    "tf32": 421.93683541286737,
+    "bf16": 226.78669807687402
+  }
+}
