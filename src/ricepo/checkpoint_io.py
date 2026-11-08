@@ -16,6 +16,8 @@ def state_digest(value):
             h.update(json.dumps([str(v.dtype),list(v.shape)]).encode())
             raw=v.detach().contiguous().reshape(-1).view(torch.uint8)
             for block in raw.split(4*1024*1024):h.update(block.cpu().numpy().tobytes())
+        elif isinstance(v,bytes):
+            h.update(b'bytes:');h.update(str(len(v)).encode());h.update(b':');h.update(v)
         elif isinstance(v,dict):
             for key in sorted(v,key=lambda k:(type(k).__name__,str(k))):
                 h.update(json.dumps([type(key).__name__,str(key)]).encode());visit(v[key])

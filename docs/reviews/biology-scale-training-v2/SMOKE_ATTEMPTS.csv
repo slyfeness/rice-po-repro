@@ -15,3 +15,4 @@ job_id,method,state,exit_code,allocation_seconds,gpus,last_stage,optimizer_steps
 177462,grpo,FAILED,1:0,87,2,initial_rng_serialization,0
 177469,ricepo,FAILED,1:0,121,2,first_D0_before_Diver_restore,0
 177470,grpo,FAILED,1:0,122,2,first_D0_before_Diver_restore,0
+177482,grpo,FAILED,1:0,537,2,checkpoint_digest_after_optimizer_step,1
