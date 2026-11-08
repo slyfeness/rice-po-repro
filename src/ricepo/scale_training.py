@@ -14,7 +14,12 @@ def run_tag(stage,method,systems_variant=KIND):
     if systems_variant not in (KIND,V2):raise ValueError('unknown scale systems variant')
     tag=os.environ.get('RICE_SCALE_RUN_TAG')
     if tag is not None:
-        if stage!='training' or re.fullmatch(r'biology-scale-v[2-9][0-9]*-training-'+re.escape(method),tag) is None:
+        allowed=(stage=='training' and re.fullmatch(r'biology-scale-v[2-9][0-9]*-training-'+re.escape(method),tag))
+        # A failed smoke directory is immutable evidence.  A retry therefore
+        # receives its own v2 namespace rather than overwriting it.
+        allowed=allowed or (systems_variant==V2 and stage=='smoke'
+                            and re.fullmatch(r'biology-scale-v2-smoke-r[1-9][0-9]*-'+re.escape(method),tag))
+        if not allowed:
             raise ValueError('explicit recovery run tag differs from stage/method or escapes the run namespace')
         return tag
     if systems_variant==V2:return f'biology-scale-v2-{stage}-{method}'

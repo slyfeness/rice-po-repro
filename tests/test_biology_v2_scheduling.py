@@ -34,6 +34,9 @@ class DualEngineSchedulingTests(unittest.TestCase):
         with patch.dict('os.environ',{},clear=True):
             self.assertEqual(run_tag('smoke','ricepo','biology_scale_training_v2'),
                              'biology-scale-v2-smoke-ricepo')
+        with patch.dict('os.environ',{'RICE_SCALE_RUN_TAG':'biology-scale-v2-smoke-r1-ricepo'},clear=True):
+            self.assertEqual(run_tag('smoke','ricepo','biology_scale_training_v2'),
+                             'biology-scale-v2-smoke-r1-ricepo')
 
     def test_v2_worker_keeps_topology_metadata_out_of_recipe_resolution(self):
         from ricepo.config import load_config, resolve
