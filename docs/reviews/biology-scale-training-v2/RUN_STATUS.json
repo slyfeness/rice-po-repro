@@ -1,5 +1,5 @@
 {
-  "status": "PHASE_RESIDENCY_SOURCE_VALIDATED_GPU_PREFLIGHT_PENDING",
+  "status": "PHASE_RESIDENCY_PREFLIGHT_COMPLETE_RETRIEVAL_RECHECK_RUNNING",
   "new_lineage_started": false,
   "four_query_smoke": "NOT_RUN",
   "formal_128_query_updates": {
@@ -60,6 +60,17 @@
       "scope": "No model, retrieval, rollout, optimizer step, or GPU execution."
     },
     {
+      "job_id": "177376",
+      "purpose": "Longest-history GPU1 HF forward/backward after Diver phase offload to CPU",
+      "state": "COMPLETED",
+      "exit_code": "0:0",
+      "elapsed_seconds": 78,
+      "gpus": 2,
+      "optimizer_steps": 0,
+      "oom": false,
+      "report": "PHASE_RESIDENCY_PREFLIGHT.json"
+    },
+    {
       "job_id": "177287",
       "purpose": "CPU TDD red check for new v2 smoke namespace",
       "state": "FAILED",
@@ -96,5 +107,5 @@
   ],
   "queue_visibility": "squeue returned permission denied; terminal states established by sacct.",
   "automatic_restart": false,
-  "implementation_status": "Two-rank HF/dual-engine source integration now has an explicit phase-residency path and a runnable v2 smoke namespace. GPU model residency, NCCL, retrieval restoration, dual-engine validation and the corrected longest-history preflight remain unrun."
+  "implementation_status": "The longest-history phase-offload preflight completed without OOM. Retrieval restoration, online two-rank NCCL, dual-engine validation, four-query smoke, and 128-query training remain unrun."
 }
