@@ -1,0 +1,42 @@
+{
+  "status": "STOPPED_OOM",
+  "new_lineage_started": false,
+  "four_query_smoke": "NOT_RUN",
+  "formal_128_query_updates": {
+    "ricepo": 0,
+    "grpo": 0
+  },
+  "old_runs": [
+    {
+      "method": "grpo",
+      "job_id": "176768",
+      "slurm_state": "CANCELLED",
+      "computed_updates": 2,
+      "persisted_updates": 2,
+      "resume_attempted": false
+    },
+    {
+      "method": "ricepo",
+      "job_id": "176798",
+      "slurm_state": "CANCELLED",
+      "computed_updates": 1,
+      "persisted_updates": 0,
+      "P1_actor_only_is_recoverable_checkpoint": false,
+      "resume_attempted": false
+    }
+  ],
+  "old_progress_source": "Preserved prior validated records; job cancellation rechecked with sacct.",
+  "new_jobs": [
+    {
+      "job_id": "177080",
+      "purpose": "saved longest-history GPU1 memory preflight with Diver resident",
+      "state": "FAILED",
+      "exit_code": "1:0",
+      "elapsed_seconds": 149,
+      "gpus": 2
+    }
+  ],
+  "queue_visibility": "squeue returned permission denied; terminal states established by sacct.",
+  "automatic_restart": false,
+  "implementation_status": "Draft two-rank HF/dual-engine integration remains local and unvalidated online; it is not enabled by this result."
+}

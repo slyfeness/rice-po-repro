@@ -1,0 +1,57 @@
+{
+  "status": "ERROR",
+  "horizon": 16947,
+  "action_tokens": 3411,
+  "optimizer_steps": 0,
+  "precision": "FP32 weights, TF32 GEMM",
+  "projection": "action_positions_v1",
+  "Diver_resident": true,
+  "actor_state_sha256": "517a10e399f0fadbfe3a8b3e3ca7bbe3ccd5479bfa5a866f81f682520ccf0626",
+  "error_type": "OutOfMemoryError",
+  "OOM": true,
+  "GPU_util": {
+    "utilization_percent": {
+      "mean": 69.58064516129032,
+      "max": 100.0
+    },
+    "memory_MiB": {
+      "mean": 63115.45161290323,
+      "max": 80927.0
+    },
+    "power_W": {
+      "mean": 211.8496774193549,
+      "max": 415.72
+    }
+  },
+  "job_id": "177080",
+  "slurm_state": "FAILED",
+  "exit_code": "1:0",
+  "allocation_elapsed_seconds": 149,
+  "allocated_gpus": 2,
+  "allocated_gpu_hours": 0.08277777777777778,
+  "failure_phase": "PPO backward",
+  "completed_HF_seconds": null,
+  "checkpoint_created": false,
+  "generated_tokens": 0,
+  "retrieval_calls": 0,
+  "private_evidence_sha256": {
+    "result": "3cc765f9aed283a777fb41e74d2e88c2dcdb27a4878d4442c17b4c4d8ddcb8e6",
+    "stderr": "aa3dabd63fe89e4328473801460e660de180155999b5c0531e58ab6988722128",
+    "executed_script": "8f2f3b51d0f47860fec8adaa8e284645cbb5585a7790a700fb8c7f622c0ecfb4"
+  },
+  "execution_core_commit": "68c1b4aca1938ffe172b0237e2016a47135f3842",
+  "oom_diagnostic": {
+    "requested_allocation_GiB": 12.84,
+    "free_GiB_at_failure": 12.8,
+    "device_capacity_GiB": 79.25,
+    "process_memory_in_use_GiB": 66.44,
+    "torch_allocated_GiB": 65.35,
+    "torch_reserved_unallocated_MiB": 605.76
+  },
+  "measurement_notes": [
+    "NVML statistics sample the HF probe interval, not the entire allocation.",
+    "OOM allocation values are rounded runtime diagnostics; they do not establish a sufficient safety margin.",
+    "The saved P0 trajectory was scored with its original IDs, q and advantages; no generation or reward recomputation occurred.",
+    "No optimizer was created or stepped in this memory preflight."
+  ]
+}
