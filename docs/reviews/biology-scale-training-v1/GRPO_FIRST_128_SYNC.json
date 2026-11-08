@@ -1,0 +1,13 @@
+{
+  "observed_stage": "first committed 128-query GRPO update; subsequent real P1 sampling has started",
+  "policy": "c5f4c5ce1ed733b961716e5d1050283e88b9bd5d30de1f71d783c27459313093",
+  "sampler_load_seconds": 255.85208710469306,
+  "worker_ready_file_sha256": "596796ffb609ea5f6dc6e589e456a8ea97196730ffe771a95f8714afe22ce3d1",
+  "live_snapshot_reloaded_by_HF_before_publish": true,
+  "worker_policy_equals_new_policy": true,
+  "worker_assets_match_published_snapshot": true,
+  "actual_sampler_gemm_precision": "high",
+  "HF_expandable_allocator_in_sampler": false,
+  "cache_policy": "new process; no KV reuse across model snapshots",
+  "P1_HF_probability_check": "pending next real original batch; not duplicated for a diagnostic"
+}

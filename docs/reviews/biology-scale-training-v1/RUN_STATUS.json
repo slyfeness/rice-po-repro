@@ -1,5 +1,5 @@
 {
-  "observed_at_utc": "2026-11-08T00:52:22.252725+00:00",
+  "observed_at_utc": "2026-11-08T01:45:16.460065+00:00",
   "sampling_plan_source_commit": "b0ee0bb0f789f803770566572ef8fd1499f14550",
   "runs": {
     "capacity_ricepo": {
@@ -665,6 +665,26 @@
       "job_ids": [
         "176798"
       ],
+      "completed_credit_recovery": {
+        "evidence_sha256": {
+          "advantages.json": "bd0e0d7a5b02c788b32193356dcbb501c4f174702e69bb4323d3b75bd252ecd9",
+          "anchors.json": "a338fa5b8b86c98e040872b6bb2bc37d7cd24bba461c6f98a5816a3f3a7e07ac",
+          "counterfactual-trajectories.json": "9d6a8ceb09869d6806abbdac272e37b0d879149c785ad8c7334166f784f5326b",
+          "summary-entropies.json": "6d18075bef663196c5d1508573636c624028c76ad74b1c3a2af70f8b7dcd3ae8",
+          "trajectories.json": "ef10515deffe758d7d1456eb697d33d9155d294fdece3c55abc6f661afb8fba0"
+        },
+        "global_update": 0,
+        "independent_new_samples": false,
+        "initial_state_complete_sha256": "5be2bdc52f50069de834069ab8d7838bff7def6b915d786e6354a0393e7a566e",
+        "new_branches": 2555,
+        "new_sampling": false,
+        "originals": 512,
+        "policy": "same uncommitted global update; native IDs/q/rewards/masks and CPU-rebuilt credit, not cross-update reuse",
+        "source_alias": "biology-scale-v1-training-ricepo",
+        "source_binding_sha256": "b0efa71857af8c51e3a89e2402c9afb5af2fd317564d7c00abcba0ce3e104135",
+        "source_code_sha256": "7a0dc988102e0bb1aea43bd4e2cf96382be7fba0b10c20cef25de8d3a57d2e51",
+        "source_optimizer_steps_proven_absent": true
+      },
       "recovery_parent": {
         "alias": "biology-scale-v1-training-ricepo",
         "completed_exclusive_phase_seconds": {
@@ -688,17 +708,26 @@
         },
         "scope": "prior paid sampling and failed/stopped attempt costs; not new sampling or completed optimizer updates"
       },
-      "active": null,
+      "active": {
+        "phase": "update",
+        "utc": "2026-11-08T01:01:19.350353+00:00",
+        "iteration": 0
+      },
       "phase_seconds": {
         "initialization": {
-          "unattributed": 59.16365763545036
+          "unattributed": 59.16365763545036,
+          "model_lifecycle": 7.165016442537308
+        },
+        "0": {
+          "HF_scoring_PPO": 841.9985308274627,
+          "model_lifecycle": 0.030067093670368195
         }
       }
     },
     "training_grpo": {
       "stage": "training",
       "method": "grpo",
-      "computed_updates": 0,
+      "computed_updates": 1,
       "persisted_updates": 0,
       "status": "RUNNING",
       "execution_source_commits": [
@@ -745,18 +774,87 @@
         "scope": "prior paid sampling and failed/stopped attempt costs; not new sampling or completed optimizer updates"
       },
       "active": {
-        "phase": "update_forward",
-        "utc": "2026-11-08T00:52:18.619343+00:00",
-        "iteration": 0
+        "phase": "original_generation_batch",
+        "utc": "2026-11-08T01:37:22.668755+00:00",
+        "iteration": 1
       },
       "phase_seconds": {
         "0": {
-          "HF_scoring_PPO": 2900.0126831568778,
-          "model_lifecycle": 0.01583343930542469
+          "HF_scoring_PPO": 7259.133949333802,
+          "model_lifecycle": 7.164859710261226,
+          "unattributed": 0.6465178076177835
         },
         "initialization": {
           "unattributed": 58.557793164625764,
           "model_lifecycle": 7.095859546214342
+        },
+        "1": {
+          "retrieval": 14.349307203665376,
+          "model_lifecycle": 256.1099115088582
+        }
+      },
+      "latest_committed_update": {
+        "new_policy_version": "c5f4c5ce1ed733b961716e5d1050283e88b9bd5d30de1f71d783c27459313093",
+        "optimizer": {
+          "activation_checkpointing": {
+            "actual_recomputation_observed": true,
+            "checkpoint_forwards": 14336,
+            "layer_executions": 28672,
+            "mode": "eval_layers_v1",
+            "model_training_mode": false
+          },
+          "actual_state_dict_changed": true,
+          "effective_clip_fraction": 0.0,
+          "global_generated_tokens": 950088,
+          "global_sequences": 512,
+          "grad_norm_before_clip": 255.4680938720703,
+          "hf_precision": {
+            "cudnn_allow_tf32": false,
+            "matmul_allow_tf32": false,
+            "matmul_precision": "highest"
+          },
+          "negative_advantages": 358872,
+          "negative_advantages_fraction": 0.37772501073584763,
+          "normalized_loss": -126.87045727670193,
+          "optimizer_steps": 1,
+          "outside_clip_fraction": 3.1576022431606337e-06,
+          "parameter_probe_changed": true,
+          "parameter_probe_coordinates": "first, per-axis midpoint, last of every trainable tensor",
+          "parameter_probe_max_abs_delta": 1.9073486328125e-06,
+          "policy_loss": -126.87045727670193,
+          "positive_advantages": 384360,
+          "positive_advantages_fraction": 0.40455199939374037,
+          "ratio_max": 1.2295469045639038,
+          "ratio_mean": 1.00000390436741,
+          "ratio_min": 0.6903653144836426,
+          "reference_kl": 0.0,
+          "steps": [
+            {
+              "effective_clip_count": 0,
+              "effective_clip_fraction": 0.0,
+              "epoch": 0,
+              "generated_tokens": 950088,
+              "grad_norm_before_clip": 255.4680938720703,
+              "loss_denominator": 512,
+              "minibatch_start": 0,
+              "negative_advantages": 358872,
+              "normalized_loss": -126.87045727670193,
+              "outside_clip_count": 3,
+              "outside_clip_fraction": 3.1576022431606337e-06,
+              "policy_loss": -126.87045727670193,
+              "positive_advantages": 384360,
+              "ratio_max": 1.2295469045639038,
+              "ratio_mean": 1.00000390436741,
+              "ratio_min": 0.6903653144836426,
+              "reference_kl": 0.0,
+              "reference_kl_token_mean": 0.0,
+              "sequences": 512,
+              "zero_advantages": 206856
+            }
+          ],
+          "zero_advantages": 206856,
+          "zero_advantages_fraction": 0.217722989870412,
+          "zero_gradient_all_steps": false
         }
       }
     }
@@ -821,8 +919,8 @@
     "176762.batch|COMPLETED|46|2026-11-07T23:26:14|2026-11-07T23:26:14|2026-11-07T23:27:00|cpu=2,mem=16G,node=1",
     "176767|COMPLETED|22|2026-11-07T23:33:13|2026-11-07T23:33:13|2026-11-07T23:33:35|billing=2,cpu=2,mem=16G,node=1",
     "176767.batch|COMPLETED|22|2026-11-07T23:33:13|2026-11-07T23:33:13|2026-11-07T23:33:35|cpu=2,mem=16G,node=1",
-    "176768|RUNNING|4727|2026-11-07T23:33:35|2026-11-07T23:33:35|Unknown|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
-    "176768.batch|RUNNING|4727|2026-11-07T23:33:35|2026-11-07T23:33:35|Unknown|cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176768|RUNNING|7901|2026-11-07T23:33:35|2026-11-07T23:33:35|Unknown|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176768.batch|RUNNING|7901|2026-11-07T23:33:35|2026-11-07T23:33:35|Unknown|cpu=16,gres/gpu=2,mem=192G,node=1",
     "176768.0|COMPLETED|0|2026-11-08T00:33:19|2026-11-08T00:33:19|2026-11-08T00:33:19|cpu=1,gres/gpu=2,mem=192G,node=1",
     "176790|FAILED|1472|2026-11-08T00:17:29|2026-11-08T00:17:29|2026-11-08T00:42:01|billing=4,cpu=4,mem=128G,node=1",
     "176790.batch|FAILED|1472|2026-11-08T00:17:29|2026-11-08T00:17:29|2026-11-08T00:42:01|cpu=4,mem=128G,node=1",
@@ -834,8 +932,9 @@
     "176796.batch|COMPLETED|33|2026-11-08T00:45:27|2026-11-08T00:45:27|2026-11-08T00:46:00|cpu=2,mem=64G,node=1",
     "176797|COMPLETED|10|2026-11-08T00:48:23|2026-11-08T00:48:23|2026-11-08T00:48:33|billing=2,cpu=2,mem=16G,node=1",
     "176797.batch|COMPLETED|10|2026-11-08T00:48:23|2026-11-08T00:48:23|2026-11-08T00:48:33|cpu=2,mem=16G,node=1",
-    "176798|RUNNING|229|2026-11-08T00:48:33|2026-11-08T00:48:33|Unknown|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
-    "176798.batch|RUNNING|229|2026-11-08T00:48:33|2026-11-08T00:48:33|Unknown|cpu=16,gres/gpu=2,mem=192G,node=1"
+    "176798|RUNNING|3403|2026-11-08T00:48:33|2026-11-08T00:48:33|Unknown|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176798.batch|RUNNING|3403|2026-11-08T00:48:33|2026-11-08T00:48:33|Unknown|cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176798.0|COMPLETED|0|2026-11-08T01:05:08|2026-11-08T01:05:08|2026-11-08T01:05:08|cpu=1,gres/gpu=2,mem=192G,node=1"
   ],
   "GPU_allocations": [
     {
@@ -1031,8 +1130,8 @@
       "job_id": "176768",
       "state": "RUNNING",
       "allocated_gpus": 2,
-      "elapsed_seconds": 4727,
-      "GPU_hours": 2.6261111111111113
+      "elapsed_seconds": 7901,
+      "GPU_hours": 4.389444444444444
     },
     {
       "job_id": "176790",
@@ -1059,12 +1158,12 @@
       "job_id": "176798",
       "state": "RUNNING",
       "allocated_gpus": 2,
-      "elapsed_seconds": 229,
-      "GPU_hours": 0.1272222222222222
+      "elapsed_seconds": 3403,
+      "GPU_hours": 1.8905555555555555
     }
   ],
-  "measured_GPU_hours_at_snapshot": 17.51638888888889,
+  "measured_GPU_hours_at_snapshot": 21.043055555555554,
   "sampling_note": "training generation tokens exclude reused branch history and environment markers; submitted input counts include full repeated native context, not measured uncached prefill FLOPs",
   "timing_note": "main-process exclusive spans only; evaluation includes its nested generation/tools. Uninstrumented verification/serialization remains unattributed. In-flight spans excluded from completed-phase totals.",
-  "collection_started_at_utc": "2026-11-08T00:51:57.384769+00:00"
+  "collection_started_at_utc": "2026-11-08T01:43:11.975749+00:00"
 }
