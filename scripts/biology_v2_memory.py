@@ -1,4 +1,4 @@
-"""One saved-native GPU1 longest-history forward/backward with resident Diver."""
+"""One saved-native GPU1 longest-history backward after Diver phase offload."""
 import argparse,json,os,time
 from pathlib import Path
 
@@ -19,10 +19,13 @@ def main(a):
     item=UpdateItem(**{k:tuple(v) if isinstance(v,list) else v for k,v in plan['items']['largest'].items()})
     if horizon(item)!=16947:raise ValueError('saved preflight identity is not requested horizon16947')
     result=dict(status='RUNNING',horizon=horizon(item),action_tokens=sum(item.generated_mask),optimizer_steps=0,
-        precision='FP32 weights, TF32 GEMM',projection='action_positions_v1',Diver_resident=True)
+        precision='FP32 weights, TF32 GEMM',projection='action_positions_v1',Diver_resident=False)
     monitor=None
     try:
         diver=AutoModel.from_pretrained(assets['diver'],torch_dtype=getattr(torch,assets['diver_dtype']),local_files_only=True).eval().requires_grad_(False).to(device)
+        torch.cuda.synchronize(device);move_start=time.perf_counter()
+        diver.to('cpu');torch.cuda.synchronize(device);torch.cuda.empty_cache()
+        result['Diver_transition']=dict(phase='hf',device='cpu',seconds=time.perf_counter()-move_start)
         actor=AutoModelForCausalLM.from_pretrained(plan['actor'],dtype=torch.float32,local_files_only=True).eval().to(device)
         reference=AutoModelForCausalLM.from_pretrained(plan['actor'],dtype=torch.float32,local_files_only=True).eval().requires_grad_(False).to(device)
         binding=json.loads((Path(plan['source_run'])/'binding.json').read_text())
