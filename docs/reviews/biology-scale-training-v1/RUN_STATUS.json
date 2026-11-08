@@ -1,5 +1,5 @@
 {
-  "observed_at_utc": "2026-11-07T23:34:00+00:00",
+  "observed_at_utc": "2026-11-08T00:52:22.252725+00:00",
   "sampling_plan_source_commit": "b0ee0bb0f789f803770566572ef8fd1499f14550",
   "runs": {
     "capacity_ricepo": {
@@ -10,6 +10,10 @@
       "status": "COMPLETE",
       "execution_source_commits": [
         "b0ee0bb0f789f803770566572ef8fd1499f14550"
+      ],
+      "actual_run_alias": "biology-scale-v1-capacity-ricepo",
+      "job_ids": [
+        "176699"
       ],
       "active": null,
       "phase_seconds": {
@@ -407,6 +411,10 @@
       "execution_source_commits": [
         "b0ee0bb0f789f803770566572ef8fd1499f14550"
       ],
+      "actual_run_alias": "biology-scale-v1-capacity-grpo",
+      "job_ids": [
+        "176700"
+      ],
       "capacity_recovery": {
         "checkpoint_complete_sha256": "03e4b94b0c91154055e3300b8d9f7a37d6523cfde498897f400aa4e9232f0caa",
         "elapsed_seconds": 191.47654097527266,
@@ -651,15 +659,39 @@
       "persisted_updates": 0,
       "status": "RUNNING",
       "execution_source_commits": [
-        "d36f2467bc82eebaadaf71b224b08eb7b56c2d8e"
+        "b11e9ec47434d168618d292e456a0f24f8043bc4"
       ],
-      "active": {
-        "phase": "counterfactual_generation",
-        "job_id": "176713"
+      "actual_run_alias": "biology-scale-v2-training-ricepo",
+      "job_ids": [
+        "176798"
+      ],
+      "recovery_parent": {
+        "alias": "biology-scale-v1-training-ricepo",
+        "completed_exclusive_phase_seconds": {
+          "initialization": {
+            "unattributed": 40.15164911001921,
+            "model_lifecycle": 7.142729453742504
+          },
+          "0": {
+            "retrieval": 765.1642175838351,
+            "generation": 6152.340559609234,
+            "entropy_credit": 3538.787578858435,
+            "unattributed": 297.1091893687844,
+            "model_lifecycle": 207.58366118371487,
+            "HF_scoring_PPO": 62.542285822331905
+          }
+        },
+        "unfinished_span_at_stop": {
+          "phase": "old_log_probs",
+          "utc": "2026-11-08T00:16:01.574281+00:00",
+          "iteration": 0
+        },
+        "scope": "prior paid sampling and failed/stopped attempt costs; not new sampling or completed optimizer updates"
       },
+      "active": null,
       "phase_seconds": {
         "initialization": {
-          "unattributed": 40.15164911001921
+          "unattributed": 59.16365763545036
         }
       }
     },
@@ -668,23 +700,71 @@
       "method": "grpo",
       "computed_updates": 0,
       "persisted_updates": 0,
-      "status": "FAILED",
+      "status": "RUNNING",
       "execution_source_commits": [
-        "d36f2467bc82eebaadaf71b224b08eb7b56c2d8e"
+        "6c70342902c5b9aa0109523e465511510e55aea1"
       ],
-      "active": null,
-      "phase_seconds": {},
-      "failed_job": "176714",
-      "failure_categories": [
-        "CUDA_OUT_OF_MEMORY_BEFORE_OPTIMIZER_STEP"
+      "actual_run_alias": "biology-scale-v2-training-grpo",
+      "job_ids": [
+        "176768"
       ],
-      "paid_originals": 512,
-      "paid_action_probability_tokens": 950088,
-      "pending_recovery_source_commit": "6c70342902c5b9aa0109523e465511510e55aea1"
+      "completed_credit_recovery": {
+        "evidence_sha256": {
+          "advantages.json": "65cca1c4ce18a9cd9ef0e46d62f89f60121c027edd04e122729ceef330410539",
+          "trajectories.json": "1113382fdd7ce768f38d8c8a25563d0d5b9b3e628acaf407b2a036819e16469d"
+        },
+        "global_update": 0,
+        "independent_new_samples": false,
+        "initial_state_complete_sha256": "5d466f74bceafed8922cc72a73356694f60497ecf30ef3e9c81b51df5efa468f",
+        "new_branches": 0,
+        "new_sampling": false,
+        "originals": 512,
+        "policy": "same uncommitted global update; native IDs/q/rewards/masks and CPU-rebuilt credit, not cross-update reuse",
+        "source_alias": "biology-scale-v1-training-grpo",
+        "source_binding_sha256": "da27821bcf1f7d134f37515dea71f9e2ab4d1b9e63b9bbd0780109b843802c6d",
+        "source_code_sha256": "7a0dc988102e0bb1aea43bd4e2cf96382be7fba0b10c20cef25de8d3a57d2e51",
+        "source_optimizer_steps_proven_absent": true
+      },
+      "recovery_parent": {
+        "alias": "biology-scale-v1-training-grpo",
+        "completed_exclusive_phase_seconds": {
+          "0": {
+            "HF_scoring_PPO": 3434.5434702392668,
+            "retrieval": 156.57364014349878,
+            "generation": 995.1188565064222,
+            "unattributed": 274.2232368644327,
+            "model_lifecycle": 204.3406550195068,
+            "entropy_credit": 7.712472856044769
+          },
+          "initialization": {
+            "unattributed": 49.32260414212942,
+            "model_lifecycle": 7.182815046980977
+          }
+        },
+        "unfinished_span_at_stop": null,
+        "scope": "prior paid sampling and failed/stopped attempt costs; not new sampling or completed optimizer updates"
+      },
+      "active": {
+        "phase": "update_forward",
+        "utc": "2026-11-08T00:52:18.619343+00:00",
+        "iteration": 0
+      },
+      "phase_seconds": {
+        "0": {
+          "HF_scoring_PPO": 2900.0126831568778,
+          "model_lifecycle": 0.01583343930542469
+        },
+        "initialization": {
+          "unattributed": 58.557793164625764,
+          "model_lifecycle": 7.095859546214342
+        }
+      }
     }
   },
   "raw_assets_public": false,
   "slurm_records": [
+    "176698|COMPLETED|10|2026-11-07T19:39:15|2026-11-07T19:39:15|2026-11-07T19:39:25|billing=2,cpu=2,mem=16G,node=1",
+    "176698.batch|COMPLETED|10|2026-11-07T19:39:15|2026-11-07T19:39:15|2026-11-07T19:39:25|cpu=2,mem=16G,node=1",
     "176699|COMPLETED|5407|2026-11-07T19:40:52|2026-11-07T19:40:53|2026-11-07T21:11:00|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
     "176699.batch|COMPLETED|5407|2026-11-07T19:40:53|2026-11-07T19:40:53|2026-11-07T21:11:00|cpu=16,gres/gpu=2,mem=192G,node=1",
     "176699.0|COMPLETED|0|2026-11-07T20:45:16|2026-11-07T20:45:16|2026-11-07T20:45:16|cpu=1,gres/gpu=2,mem=192G,node=1",
@@ -694,26 +774,77 @@
     "176700.1|COMPLETED|1|2026-11-07T19:54:37|2026-11-07T19:54:37|2026-11-07T19:54:38|cpu=1,gres/gpu=2,mem=192G,node=1",
     "176701|CANCELLED|0|2026-11-07T19:40:53|None|2026-11-07T20:26:26|",
     "176702|CANCELLED|0|2026-11-07T19:40:53|None|2026-11-07T20:26:26|",
+    "176704|COMPLETED|10|2026-11-07T19:55:40|2026-11-07T19:55:40|2026-11-07T19:55:50|billing=4,cpu=4,mem=64G,node=1",
+    "176704.batch|COMPLETED|10|2026-11-07T19:55:40|2026-11-07T19:55:40|2026-11-07T19:55:50|cpu=4,mem=64G,node=1",
+    "176708|COMPLETED|7|2026-11-07T20:30:49|2026-11-07T20:30:50|2026-11-07T20:30:57|billing=2,cpu=2,mem=16G,node=1",
+    "176708.batch|COMPLETED|7|2026-11-07T20:30:50|2026-11-07T20:30:50|2026-11-07T20:30:57|cpu=2,mem=16G,node=1",
+    "176709|COMPLETED|8|2026-11-07T20:31:49|2026-11-07T20:31:50|2026-11-07T20:31:58|billing=2,cpu=2,mem=16G,node=1",
+    "176709.batch|COMPLETED|8|2026-11-07T20:31:50|2026-11-07T20:31:50|2026-11-07T20:31:58|cpu=2,mem=16G,node=1",
     "176710|COMPLETED|2382|2026-11-07T20:32:17|2026-11-07T20:32:19|2026-11-07T21:12:01|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
     "176710.batch|COMPLETED|2382|2026-11-07T20:32:19|2026-11-07T20:32:19|2026-11-07T21:12:01|cpu=16,gres/gpu=2,mem=192G,node=1",
     "176712|COMPLETED|1|2026-11-07T20:35:29|2026-11-07T21:11:00|2026-11-07T21:11:01|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
     "176712.batch|COMPLETED|1|2026-11-07T21:11:00|2026-11-07T21:11:00|2026-11-07T21:11:01|cpu=16,gres/gpu=2,mem=192G,node=1",
-    "176713|RUNNING|8911|2026-11-07T20:35:41|2026-11-07T21:12:01|Unknown|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
-    "176713.batch|RUNNING|8911|2026-11-07T21:12:01|2026-11-07T21:12:01|Unknown|cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176713|CANCELLED|11105|2026-11-07T20:35:41|2026-11-07T21:12:01|2026-11-08T00:17:06|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176713.batch|CANCELLED|11106|2026-11-07T21:12:01|2026-11-07T21:12:01|2026-11-08T00:17:07|cpu=16,gres/gpu=2,mem=192G,node=1",
     "176713.0|COMPLETED|0|2026-11-07T21:27:35|2026-11-07T21:27:35|2026-11-07T21:27:35|cpu=1,gres/gpu=2,mem=192G,node=1",
+    "176713.1|COMPLETED|0|2026-11-08T00:12:43|2026-11-08T00:12:43|2026-11-08T00:12:43|cpu=1,gres/gpu=2,mem=192G,node=1",
     "176714|FAILED|5431|2026-11-07T20:35:41|2026-11-07T21:12:01|2026-11-07T22:42:32|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
     "176714.batch|FAILED|5431|2026-11-07T21:12:01|2026-11-07T21:12:01|2026-11-07T22:42:32|cpu=16,gres/gpu=2,mem=192G,node=1",
     "176714.0|COMPLETED|0|2026-11-07T21:27:35|2026-11-07T21:27:35|2026-11-07T21:27:35|cpu=1,gres/gpu=2,mem=192G,node=1",
+    "176715|COMPLETED|31|2026-11-07T21:12:21|2026-11-07T21:12:21|2026-11-07T21:12:52|billing=4,cpu=4,mem=64G,node=1",
+    "176715.batch|COMPLETED|31|2026-11-07T21:12:21|2026-11-07T21:12:21|2026-11-07T21:12:52|cpu=4,mem=64G,node=1",
+    "176722|COMPLETED|41|2026-11-07T22:49:10|2026-11-07T22:49:11|2026-11-07T22:49:52|billing=2,cpu=2,mem=16G,node=1",
+    "176722.batch|COMPLETED|41|2026-11-07T22:49:11|2026-11-07T22:49:11|2026-11-07T22:49:52|cpu=2,mem=16G,node=1",
+    "176723|COMPLETED|20|2026-11-07T22:52:47|2026-11-07T22:52:47|2026-11-07T22:53:07|billing=2,cpu=2,mem=16G,node=1",
+    "176723.batch|COMPLETED|20|2026-11-07T22:52:47|2026-11-07T22:52:47|2026-11-07T22:53:07|cpu=2,mem=16G,node=1",
     "176724|FAILED|121|2026-11-07T22:54:22|2026-11-07T22:54:22|2026-11-07T22:56:23|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
     "176724.batch|FAILED|121|2026-11-07T22:54:22|2026-11-07T22:54:22|2026-11-07T22:56:23|cpu=16,gres/gpu=2,mem=192G,node=1",
     "176729|FAILED|90|2026-11-07T22:59:34|2026-11-07T22:59:34|2026-11-07T23:01:04|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
     "176729.batch|FAILED|90|2026-11-07T22:59:34|2026-11-07T22:59:34|2026-11-07T23:01:04|cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176730|COMPLETED|3|2026-11-07T23:00:54|2026-11-07T23:00:54|2026-11-07T23:00:57|billing=2,cpu=2,mem=16G,node=1",
+    "176730.batch|COMPLETED|3|2026-11-07T23:00:54|2026-11-07T23:00:54|2026-11-07T23:00:57|cpu=2,mem=16G,node=1",
     "176734|FAILED|69|2026-11-07T23:03:49|2026-11-07T23:03:49|2026-11-07T23:04:58|billing=16,cpu=16,gres/gpu=1,mem=192G,node=1",
     "176734.batch|FAILED|69|2026-11-07T23:03:49|2026-11-07T23:03:49|2026-11-07T23:04:58|cpu=16,gres/gpu=1,mem=192G,node=1",
     "176735|COMPLETED|92|2026-11-07T23:07:35|2026-11-07T23:07:35|2026-11-07T23:09:07|billing=16,cpu=16,gres/gpu=1,mem=192G,node=1",
-    "176735.batch|COMPLETED|92|2026-11-07T23:07:35|2026-11-07T23:07:35|2026-11-07T23:09:07|cpu=16,gres/gpu=1,mem=192G,node=1"
+    "176735.batch|COMPLETED|92|2026-11-07T23:07:35|2026-11-07T23:07:35|2026-11-07T23:09:07|cpu=16,gres/gpu=1,mem=192G,node=1",
+    "176736|COMPLETED|8|2026-11-07T23:08:00|2026-11-07T23:08:00|2026-11-07T23:08:08|billing=2,cpu=2,mem=16G,node=1",
+    "176736.batch|COMPLETED|8|2026-11-07T23:08:00|2026-11-07T23:08:00|2026-11-07T23:08:08|cpu=2,mem=16G,node=1",
+    "176739|COMPLETED|1|2026-11-07T23:09:28|2026-11-07T23:09:28|2026-11-07T23:09:29|billing=2,cpu=2,mem=16G,node=1",
+    "176739.batch|COMPLETED|1|2026-11-07T23:09:28|2026-11-07T23:09:28|2026-11-07T23:09:29|cpu=2,mem=16G,node=1",
+    "176744|COMPLETED|263|2026-11-07T23:13:08|2026-11-07T23:13:08|2026-11-07T23:17:31|billing=2,cpu=2,mem=16G,node=1",
+    "176744.batch|COMPLETED|263|2026-11-07T23:13:08|2026-11-07T23:13:08|2026-11-07T23:17:31|cpu=2,mem=16G,node=1",
+    "176755|COMPLETED|1|2026-11-07T23:22:17|2026-11-07T23:22:17|2026-11-07T23:22:18|billing=2,cpu=2,mem=16G,node=1",
+    "176755.batch|COMPLETED|1|2026-11-07T23:22:17|2026-11-07T23:22:17|2026-11-07T23:22:18|cpu=2,mem=16G,node=1",
+    "176757|COMPLETED|918|2026-11-07T23:25:14|2026-11-07T23:25:14|2026-11-07T23:40:32|billing=4,cpu=4,mem=64G,node=1",
+    "176757.batch|COMPLETED|918|2026-11-07T23:25:14|2026-11-07T23:25:14|2026-11-07T23:40:32|cpu=4,mem=64G,node=1",
+    "176762|COMPLETED|46|2026-11-07T23:26:13|2026-11-07T23:26:14|2026-11-07T23:27:00|billing=2,cpu=2,mem=16G,node=1",
+    "176762.batch|COMPLETED|46|2026-11-07T23:26:14|2026-11-07T23:26:14|2026-11-07T23:27:00|cpu=2,mem=16G,node=1",
+    "176767|COMPLETED|22|2026-11-07T23:33:13|2026-11-07T23:33:13|2026-11-07T23:33:35|billing=2,cpu=2,mem=16G,node=1",
+    "176767.batch|COMPLETED|22|2026-11-07T23:33:13|2026-11-07T23:33:13|2026-11-07T23:33:35|cpu=2,mem=16G,node=1",
+    "176768|RUNNING|4727|2026-11-07T23:33:35|2026-11-07T23:33:35|Unknown|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176768.batch|RUNNING|4727|2026-11-07T23:33:35|2026-11-07T23:33:35|Unknown|cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176768.0|COMPLETED|0|2026-11-08T00:33:19|2026-11-08T00:33:19|2026-11-08T00:33:19|cpu=1,gres/gpu=2,mem=192G,node=1",
+    "176790|FAILED|1472|2026-11-08T00:17:29|2026-11-08T00:17:29|2026-11-08T00:42:01|billing=4,cpu=4,mem=128G,node=1",
+    "176790.batch|FAILED|1472|2026-11-08T00:17:29|2026-11-08T00:17:29|2026-11-08T00:42:01|cpu=4,mem=128G,node=1",
+    "176790.0|COMPLETED|0|2026-11-08T00:38:36|2026-11-08T00:38:36|2026-11-08T00:38:36|cpu=1,mem=128G,node=1",
+    "176790.1|COMPLETED|0|2026-11-08T00:38:42|2026-11-08T00:38:42|2026-11-08T00:38:42|cpu=1,mem=128G,node=1",
+    "176790.2|COMPLETED|0|2026-11-08T00:38:51|2026-11-08T00:38:51|2026-11-08T00:38:51|cpu=1,mem=128G,node=1",
+    "176790.3|FAILED|0|2026-11-08T00:40:10|2026-11-08T00:40:10|2026-11-08T00:40:10|cpu=1,mem=128G,node=1",
+    "176796|COMPLETED|33|2026-11-08T00:45:27|2026-11-08T00:45:27|2026-11-08T00:46:00|billing=2,cpu=2,mem=64G,node=1",
+    "176796.batch|COMPLETED|33|2026-11-08T00:45:27|2026-11-08T00:45:27|2026-11-08T00:46:00|cpu=2,mem=64G,node=1",
+    "176797|COMPLETED|10|2026-11-08T00:48:23|2026-11-08T00:48:23|2026-11-08T00:48:33|billing=2,cpu=2,mem=16G,node=1",
+    "176797.batch|COMPLETED|10|2026-11-08T00:48:23|2026-11-08T00:48:23|2026-11-08T00:48:33|cpu=2,mem=16G,node=1",
+    "176798|RUNNING|229|2026-11-08T00:48:33|2026-11-08T00:48:33|Unknown|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176798.batch|RUNNING|229|2026-11-08T00:48:33|2026-11-08T00:48:33|Unknown|cpu=16,gres/gpu=2,mem=192G,node=1"
   ],
   "GPU_allocations": [
+    {
+      "job_id": "176698",
+      "state": "COMPLETED",
+      "allocated_gpus": 0,
+      "elapsed_seconds": 10,
+      "GPU_hours": 0.0
+    },
     {
       "job_id": "176699",
       "state": "COMPLETED",
@@ -743,6 +874,27 @@
       "GPU_hours": 0.0
     },
     {
+      "job_id": "176704",
+      "state": "COMPLETED",
+      "allocated_gpus": 0,
+      "elapsed_seconds": 10,
+      "GPU_hours": 0.0
+    },
+    {
+      "job_id": "176708",
+      "state": "COMPLETED",
+      "allocated_gpus": 0,
+      "elapsed_seconds": 7,
+      "GPU_hours": 0.0
+    },
+    {
+      "job_id": "176709",
+      "state": "COMPLETED",
+      "allocated_gpus": 0,
+      "elapsed_seconds": 8,
+      "GPU_hours": 0.0
+    },
+    {
       "job_id": "176710",
       "state": "COMPLETED",
       "allocated_gpus": 2,
@@ -758,10 +910,10 @@
     },
     {
       "job_id": "176713",
-      "state": "RUNNING",
+      "state": "CANCELLED",
       "allocated_gpus": 2,
-      "elapsed_seconds": 8911,
-      "GPU_hours": 4.950555555555556
+      "elapsed_seconds": 11105,
+      "GPU_hours": 6.169444444444444
     },
     {
       "job_id": "176714",
@@ -769,6 +921,27 @@
       "allocated_gpus": 2,
       "elapsed_seconds": 5431,
       "GPU_hours": 3.0172222222222222
+    },
+    {
+      "job_id": "176715",
+      "state": "COMPLETED",
+      "allocated_gpus": 0,
+      "elapsed_seconds": 31,
+      "GPU_hours": 0.0
+    },
+    {
+      "job_id": "176722",
+      "state": "COMPLETED",
+      "allocated_gpus": 0,
+      "elapsed_seconds": 41,
+      "GPU_hours": 0.0
+    },
+    {
+      "job_id": "176723",
+      "state": "COMPLETED",
+      "allocated_gpus": 0,
+      "elapsed_seconds": 20,
+      "GPU_hours": 0.0
     },
     {
       "job_id": "176724",
@@ -785,6 +958,13 @@
       "GPU_hours": 0.05
     },
     {
+      "job_id": "176730",
+      "state": "COMPLETED",
+      "allocated_gpus": 0,
+      "elapsed_seconds": 3,
+      "GPU_hours": 0.0
+    },
+    {
       "job_id": "176734",
       "state": "FAILED",
       "allocated_gpus": 1,
@@ -797,12 +977,94 @@
       "allocated_gpus": 1,
       "elapsed_seconds": 92,
       "GPU_hours": 0.025555555555555557
+    },
+    {
+      "job_id": "176736",
+      "state": "COMPLETED",
+      "allocated_gpus": 0,
+      "elapsed_seconds": 8,
+      "GPU_hours": 0.0
+    },
+    {
+      "job_id": "176739",
+      "state": "COMPLETED",
+      "allocated_gpus": 0,
+      "elapsed_seconds": 1,
+      "GPU_hours": 0.0
+    },
+    {
+      "job_id": "176744",
+      "state": "COMPLETED",
+      "allocated_gpus": 0,
+      "elapsed_seconds": 263,
+      "GPU_hours": 0.0
+    },
+    {
+      "job_id": "176755",
+      "state": "COMPLETED",
+      "allocated_gpus": 0,
+      "elapsed_seconds": 1,
+      "GPU_hours": 0.0
+    },
+    {
+      "job_id": "176757",
+      "state": "COMPLETED",
+      "allocated_gpus": 0,
+      "elapsed_seconds": 918,
+      "GPU_hours": 0.0
+    },
+    {
+      "job_id": "176762",
+      "state": "COMPLETED",
+      "allocated_gpus": 0,
+      "elapsed_seconds": 46,
+      "GPU_hours": 0.0
+    },
+    {
+      "job_id": "176767",
+      "state": "COMPLETED",
+      "allocated_gpus": 0,
+      "elapsed_seconds": 22,
+      "GPU_hours": 0.0
+    },
+    {
+      "job_id": "176768",
+      "state": "RUNNING",
+      "allocated_gpus": 2,
+      "elapsed_seconds": 4727,
+      "GPU_hours": 2.6261111111111113
+    },
+    {
+      "job_id": "176790",
+      "state": "FAILED",
+      "allocated_gpus": 0,
+      "elapsed_seconds": 1472,
+      "GPU_hours": 0.0
+    },
+    {
+      "job_id": "176796",
+      "state": "COMPLETED",
+      "allocated_gpus": 0,
+      "elapsed_seconds": 33,
+      "GPU_hours": 0.0
+    },
+    {
+      "job_id": "176797",
+      "state": "COMPLETED",
+      "allocated_gpus": 0,
+      "elapsed_seconds": 10,
+      "GPU_hours": 0.0
+    },
+    {
+      "job_id": "176798",
+      "state": "RUNNING",
+      "allocated_gpus": 2,
+      "elapsed_seconds": 229,
+      "GPU_hours": 0.1272222222222222
     }
   ],
-  "measured_GPU_hours_at_snapshot": 13.544166666666667,
+  "measured_GPU_hours_at_snapshot": 17.51638888888889,
   "sampling_note": "training generation tokens exclude reused branch history and environment markers; submitted input counts include full repeated native context, not measured uncached prefill FLOPs",
   "timing_note": "main-process exclusive spans only; evaluation includes its nested generation/tools. Uninstrumented verification/serialization remains unattributed. In-flight spans excluded from completed-phase totals.",
-  "snapshot_note": "Run-stage status refreshed from Slurm/complete receipts at stated UTC. Older allocation/timing arrays retain their original capacity-milestone measurement; full CPU export pending.",
-  "allocation_measurement_observed_at_utc": "2026-11-07T23:40:33+00:00",
-  "allocation_measurement_jobs_note": "Full CPU export176757; allocation snapshot includes old active176713 and failed176714 plus qualification probes; new176768 is not included in this earlier export."
+  "collection_started_at_utc": "2026-11-08T00:51:57.384769+00:00"
 }

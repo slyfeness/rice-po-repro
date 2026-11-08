@@ -122,6 +122,10 @@ def update_stats(directory,cache):
         think_nonterminal=sum(a['gates']['joint'] and not a['terminal_anchor'] for a in anchors),
         influence_variances=[a['influence_variance'] for a in anchors],residual_variances=[a['residual_variance'] for a in anchors],
         original_probability=risk)
+    if recovery.exists():
+        result['recovery_source_alias']=read(recovery)['source_alias']
+        result['iteration_seconds_scope']='completion attempt after prior paid sampling and failed allocation; not a clean full-update throughput benchmark'
+    else:result['iteration_seconds_scope']='current online iteration; initialization/checkpoint/evaluation attribution reported separately'
     write(target,result);return result
 
 
@@ -200,6 +204,15 @@ def main(args):
             info['job_ids']=sorted({r['slurm_job_id'] for r in launches})
             recovery=root/'iteration-000000/completed-credit-recovery.json'
             if recovery.exists():info['completed_credit_recovery']=read(recovery)
+            if stage=='training' and launches:
+                prior=launches[-1]['deployment'].get('completed_credit_recovery')
+                if prior:
+                    parent=Path(prior['run'])
+                    if parent.parent!=R/'runs' or not re.fullmatch(r'biology-scale-v[1-9][0-9]*-training-'+method,parent.name):raise ValueError('invalid recovery parent')
+                    parent_times,parent_unfinished=event_times(parent,cache)
+                    info['recovery_parent']=dict(alias=parent.name,completed_exclusive_phase_seconds=parent_times,
+                        unfinished_span_at_stop=parent_unfinished,
+                        scope='prior paid sampling and failed/stopped attempt costs; not new sampling or completed optimizer updates')
             if (root/'capacity-complete.json').exists():
                 recovery=read(root/'capacity-complete.json').get('recovery')
                 if recovery:info['capacity_recovery']={k:v for k,v in recovery.items() if k not in ('evidence',)}
