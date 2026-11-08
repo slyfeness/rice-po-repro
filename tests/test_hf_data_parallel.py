@@ -1,8 +1,15 @@
 import unittest
 from types import SimpleNamespace
-from ricepo.hf_data_parallel import length_partition, validate_spec, validate_recipe
+from ricepo.hf_data_parallel import length_partition, validate_spec, validate_recipe, rng_state_from_bytes, rng_state_to_bytes
 
 class HFDPContractTests(unittest.TestCase):
+    def test_rng_bytes_avoid_tensor_ipc_and_round_trip_exactly(self):
+        import torch
+        original=torch.tensor([0,17,255,31],dtype=torch.uint8)
+        payload=rng_state_to_bytes(original)
+        self.assertIsInstance(payload,bytes)
+        self.assertTrue(torch.equal(rng_state_from_bytes(payload),original))
+
     def test_partition_covers_unequal_lengths_once(self):
         items=[SimpleNamespace(generated_mask=(False,)+(True,)*n) for n in (9,8,2,1,1)]
         self.assertEqual(length_partition(items),[[0,3,4],[1,2]])

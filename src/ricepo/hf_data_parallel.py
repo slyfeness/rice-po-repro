@@ -5,6 +5,16 @@ import datetime
 import time
 
 
+def rng_state_to_bytes(state):
+    return bytes(state.detach().cpu().tolist())
+
+
+def rng_state_from_bytes(state):
+    import torch
+    if not isinstance(state,bytes):raise ValueError('serialized RNG state must be bytes')
+    return torch.tensor(list(state),dtype=torch.uint8)
+
+
 def validate_spec(spec):
     if spec != dict(world_size=2, partition='length_greedy_v1', grad_reduce='manual_allreduce_sum'):
         raise ValueError('HF DP requires two length-greedy ranks and manual SUM gradients')
@@ -74,8 +84,15 @@ class Replica:
     def rng(self, value=None):
         import torch
         if value is not None:
-            torch.random.set_rng_state(value['cpu_rng']);torch.cuda.set_rng_state(value['cuda_rng'],self.device)
-        return dict(cpu_rng=torch.random.get_rng_state(),cuda_rng=torch.cuda.get_rng_state(self.device))
+            cpu=rng_state_from_bytes(value['cpu_rng'])
+            cuda=rng_state_from_bytes(value['cuda_rng'])
+            torch.random.set_rng_state(cpu);torch.cuda.set_rng_state(cuda,self.device)
+        # Raw torch tensors cross multiprocessing Pipe via a resource-sharer
+        # Unix socket.  Its generated path can exceed AF_UNIX limits on a
+        # long project TMPDIR.  Bytes preserve the exact RNG state without
+        # exporting tensors through that control channel.
+        return dict(cpu_rng=rng_state_to_bytes(torch.random.get_rng_state()),
+                    cuda_rng=rng_state_to_bytes(torch.cuda.get_rng_state(self.device)))
     def score(self, trajectories, entropy=False):
         import torch
         from .backends import TransformersEntropyProvider
@@ -113,7 +130,7 @@ class Replica:
                 loss=ppo_loss(current,old,adv,mask,clip_epsilon=recipe['clip_epsilon'],kl_coefficient=recipe['actor_kl_coefficient'],reference_kl=kl,reduction='sum')
                 if not bool(torch.isfinite(loss)):raise FloatingPointError('nonfinite DP loss')
                 (loss/len(items)).backward()
-                rows.append((i,float(loss.detach()),current.detach().cpu(),float(kl.detach()[mask].double().sum())))
+                rows.append((i,float(loss.detach()),current.detach()[0].cpu().tolist(),float(kl.detach()[mask].double().sum())))
         torch.cuda.synchronize(self.device);self.stage_seconds['forward_backward']=time.monotonic()-started
         return rows
     def timings(self):return dict(self.stage_seconds)
@@ -275,7 +292,11 @@ class HFDataParallel:
         rows=self.local.backward(items,shards[0])+self._update_receive();rows.sort(key=lambda r:r[0])
         if [r[0] for r in rows]!=list(range(len(items))):raise ValueError('DP update lost or duplicated items')
         probability_guard.begin(items,policy_version)
-        for i,loss,current,kl in rows:probability_guard.observe(items[i],current)
+        for i,loss,current,kl in rows:
+            # Remote rows use plain floats to avoid tensor IPC; rebuild only
+            # the detached diagnostic view consumed by the risk guard.
+            if isinstance(current,(list,tuple)):current=torch.tensor([current],dtype=torch.float32)
+            probability_guard.observe(items[i],current)
         # The complete original risk and existing branch expansion gate precede either step.
         probability_guard.finish()
         self._update_send('reduce');self.local.reduce();self._update_receive()
