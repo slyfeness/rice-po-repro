@@ -44,6 +44,12 @@ class HFDPContractTests(unittest.TestCase):
             with self.subTest(policies=policies),self.assertRaisesRegex(ValueError,'one nonempty frozen policy'):
                 replica.score(trajectories,entropy=True)
 
+    def test_empty_scoring_shard_is_valid_when_long_histories_pin_to_rank_zero(self):
+        from ricepo.hf_data_parallel import Replica
+        replica=Replica.__new__(Replica)
+        self.assertEqual(replica.score([],entropy=True),{})
+        self.assertEqual(replica.score([],entropy=False),{})
+
 class HFDPCommitTests(unittest.TestCase):
     def build(self, reject=False, other_sha='after'):
         from ricepo.hf_data_parallel import HFDataParallel

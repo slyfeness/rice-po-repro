@@ -1,4 +1,8 @@
-# Biology scale v2: stopped at memory preflight
+# Biology scale v2: phase-offload preflight complete, online smoke pending
+
+Current status: the phase-offloaded longest-history backward and 48-request retrieval recheck completed (see results below). Online smoke has not completed. Initialization attempts are retained in `SMOKE_ATTEMPTS.csv`; none executed optimizer.step. The latest executed pair, 177469/177470, completed HF-DP initialization but failed at the first D0 because Diver had not yet been restored from CPU. The correction explicitly enters generation residency before D0 and orders transitions so the outgoing GPU occupant is released first. The subsequent online result is still pending. Original paused lineages remain untouched; no v2 128-query update has started.
+
+The following sections preserve the earlier preflight evidence and its historical limitations.
 
 The explicitly requested GPU1 longest-history test failed with CUDA OOM in backward. No four-query smoke or new 128-query training was started. The old runs remain cancelled and untouched.
 

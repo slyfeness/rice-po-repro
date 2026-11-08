@@ -29,6 +29,18 @@ class DualEngineSchedulingTests(unittest.TestCase):
         self.assertEqual(service.transitions,[{'phase':'hf','device':'cpu','seconds':1.25}])
         self.assertEqual(service.connection.send.call_args.args[0],('residency','hf'))
 
+    def test_phase_transition_frees_outgoing_gpu_occupant_first(self):
+        from ricepo.hf_runtime import transition_hf_retrieval
+        from types import SimpleNamespace
+        events=[]
+        dp=SimpleNamespace(phase_callback=lambda phase:events.append(('hf',phase)))
+        retrieval=SimpleNamespace(set_residency=lambda phase:events.append(('diver',phase)))
+        transition_hf_retrieval('generation',dp,retrieval)
+        self.assertEqual(events,[('hf','generation'),('diver','generation')])
+        events.clear()
+        transition_hf_retrieval('scoring',dp,retrieval)
+        self.assertEqual(events,[('diver','hf'),('hf','scoring')])
+
     def test_v2_smoke_has_its_own_nonresumable_run_namespace(self):
         from ricepo.scale_training import run_tag
         with patch.dict('os.environ',{},clear=True):

@@ -1,0 +1,17 @@
+job_id,method,state,exit_code,allocation_seconds,gpus,last_stage,optimizer_steps
+177415,ricepo,FAILED,1:0,8,2,recipe_resolution,0
+177416,grpo,FAILED,1:0,47,2,initialization,0
+177426,ricepo,FAILED,1:0,125,2,rng_ipc,0
+177427,grpo,CANCELLED,0:0,168,2,initialization,0
+177431,ricepo,FAILED,1:0,6,2,storage_path_validation,0
+177432,grpo,FAILED,1:0,3,2,storage_path_validation,0
+177436,ricepo,FAILED,1:0,71,2,rng_ipc,0
+177437,grpo,CANCELLED,0:0,108,2,initialization,0
+177441,ricepo,FAILED,1:0,115,2,rng_ipc,0
+177442,grpo,CANCELLED,0:0,168,2,initialization,0
+177449,ricepo,FAILED,1:0,113,2,rng_ipc,0
+177450,grpo,FAILED,1:0,115,2,rng_ipc,0
+177461,ricepo,FAILED,1:0,85,2,initial_rng_serialization,0
+177462,grpo,FAILED,1:0,87,2,initial_rng_serialization,0
+177469,ricepo,FAILED,1:0,121,2,first_D0_before_Diver_restore,0
+177470,grpo,FAILED,1:0,122,2,first_D0_before_Diver_restore,0

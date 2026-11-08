@@ -40,6 +40,16 @@ from .training import UpdateItem, ppo_plan_update
 from .workflow import IterationComponents, run_iteration
 
 
+def transition_hf_retrieval(phase, dp, retrieval_service):
+    # Free the outgoing occupant before moving the incoming one onto GPU1.
+    if phase == 'generation':
+        if dp is not None:dp.phase_callback(phase)
+        if retrieval_service is not None:retrieval_service.set_residency('generation')
+    else:
+        if retrieval_service is not None:retrieval_service.set_residency('hf')
+        if dp is not None:dp.phase_callback(phase)
+
+
 class HFNativeGenerator:
     """Sample untouched model probabilities and retain every native output ID.
 
@@ -677,10 +687,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             scoring_options=scoring_options,recipe=plan,behavior=behavior)
         cleanup.callback(dp.close)
     def phase_callback(phase):
-        if retrieval_service is not None:
-            retrieval_service.set_residency('generation' if phase=='generation' else 'hf')
-        if dp is not None:
-            dp.phase_callback(phase)
+        transition_hf_retrieval(phase,dp,retrieval_service)
     if scale and not resume and pilot['stage']!='initial':
         if completed_credit_recovery:completed_credit_recovery.restore_initial(optimizer,version['value'])
         from .scale_training import publish_initial_state
@@ -712,6 +719,12 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             dual_runtime=deployment.get('vllm_secondary_runtime'),cache_root=Path(cache)/'generation-workers',
             phase_callback=phase_callback if (dp or retrieval_service is not None) else None)
         cleanup.callback(generator.close)
+    # DP setup offloads Diver so rank 1 can load safely, but D0 retrieval
+    # precedes the first generation request.  Enter the generation phase now
+    # (rather than waiting for the generator's first request) so the initial
+    # retriever call observes its required GPU-resident encoder.
+    if dp or retrieval_service is not None:
+        phase_callback('generation')
     reward = PyTrecReward(qrels)
     runners = {domain:RolloutRunner(generator=generator,retriever=backend,reward_scorer=reward,
         query_composer=ExplicitQueryComposer(**plan["query_composition"]),rules=RolloutRules(
@@ -763,6 +776,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         entropy = ConditionalEntropy()
 
     def rollout_batch(i,policy_version):
+        phase_callback('generation')
         global_i = global_start+i
         if parent:
             selected = scheduled_queries(train,seed,global_i,plan["queries_per_update"])
@@ -1161,6 +1175,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             atomic_json(root/'diagnostic-complete.json',result)
             return result
         def evaluate(out):
+            phase_callback('generation')
             probe=[]
             with operation("development_evaluation",iteration=i,evaluation_scope=True):
                 evaluate_queries(examples=dev,expected_ids=frozen.identities["development"],split="development",

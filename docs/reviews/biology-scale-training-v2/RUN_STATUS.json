@@ -1,7 +1,8 @@
 {
   "status": "PREFLIGHT_AND_RETRIEVAL_RECHECK_COMPLETE_SMOKE_PENDING",
   "new_lineage_started": false,
-  "four_query_smoke": "NOT_RUN",
+  "four_query_smoke": "ATTEMPTED_FAILED_BEFORE_FIRST_ROLLOUT",
+  "smoke_attempts": "SMOKE_ATTEMPTS.csv",
   "formal_128_query_updates": {
     "ricepo": 0,
     "grpo": 0
@@ -125,5 +126,5 @@
   ],
   "queue_visibility": "squeue returned permission denied; terminal states established by sacct.",
   "automatic_restart": false,
-  "implementation_status": "The longest-history phase-offload preflight and saved 48-request Diver restoration recheck completed. Online two-rank NCCL, dual-engine validation, four-query smoke, and 128-query training remain unrun."
+  "implementation_status": "The phase-offload preflight and saved 48-request retrieval recheck completed. Latest smoke pair passed initial HF-DP setup but stopped before D0 retrieval because Diver was CPU-resident. No smoke update or formal update has completed. Corrected residency sequencing awaits online validation."
 }

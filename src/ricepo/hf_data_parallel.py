@@ -102,6 +102,7 @@ class Replica:
         from .backends import TransformersEntropyProvider
         from .modeling import sampled_old_log_probs
         result={}
+        if not trajectories:return result
         # Entropy belongs to the frozen behavior policy for this iteration.
         # Do not advertise a placeholder identity: the strict provider must
         # receive the actual native trajectory policy version.
