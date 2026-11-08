@@ -1,5 +1,5 @@
 {
-  "observed_at_utc": "2026-11-08T04:17:43.530719+00:00",
+  "observed_at_utc": "2026-11-08T04:23:46.520853+00:00",
   "sampling_plan_source_commit": "b0ee0bb0f789f803770566572ef8fd1499f14550",
   "runs": {
     "capacity_ricepo": {
@@ -655,7 +655,7 @@
     "training_ricepo": {
       "stage": "training",
       "method": "ricepo",
-      "computed_updates": 0,
+      "computed_updates": 1,
       "persisted_updates": 0,
       "status": "RUNNING",
       "execution_source_commits": [
@@ -709,9 +709,9 @@
         "scope": "prior paid sampling and failed/stopped attempt costs; not new sampling or completed optimizer updates"
       },
       "active": {
-        "phase": "update_forward",
-        "utc": "2026-11-08T04:12:27.514645+00:00",
-        "iteration": 0
+        "phase": "model_lifecycle",
+        "utc": "2026-11-08T04:19:53.234481+00:00",
+        "iteration": 1
       },
       "phase_seconds": {
         "initialization": {
@@ -719,8 +719,77 @@
           "model_lifecycle": 7.165016442537308
         },
         "0": {
-          "HF_scoring_PPO": 4262.668836481869,
-          "model_lifecycle": 0.030067093670368195
+          "HF_scoring_PPO": 11891.083710998297,
+          "model_lifecycle": 7.119897052645683,
+          "unattributed": 2.907459259033203
+        },
+        "1": {
+          "retrieval": 13.136850528419018,
+          "model_lifecycle": 18.500486001372337
+        }
+      },
+      "latest_committed_update": {
+        "new_policy_version": "f2846fcab66c5378c1bb2e08e4d5e97c583aeca897032826192009a93b58c023",
+        "optimizer": {
+          "activation_checkpointing": {
+            "actual_recomputation_observed": true,
+            "checkpoint_forwards": 14336,
+            "layer_executions": 28672,
+            "mode": "eval_layers_v1",
+            "model_training_mode": false
+          },
+          "actual_state_dict_changed": true,
+          "effective_clip_fraction": 1.0646101238035113e-06,
+          "global_generated_tokens": 939311,
+          "global_sequences": 512,
+          "grad_norm_before_clip": 247.07620239257812,
+          "hf_precision": {
+            "cudnn_allow_tf32": false,
+            "matmul_allow_tf32": false,
+            "matmul_precision": "highest"
+          },
+          "negative_advantages": 343142,
+          "negative_advantages_fraction": 0.36531244710218447,
+          "normalized_loss": -170.70697310828837,
+          "optimizer_steps": 1,
+          "outside_clip_fraction": 2.1292202476070225e-06,
+          "parameter_probe_changed": true,
+          "parameter_probe_coordinates": "first, per-axis midpoint, last of every trainable tensor",
+          "parameter_probe_max_abs_delta": 1.9073486328125e-06,
+          "policy_loss": -170.70697310828837,
+          "positive_advantages": 398075,
+          "positive_advantages_fraction": 0.42379467503308277,
+          "ratio_max": 1.248481035232544,
+          "ratio_mean": 1.000002500455622,
+          "ratio_min": 0.7599372267723083,
+          "reference_kl": 0.0,
+          "steps": [
+            {
+              "effective_clip_count": 1,
+              "effective_clip_fraction": 1.0646101238035113e-06,
+              "epoch": 0,
+              "generated_tokens": 939311,
+              "grad_norm_before_clip": 247.07620239257812,
+              "loss_denominator": 512,
+              "minibatch_start": 0,
+              "negative_advantages": 343142,
+              "normalized_loss": -170.70697310828837,
+              "outside_clip_count": 2,
+              "outside_clip_fraction": 2.1292202476070225e-06,
+              "policy_loss": -170.70697310828837,
+              "positive_advantages": 398075,
+              "ratio_max": 1.248481035232544,
+              "ratio_mean": 1.000002500455622,
+              "ratio_min": 0.7599372267723083,
+              "reference_kl": 0.0,
+              "reference_kl_token_mean": 0.0,
+              "sequences": 512,
+              "zero_advantages": 198094
+            }
+          ],
+          "zero_advantages": 198094,
+          "zero_advantages_fraction": 0.21089287786473276,
+          "zero_gradient_all_steps": false
         }
       }
     },
@@ -775,7 +844,7 @@
       },
       "active": {
         "phase": "original_generation_batch",
-        "utc": "2026-11-08T04:12:19.400046+00:00",
+        "utc": "2026-11-08T04:19:41.172226+00:00",
         "iteration": 2
       },
       "phase_seconds": {
@@ -798,8 +867,8 @@
           "checkpoint": 187.9546759892255
         },
         "2": {
-          "generation": 132.23229744657874,
-          "retrieval": 46.25141787156463,
+          "generation": 440.6095003243536,
+          "retrieval": 106.69508002512157,
           "model_lifecycle": 151.73015569895506
         }
       },
@@ -929,8 +998,8 @@
     "176762.batch|COMPLETED|46|2026-11-07T23:26:14|2026-11-07T23:26:14|2026-11-07T23:27:00|cpu=2,mem=16G,node=1",
     "176767|COMPLETED|22|2026-11-07T23:33:13|2026-11-07T23:33:13|2026-11-07T23:33:35|billing=2,cpu=2,mem=16G,node=1",
     "176767.batch|COMPLETED|22|2026-11-07T23:33:13|2026-11-07T23:33:13|2026-11-07T23:33:35|cpu=2,mem=16G,node=1",
-    "176768|RUNNING|17048|2026-11-07T23:33:35|2026-11-07T23:33:35|Unknown|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
-    "176768.batch|RUNNING|17048|2026-11-07T23:33:35|2026-11-07T23:33:35|Unknown|cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176768|RUNNING|17411|2026-11-07T23:33:35|2026-11-07T23:33:35|Unknown|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176768.batch|RUNNING|17411|2026-11-07T23:33:35|2026-11-07T23:33:35|Unknown|cpu=16,gres/gpu=2,mem=192G,node=1",
     "176768.0|COMPLETED|0|2026-11-08T00:33:19|2026-11-08T00:33:19|2026-11-08T00:33:19|cpu=1,gres/gpu=2,mem=192G,node=1",
     "176790|FAILED|1472|2026-11-08T00:17:29|2026-11-08T00:17:29|2026-11-08T00:42:01|billing=4,cpu=4,mem=128G,node=1",
     "176790.batch|FAILED|1472|2026-11-08T00:17:29|2026-11-08T00:17:29|2026-11-08T00:42:01|cpu=4,mem=128G,node=1",
@@ -942,8 +1011,8 @@
     "176796.batch|COMPLETED|33|2026-11-08T00:45:27|2026-11-08T00:45:27|2026-11-08T00:46:00|cpu=2,mem=64G,node=1",
     "176797|COMPLETED|10|2026-11-08T00:48:23|2026-11-08T00:48:23|2026-11-08T00:48:33|billing=2,cpu=2,mem=16G,node=1",
     "176797.batch|COMPLETED|10|2026-11-08T00:48:23|2026-11-08T00:48:23|2026-11-08T00:48:33|cpu=2,mem=16G,node=1",
-    "176798|RUNNING|12550|2026-11-08T00:48:33|2026-11-08T00:48:33|Unknown|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
-    "176798.batch|RUNNING|12550|2026-11-08T00:48:33|2026-11-08T00:48:33|Unknown|cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176798|RUNNING|12913|2026-11-08T00:48:33|2026-11-08T00:48:33|Unknown|billing=16,cpu=16,gres/gpu=2,mem=192G,node=1",
+    "176798.batch|RUNNING|12913|2026-11-08T00:48:33|2026-11-08T00:48:33|Unknown|cpu=16,gres/gpu=2,mem=192G,node=1",
     "176798.0|COMPLETED|0|2026-11-08T01:05:08|2026-11-08T01:05:08|2026-11-08T01:05:08|cpu=1,gres/gpu=2,mem=192G,node=1"
   ],
   "GPU_allocations": [
@@ -1140,8 +1209,8 @@
       "job_id": "176768",
       "state": "RUNNING",
       "allocated_gpus": 2,
-      "elapsed_seconds": 17048,
-      "GPU_hours": 9.471111111111112
+      "elapsed_seconds": 17411,
+      "GPU_hours": 9.672777777777778
     },
     {
       "job_id": "176790",
@@ -1168,12 +1237,12 @@
       "job_id": "176798",
       "state": "RUNNING",
       "allocated_gpus": 2,
-      "elapsed_seconds": 12550,
-      "GPU_hours": 6.972222222222222
+      "elapsed_seconds": 12913,
+      "GPU_hours": 7.1738888888888885
     }
   ],
-  "measured_GPU_hours_at_snapshot": 31.20638888888889,
+  "measured_GPU_hours_at_snapshot": 31.60972222222222,
   "sampling_note": "training generation tokens exclude reused branch history and environment markers; submitted input counts include full repeated native context, not measured uncached prefill FLOPs",
   "timing_note": "main-process exclusive spans only; evaluation includes its nested generation/tools. Uninstrumented verification/serialization remains unattributed. In-flight spans excluded from completed-phase totals.",
-  "collection_started_at_utc": "2026-11-08T04:12:12.282924+00:00"
+  "collection_started_at_utc": "2026-11-08T04:20:31.351667+00:00"
 }

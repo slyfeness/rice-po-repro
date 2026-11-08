@@ -1,6 +1,6 @@
 # Biology 单领域规模训练 v1
 
-容量验收两方法均 PASS，共同 Initial 已完成。UTC2026-11-08 04:17快照：GRPO176768已完成2/10个128查询更新，computed=2、persisted=2；checkpoint2的Actor、Adam、CPU/CUDA RNG完整并原子发布，新P2推理worker身份/资产已核对，正在同一进程采样第3批。RICE176798已完成512原轨迹、511锚点/2555新分支、信用与首次全量概率复核，首步PPO反传中，尚无正式step。继续各10更新；不把运行中阶段宣称完成。
+容量验收两方法均 PASS，共同 Initial 已完成。UTC2026-11-08 04:23快照：RICE-PO176798已完成首个128查询PPO更新，computed=1、persisted=0，新P1推理快照已实际加载并开始下一批；GRPO176768已完成2/10个128查询更新，computed=2、persisted=2，checkpoint2完整并原子发布，正在同一进程采样第3批。两种方法均已真正进入128查询训练。各10次尚未完成，继续执行；不把当前部分曲线宣称完整复现。
 
 | 32查询容量批 | RICE-PO | GRPO |
 |---|---:|---:|
@@ -85,3 +85,14 @@ UTC01:05真实128批信用快照：[CREDIT_128_SNAPSHOT.json](CREDIT_128_SNAPSHO
 checkpoint2 complete记录SHA-256：`f757b1c719070600af160df88700db2bc81dbb12570b6693aba2aac97b86c599`；Actor payload：`cae9b42f2533fe552a1e7ec6dc6a612c2e3987ac482d02799fac62e91a35c374`；Adam/RNG：`0bc9dd0af58f7bc3d319c3ce23b4397db6d79be8f7feaa56a10071adbf8b8a37`。P2 sampler实际同payload和policy、GEMM high、无HF allocator混入、新进程无跨版本KV复用，见GRPO_SECOND_128_SYNC.json。这里没有额外独立恢复2测试；容量独立恢复已通过，正式最终10仍必须独立恢复。
 
 RICE首次全量复核也已完成：原轨迹939311 token，ratio越界2、极端0；含所有新分支及其条件历史的6153509个被评分位置，越界32、极端1，max绝对log误差1.5647192。原轨迹单独判定，未用分支稀释；原始和分支受限风险均通过，旧一致性失败如实保留。PPO首步仍在进行，信用统计不冒充参数更新。下一次开发评估仍冻结为update4/8/10，没有追加开发扫描、额外种子或样本筛选。
+
+
+## RICE-PO首个128查询PPO完成（04:23里程碑）
+
+512条原轨迹全部参与一次global512 PPO，289条正常到达五轮终点、223条按冻结失败终态保留。511个真实高熵锚点、2555条新分支完整保留；295个锚点可估计、190个有非零局部优势，Summary替换31428 token，其中28808实际改变优势；Think末轮5次、非末轮3次传播。局部影响总体方差均值0.02107758、P90=0.05328305；残差总体方差均值0.07627458、P90=0.22222222，门控仍0.05/0.03，未调整以制造通过。非末轮传播和实际Summary改变证明本批有RICE专有信用参与，并不证明性能优于GRPO。
+
+真实梯度247.076202，policy loss=-170.706973108、初始固定Reference KL=0；939311个优化动作token中正优势398075、负343142、零198094。完整state与固定参数探针均改变，最大探针变化1.9073486328125e-6；HF highest、matmul/cudnn TF32关闭，eval层重计算14336/28672，loss denominator512，实际一次optimizer.step。
+
+训练任务效用0.309443806、last-valid均值0.563528262、正常完成条件最终真实NDCG0.548218784，均为128训练题统计，非开发性能。逻辑生成4100299 token、提交输入73687814 token、检索8165次；首批源于同P0、同未提交逻辑批次的已付费原生资产，当前恢复尝试新增生成/检索0，11901.121891秒是恢复校验、全量概率评分及PPO的完成尝试时间，排除此前生成/失败成本，不能当干净完整RICE更新时间。旧作业和成本仍保留。下一批已使用新P1、新update身份及预冻种子在线采样，没有跨更新复用旧轨迹。
+
+P1=f2846fcab66c5378c1bb2e08e4d5e97c583aeca897032826192009a93b58c023，Actor payload SHA-256=16d14677664b167db41cae673a56d52eae4e29ccf1ea70dab6daa70d47acc047；实际新vLLM worker同身份/同资产、GEMM high、无跨版本KV复用、HF allocator隔离，加载130.051425秒，见RICE_FIRST_128_SYNC.json。这里仍是推理快照，不是完整checkpoint1。checkpoint2、开发4/8/10及最终独立恢复继续按冻结计划执行。Initial的32×K4证据保持原样；尚无正式update4开发成绩。

@@ -1,0 +1,15 @@
+{
+  "observed_stage": "first committed 128-query RICE-PO update; subsequent real P1 sampler loaded",
+  "policy": "f2846fcab66c5378c1bb2e08e4d5e97c583aeca897032826192009a93b58c023",
+  "actor_payload_sha256": "16d14677664b167db41cae673a56d52eae4e29ccf1ea70dab6daa70d47acc047",
+  "sampler_load_seconds": 130.05142453312874,
+  "worker_ready_file_sha256": "a94ab2bcb9ce1bea9841695580cf2178e27c87ab68f763f4560066efde816e90",
+  "worker_policy_equals_new_policy": true,
+  "worker_assets_match_published_snapshot": true,
+  "live_snapshot_reloaded_by_HF_before_publish": true,
+  "actual_sampler_gemm_precision": "high",
+  "HF_expandable_allocator_in_sampler": false,
+  "cache_policy": "new process; no KV reuse across model snapshots",
+  "P1_HF_probability_check": "pending next real original batch; no duplicate diagnostic generation",
+  "full_training_checkpoint1": false
+}
