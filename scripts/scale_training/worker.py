@@ -11,13 +11,16 @@ def main(args):
     from ricepo.config import load_config,resolve
     from ricepo.hf_runtime import run
     from ricepo.scale_training import request_stop,run_tag,KIND,V2
-    torch.set_float32_matmul_precision('highest');torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
     if torch.cuda.device_count()!=2:raise ValueError('two Slurm-assigned GPUs required')
     if os.environ.get('TORCH_ALLOW_TF32_CUBLAS_OVERRIDE')=='1':raise ValueError('TF32 override in HF parent')
     signal.signal(signal.SIGUSR1,lambda *_:request_stop())
     R=Path(os.environ['RICE_PROJECT_ROOT']);source=Path(os.environ['RICE_SOURCE_ROOT'])
     plan_path=Path(os.environ['RICE_SCALE_PLAN']);frozen=json.loads(plan_path.read_text())
     systems_variant=os.environ.get('RICE_SYSTEMS_VARIANT',KIND)
+    if systems_variant==V2:
+        torch.set_float32_matmul_precision('high');torch.backends.cuda.matmul.allow_tf32=True;torch.backends.cudnn.allow_tf32=False
+    else:
+        torch.set_float32_matmul_precision('highest');torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
     tag=run_tag(args.stage,args.method,systems_variant)
     root=R/'runs'/tag
     if args.resume:
