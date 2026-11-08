@@ -8,6 +8,7 @@ class HFDPContractTests(unittest.TestCase):
         original=torch.tensor([0,17,255,31],dtype=torch.uint8)
         payload=rng_state_to_bytes(original)
         self.assertIsInstance(payload,bytes)
+        self.assertIs(rng_state_to_bytes(payload),payload)
         self.assertTrue(torch.equal(rng_state_from_bytes(payload),original))
 
     def test_partition_covers_unequal_lengths_once(self):

@@ -6,6 +6,10 @@ import time
 
 
 def rng_state_to_bytes(state):
+    if isinstance(state, bytes):
+        return state
+    if isinstance(state, bytearray):
+        return bytes(state)
     return bytes(state.detach().cpu().tolist())
 
 

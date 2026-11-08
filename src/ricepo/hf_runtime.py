@@ -661,10 +661,18 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         dp_init_root=Path(deployment.get('hf_dp_init_root',deployment['vllm_rpc_root']))
         if not dp_init_root.is_absolute() or len(str(dp_init_root))>48:
             raise ValueError('HF DP local rendezvous path must be an absolute short path')
+        # The spawned rank is controlled over a multiprocessing Pipe.  RNG
+        # tensors must be serialized before they enter that channel: tensor
+        # IPC uses a Unix resource-sharer socket whose pathname is not safe
+        # under the project's long storage root.
+        from .hf_data_parallel import rng_state_to_bytes
+        dp_rank1_rng=rank1_rng or dict(cpu_rng=torch.random.get_rng_state(),cuda_rng=torch.cuda.get_rng_state(retriever_device))
+        dp_rank1_rng=dict(cpu_rng=rng_state_to_bytes(dp_rank1_rng['cpu_rng']),
+                          cuda_rng=rng_state_to_bytes(dp_rank1_rng['cuda_rng']))
         dp=HFDataParallel(actor=actor,reference=reference,optimizer=optimizer,device=actor_device,spec=dp_spec,
             worker_spec=dict(device=str(retriever_device),actor_path=str(actor_load),reference_path=str(actor_path),
                 **optimizer_source,optimizer_sha256=state_digest(canonical_optimizer),
-                rng=rank1_rng or dict(cpu_rng=torch.random.get_rng_state(),cuda_rng=torch.cuda.get_rng_state(retriever_device))),
+                rng=dp_rank1_rng),
             rpc_root=dp_init_root,precision=deployment.get('hf_matmul_precision','ieee'),
             scoring_options=scoring_options,recipe=plan,behavior=behavior)
         cleanup.callback(dp.close)
