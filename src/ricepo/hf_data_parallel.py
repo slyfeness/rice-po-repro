@@ -20,11 +20,19 @@ def validate_recipe(recipe, global_size=None):
             raise ValueError('HF DP minibatch and accumulation must equal the global batch size')
 
 
-def length_partition(items):
+def length_partition(items, *, cpu_exact_budget=None):
     shards, loads = [[], []], [0, 0]
     def horizon(i):
         return max(j for j, flag in enumerate(items[i].generated_mask) if flag)
-    for i in sorted(range(len(items)), key=lambda i: (-horizon(i), i)):
+    def cpu_exact(i):
+        if cpu_exact_budget is None:return False
+        return (horizon(i)>cpu_exact_budget['horizon']
+                or sum(items[i].generated_mask)>cpu_exact_budget['action_tokens'])
+    # CPU-exact histories are the long cases that need the Diver-free rank.
+    # They are fixed to rank 0 before ordinary histories are length-balanced.
+    for i in sorted((i for i in range(len(items)) if cpu_exact(i)), key=lambda i: (-horizon(i), i)):
+        shards[0].append(i);loads[0]+=horizon(i)
+    for i in sorted((i for i in range(len(items)) if not cpu_exact(i)), key=lambda i: (-horizon(i), i)):
         rank = min(range(2), key=lambda r: (loads[r], r))
         shards[rank].append(i); loads[rank] += horizon(i)
     return shards
@@ -216,7 +224,7 @@ class HFDataParallel:
     def _scores(self, trajectories, entropy):
         trajectories=list(trajectories)
         # Entropy may contain terminal failures without actions; callers omit those.
-        shards=length_partition(trajectories)
+        shards=self._partition(trajectories)
         self.pipe.send(('score',([trajectories[i] for i in shards[1]],entropy)))
         result=self.local.score([trajectories[i] for i in shards[0]],entropy);result.update(self._receive())
         if len(result)!=len(trajectories):raise ValueError('HF score coverage differs')
@@ -227,6 +235,11 @@ class HFDataParallel:
         self.pipe.send(('rng',()));return self._receive()
     def restore_rng_state(self,value):
         self.pipe.send(('rng',(value,)));self._receive()
+    def _partition(self,items):
+        options=self.local.options
+        budget=(options.get('device_residency_budget')
+                if options.get('saved_tensor_policy')=='cpu_above_budget_v1' else None)
+        return length_partition(items,cpu_exact_budget=budget)
     def _update_send(self,command,args=()):
         self.pipe.send((command,args));self._pending_update_rpc=True
     def _update_receive(self):
@@ -257,7 +270,7 @@ class HFDataParallel:
         _validate_items(items,policy_version)
         if probability_guard is None:raise ValueError('HF DP requires complete original risk gate')
         before=identify(self.local.actor,self.local.behavior)[1]['state_dict_sha256']
-        shards=length_partition(items)
+        shards=self._partition(items)
         self._update_send('backward',(items,shards[1]))
         rows=self.local.backward(items,shards[0])+self._update_receive();rows.sort(key=lambda r:r[0])
         if [r[0] for r in rows]!=list(range(len(items))):raise ValueError('DP update lost or duplicated items')

@@ -34,7 +34,8 @@
       "gpu_memory_utilization": 0.45
     },
     "retrieval_process": "isolated_v1",
+    "retrieval_hf_residency": "cpu_v1",
     "retrieval_ranking_impl": "array_minmax_v1"
   },
-  "implementation_note": "Independent system lineage. The scientific recipe is inherited unchanged from biology_scale_v1_training_ricepo.json. The separate GPU1 longest-history preflight must succeed before this configuration may be enabled."
+  "implementation_note": "Independent system lineage. The scientific recipe is inherited unchanged from biology_scale_v1_training_ricepo.json. Diver is GPU-resident only for generation/retrieval and is moved to CPU before rank1 HF loading, entropy, probability checks, and PPO. The separate GPU1 longest-history preflight must succeed before this configuration may be enabled."
 }

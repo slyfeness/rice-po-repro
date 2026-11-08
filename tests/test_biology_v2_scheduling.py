@@ -8,8 +8,30 @@ from ricepo.hf_runtime import _validate_hf_dp_resource_topology
 class DualEngineSchedulingTests(unittest.TestCase):
     def test_dp_with_isolated_diver_fails_closed_before_model_loading(self):
         deployment={"hf_data_parallel": {"world_size": 2}, "retrieval_process": "isolated_v1"}
-        with self.assertRaisesRegex(ValueError, "fail-closed"):
+        with self.assertRaisesRegex(ValueError, "CPU residency"):
             _validate_hf_dp_resource_topology(deployment, object(), object())
+
+    def test_dp_with_isolated_diver_accepts_explicit_hf_cpu_residency(self):
+        deployment={"hf_data_parallel": {"world_size": 2}, "retrieval_process": "isolated_v1",
+                    "retrieval_hf_residency": "cpu_v1"}
+        _validate_hf_dp_resource_topology(deployment, object(), object())
+
+    def test_remote_retriever_records_cpu_transition_before_hf(self):
+        from ricepo.remote_retrieval import RemoteRetrievalService
+        from unittest.mock import Mock
+        service=RemoteRetrievalService.__new__(RemoteRetrievalService)
+        service.connection=Mock();service.transitions=[]
+        service.receive=Mock(return_value=('residency',{'phase':'hf','device':'cpu','seconds':1.25}))
+        result=service.set_residency('hf')
+        self.assertEqual(result['device'],'cpu')
+        self.assertEqual(service.transitions,[{'phase':'hf','device':'cpu','seconds':1.25}])
+        self.assertEqual(service.connection.send.call_args.args[0],('residency','hf'))
+
+    def test_v2_smoke_has_its_own_nonresumable_run_namespace(self):
+        from ricepo.scale_training import run_tag
+        with patch.dict('os.environ',{},clear=True):
+            self.assertEqual(run_tag('smoke','ricepo','biology_scale_training_v2'),
+                             'biology-scale-v2-smoke-ricepo')
     def test_anchor_group_is_never_split_and_coverage_is_exact(self):
         requests = [
             {"prefix": (1,) * 50, "budget": 100},

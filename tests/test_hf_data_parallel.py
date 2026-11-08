@@ -6,6 +6,13 @@ class HFDPContractTests(unittest.TestCase):
     def test_partition_covers_unequal_lengths_once(self):
         items=[SimpleNamespace(generated_mask=(False,)+(True,)*n) for n in (9,8,2,1,1)]
         self.assertEqual(length_partition(items),[[0,3,4],[1,2]])
+
+    def test_cpu_exact_sequences_are_pinned_to_rank_zero_before_length_balance(self):
+        items=[SimpleNamespace(generated_mask=(False,)+(True,)*n) for n in (6000,90,80,70,60)]
+        shards=length_partition(items,cpu_exact_budget={'horizon':5535,'action_tokens':1889})
+        self.assertIn(0,shards[0])
+        self.assertNotIn(0,shards[1])
+        self.assertEqual(sorted(index for shard in shards for index in shard),list(range(len(items))))
     def test_rejects_averaging(self):
         with self.assertRaises(ValueError):
             validate_spec(dict(world_size=2,partition='length_greedy_v1',grad_reduce='mean'))

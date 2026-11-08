@@ -5,16 +5,19 @@ from .artifacts import atomic_json, file_sha256, require_cluster_storage
 from .state import read_json, verify_checkpoint, development_score
 
 KIND='biology_scale_training_v1'
+V2='biology_scale_training_v2'
 _stop=False
 
 
-def run_tag(stage,method):
+def run_tag(stage,method,systems_variant=KIND):
     import os,re
+    if systems_variant not in (KIND,V2):raise ValueError('unknown scale systems variant')
     tag=os.environ.get('RICE_SCALE_RUN_TAG')
     if tag is not None:
         if stage!='training' or re.fullmatch(r'biology-scale-v[2-9][0-9]*-training-'+re.escape(method),tag) is None:
             raise ValueError('explicit recovery run tag differs from stage/method or escapes the run namespace')
         return tag
+    if systems_variant==V2:return f'biology-scale-v2-{stage}-{method}'
     return 'biology-scale-v1-initial' if stage=='initial' else f'biology-scale-v1-{stage}-{method}'
 
 
@@ -34,10 +37,13 @@ def stop_at_checkpoint(durations, completed, total):
     return float(end)-time.time()<budget
 
 
-def validate_contract(stage, frozen, recipe):
-    if stage not in ('capacity','initial','training') or frozen.get('kind')!=KIND:
+def validate_contract(stage, frozen, recipe, systems_variant=KIND):
+    if stage not in ('capacity','initial','training','smoke') or frozen.get('kind')!=KIND:
         raise ValueError('unknown independent scale stage')
-    count,updates=(32,1) if stage=='capacity' else (128,10)
+    if stage=='smoke':
+        if systems_variant!=V2:raise ValueError('smoke is only available for the v2 lineage')
+        count,updates=4,1
+    else:count,updates=(32,1) if stage=='capacity' else (128,10)
     expected=dict(queries_per_update=count,total_updates=updates,training_seeds=[frozen['training_seed']],
         trajectories_per_query=4,rollout_depth=5,actor_learning_rate=1e-6,actor_kl_coefficient=.001,
         clip_epsilon=.2,ppo_epochs=1,microbatch_size=1,loss_reduction='sequence_mean',
@@ -58,12 +64,22 @@ def validate_contract(stage, frozen, recipe):
 def settings(spec, deployment, recipe):
     path=require_cluster_storage(spec['validation_plan_path'])
     if file_sha256(path)!=spec['validation_plan_sha256']:raise ValueError('scale plan changed')
-    frozen=read_json(path);stage=spec['stage'];validate_contract(stage,frozen,recipe)
+    frozen=read_json(path);stage=spec['stage'];variant=deployment.get('systems_variant',KIND)
+    validate_contract(stage,frozen,recipe,variant)
     prior_path=require_cluster_storage(spec['qualification_result_path']);prior=read_json(prior_path)
     if (file_sha256(prior_path)!=frozen['prior_qualification_sha256'] or prior.get('candidate')!='B'
             or not prior.get('risk_screen_pass')):
         raise ValueError('scale TF32 GEMM qualification identity differs')
-    if (deployment.get('hf_projection_mode','full_sequence')!='full_sequence'
+    if variant==V2:
+        if (deployment.get('hf_projection_mode')!='action_positions_v1'
+                or deployment.get('hf_data_parallel')!=dict(world_size=2,partition='length_greedy_v1',grad_reduce='manual_allreduce_sum')
+                or deployment.get('original_probability_mode')!='fused_actor_v1'
+                or deployment.get('retrieval_process')!='isolated_v1'
+                or deployment.get('retrieval_hf_residency')!='cpu_v1'
+                or deployment.get('hf_matmul_precision')!='tf32'
+                or deployment.get('vllm_secondary_runtime',{}).get('max_num_seqs')!=64):
+            raise ValueError('v2 systems deployment differs from its frozen resource contract')
+    elif (deployment.get('hf_projection_mode','full_sequence')!='full_sequence'
             or deployment.get('actor_precision')!='float32' or deployment.get('parent_run_root')
             or deployment.get('compare_grpo_credit_gradients')
             or deployment.get('sampling_backend')!='vllm_mixed_precision_pilot_v1'
@@ -75,7 +91,8 @@ def settings(spec, deployment, recipe):
             gpu_memory_utilization=.90,enforce_eager=False,enable_prefix_caching=True,
             enable_chunked_prefill=True,attention_backend='TRITON_ATTN').items()):
         raise ValueError('frozen scale vLLM runtime differs')
-    batches=frozen['capacity_batches'] if stage=='capacity' else frozen['training_batches']
+    batches=([frozen['capacity_batches'][0][:4]] if stage=='smoke' else
+             frozen['capacity_batches'] if stage=='capacity' else frozen['training_batches'])
     if len(batches)!=recipe['total_updates'] or any(len(b)!=recipe['queries_per_update'] or len(set(b))!=len(b) for b in batches):
         raise ValueError('incomplete scale query schedule')
     return {**frozen,**spec,'query_batches':batches,'numeric_mode':'tf32_gemm_pilot'}

@@ -1,5 +1,5 @@
 {
-  "status": "STOPPED_OOM",
+  "status": "PHASE_RESIDENCY_SOURCE_VALIDATED_GPU_PREFLIGHT_PENDING",
   "new_lineage_started": false,
   "four_query_smoke": "NOT_RUN",
   "formal_128_query_updates": {
@@ -58,9 +58,43 @@
         "v2_config_expansion": "2 configs expanded"
       },
       "scope": "No model, retrieval, rollout, optimizer step, or GPU execution."
+    },
+    {
+      "job_id": "177287",
+      "purpose": "CPU TDD red check for new v2 smoke namespace",
+      "state": "FAILED",
+      "exit_code": "1:0",
+      "elapsed_seconds": 7,
+      "gpus": 0,
+      "project_tests_executed": true,
+      "failure": "Expected pre-implementation run_tag interface mismatch"
+    },
+    {
+      "job_id": "177335",
+      "purpose": "CPU launcher syntax check after v2 smoke wiring",
+      "state": "FAILED",
+      "exit_code": "1:0",
+      "elapsed_seconds": 5,
+      "gpus": 0,
+      "project_tests_executed": false,
+      "failure": "New worker syntax defect corrected before final validation"
+    },
+    {
+      "job_id": "177337",
+      "purpose": "CPU validation of phase residency, long-history placement, and v2 smoke launch wiring",
+      "state": "COMPLETED",
+      "exit_code": "0:0",
+      "elapsed_seconds": 12,
+      "gpus": 0,
+      "tests": {
+        "hf_data_parallel": "12 passed",
+        "v2_scheduling": "7 passed",
+        "v2_config_expansion": "2 configs expanded"
+      },
+      "scope": "No model, retrieval, rollout, optimizer step, or GPU execution."
     }
   ],
   "queue_visibility": "squeue returned permission denied; terminal states established by sacct.",
   "automatic_restart": false,
-  "implementation_status": "Two-rank HF/dual-engine source integration is present, but online NCCL, model residency and dual-engine validation are unrun. The known DP-rank1/isolated-Diver GPU1 collision fails closed; v2 recipe declarations are not connected to a runnable scale launcher. Job 177208 predates the post-review entropy-identity and fail-closed guard corrections, whose test source is present but unexecuted."
+  "implementation_status": "Two-rank HF/dual-engine source integration now has an explicit phase-residency path and a runnable v2 smoke namespace. GPU model residency, NCCL, retrieval restoration, dual-engine validation and the corrected longest-history preflight remain unrun."
 }

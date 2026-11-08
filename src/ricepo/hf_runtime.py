@@ -309,7 +309,7 @@ def checkpoint_diagnostic_mode(deployment, plan, *, parent, resume):
     if type(enabled) is not bool:
         raise ValueError('checkpoint diagnostic flag must be a boolean')
     spec=deployment.get('precision_pilot',{})
-    if spec.get('candidate')=='SCALE':return spec.get('stage')=='capacity'
+    if spec.get('candidate')=='SCALE':return spec.get('stage') in ('capacity','smoke')
     pilot=deployment.get('precision_pilot') is not None
     validation=deployment.get('precision_pilot',{}).get('candidate') in ('G_A','G_B')
     if validation:
@@ -347,19 +347,13 @@ def run(config, deployment, *, resume=False):
 
 
 def _validate_hf_dp_resource_topology(deployment, actor_device, retriever_device):
-    """Fail closed for the observed DP/Diver GPU1 collision.
-
-    This DP implementation assigns rank 1 to ``retriever_device``.  With an
-    isolated Diver child, that is the exact longest-history backward topology
-    that OOMed in the v2 preflight.  It remains unavailable until a distinct,
-    separately implemented resource mapping is qualified.
-    """
+    """Require the explicit Diver CPU residency fix for DP rank 1."""
     if (deployment.get('hf_data_parallel') is not None
-            and deployment.get('retrieval_process') == 'isolated_v1'):
+            and deployment.get('retrieval_process') == 'isolated_v1'
+            and deployment.get('retrieval_hf_residency') != 'cpu_v1'):
         raise ValueError(
-            'HF DP rank 1 shares retriever_device with isolated Diver; the '
-            'known longest-history OOM topology is fail-closed pending a '
-            'separately implemented and qualified resource mapping')
+            'HF DP with isolated Diver requires explicit CPU residency during '
+            'HF phases; the known GPU1 co-resident layout remains fail-closed')
 
 
 def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
@@ -468,6 +462,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         renderer = PromptRenderer(tokenizer,prompt_path.read_text("utf8"),observation_top_k=plan["observation_top_k"],
                                   observation_token_limit=plan["observation_token_limit"],prefill_think=True)
         examples, qrels = {**train,**dev},{**train_qrels,**dev_qrels}
+        retrieval_service=None
         if deployment.get('retrieval_process')=='isolated_v1':
             from .remote_retrieval import RemoteRetrievalService
             retrieval_service=RemoteRetrievalService(deployment,plan,config['model'],examples,qrels,prompt_path)
@@ -659,6 +654,10 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         # Resume loads rank1 from the same verified checkpoint instead of copying
         # gigabytes of Adam tensors through multiprocessing shared memory.
         optimizer_source=({'optimizer_path':str(loading_cp/'optimizer-and-rng.pt')} if loading else {'optimizer':canonical_optimizer})
+        # The retrieval child is moved out before rank 1 is loaded onto GPU1.
+        # This is part of the runtime ordering, not merely a configuration note.
+        if retrieval_service is not None:
+            retrieval_service.set_residency('hf')
         dp=HFDataParallel(actor=actor,reference=reference,optimizer=optimizer,device=actor_device,spec=dp_spec,
             worker_spec=dict(device=str(retriever_device),actor_path=str(actor_load),reference_path=str(actor_path),
                 **optimizer_source,optimizer_sha256=state_digest(canonical_optimizer),
@@ -666,6 +665,11 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             rpc_root=require_cluster_storage(deployment['vllm_rpc_root']),precision=deployment.get('hf_matmul_precision','ieee'),
             scoring_options=scoring_options,recipe=plan,behavior=behavior)
         cleanup.callback(dp.close)
+    def phase_callback(phase):
+        if retrieval_service is not None:
+            retrieval_service.set_residency('generation' if phase=='generation' else 'hf')
+        if dp is not None:
+            dp.phase_callback(phase)
     if scale and not resume and pilot['stage']!='initial':
         if completed_credit_recovery:completed_credit_recovery.restore_initial(optimizer,version['value'])
         from .scale_training import publish_initial_state
@@ -695,7 +699,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             response_timeout_seconds=43200 if scale else 1800,
             defer_optimizer_residency=bool(memory_repair or dp),isolate_training_allocator=bool(memory_repair or dp),
             dual_runtime=deployment.get('vllm_secondary_runtime'),cache_root=Path(cache)/'generation-workers',
-            phase_callback=dp.phase_callback if dp else None)
+            phase_callback=phase_callback if (dp or retrieval_service is not None) else None)
         cleanup.callback(generator.close)
     reward = PyTrecReward(qrels)
     runners = {domain:RolloutRunner(generator=generator,retriever=backend,reward_scorer=reward,
@@ -976,6 +980,8 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             diagnostics = (dp.update(items,policy_version=old_version,probability_guard=probability_guard,step_observer=observer) if dp else
                 ppo_plan_update(actor,optimizer,items,policy_version=old_version,forward=forward,
                                 device=actor_device,recipe=plan,step_observer=observer,probability_guard=probability_guard))
+            if retrieval_service is not None:
+                diagnostics['retriever_residency_transitions']=list(retrieval_service.transitions)
             if fused:sampled_branches.clear()
             if validation or (scale and not dp):
                 diagnostics['hf_precision']=dict(matmul_precision=torch.get_float32_matmul_precision(),
@@ -1133,10 +1139,13 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                 if last:atomic_json(root/'training-validation-complete.json',result)
                 return result
             if scale:
-                result.update(status="capacity_update_complete",method=plan["method"],optimizer_steps=1,queries=32,original_trajectories=128)
+                smoke=pilot['stage']=='smoke'
+                result.update(status="smoke_update_complete" if smoke else "capacity_update_complete",
+                    method=plan["method"],optimizer_steps=1,queries=plan['queries_per_update'],
+                    original_trajectories=plan['queries_per_update']*plan['trajectories_per_query'])
                 complete_stage(directory,"development_complete",current,{"skipped":"independent capacity batch, no development"})
-                complete_stage(directory,"iteration_complete",current,{"capacity_complete":True})
-                atomic_json(root/"capacity-complete.json",result)
+                complete_stage(directory,"iteration_complete",current,{"capacity_complete":not smoke,"smoke_complete":smoke})
+                atomic_json(root/("smoke-complete.json" if smoke else "capacity-complete.json"),result)
                 return result
             atomic_json(root/'diagnostic-complete.json',result)
             return result

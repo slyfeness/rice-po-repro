@@ -35,7 +35,24 @@ def _serve(connection,spec):
             while True:
                 command=connection.recv()
                 if command[0]=='close':break
+                if command[0]=='residency':
+                    import time
+                    phase=command[1]
+                    if phase not in ('generation','hf'):raise ValueError('unknown retriever residency phase')
+                    started=time.monotonic()
+                    if phase=='hf':
+                        encoder.model.to('cpu')
+                        torch.cuda.synchronize();torch.cuda.empty_cache()
+                        device='cpu'
+                    else:
+                        encoder.model.to(encoder.device)
+                        torch.cuda.synchronize()
+                        device=str(encoder.device)
+                    connection.send(('residency',dict(phase=phase,device=device,seconds=time.monotonic()-started)))
+                    continue
                 _,domain,requests=command
+                if next(encoder.model.parameters()).device.type!='cuda':
+                    raise RuntimeError('retrieval requested while Diver is offloaded for HF')
                 values=backends[domain].retrieve_many(requests)
                 connection.send(('result',values))
     except BaseException as exc:
@@ -64,7 +81,7 @@ class RemoteRetrievalService:
             prompt_path=str(prompt_path),cache_root=str(Path(deployment['cache_root'])/'retrieval-process'),
             cuda_mask=os.environ['CUDA_VISIBLE_DEVICES'].split(',')[index])
         ctx=multiprocessing.get_context('spawn');self.connection,child=ctx.Pipe()
-        self.process=ctx.Process(target=_serve,args=(child,spec));self.closed=False
+        self.process=ctx.Process(target=_serve,args=(child,spec));self.closed=False;self.transitions=[]
         self.process.start();child.close()
         try:
             kind,ready=self.receive()
@@ -77,6 +94,16 @@ class RemoteRetrievalService:
         kind,value=self.connection.recv()
         if kind=='error':raise RuntimeError('retriever process failed: '+str(value))
         return kind,value
+    def set_residency(self,phase):
+        if phase not in ('generation','hf'):raise ValueError('unknown retriever residency phase')
+        self.connection.send(('residency',phase))
+        kind,value=self.receive()
+        if kind!='residency' or value.get('phase')!=phase:
+            raise RuntimeError('retriever residency transition did not acknowledge the requested phase')
+        if (phase=='generation') != (value.get('device')!='cpu'):
+            raise RuntimeError('retriever residency acknowledgement has the wrong device')
+        self.transitions.append(value)
+        return value
     def close(self):
         if self.closed:return
         self.closed=True

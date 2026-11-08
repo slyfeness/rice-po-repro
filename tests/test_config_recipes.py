@@ -167,6 +167,7 @@ def test_biology_v2_configs_keep_the_frozen_scientific_recipe_and_declare_system
         assert config["systems_variant"] == "biology_scale_training_v2"
         assert config["deployment_requirements"]["hf_data_parallel"]["grad_reduce"] == "manual_allreduce_sum"
         assert config["deployment_requirements"]["hf_projection_mode"] == "action_positions_v1"
+        assert config["deployment_requirements"]["retrieval_hf_residency"] == "cpu_v1"
         assert config["deployment_requirements"]["entropy_matmul_precision"] == "ieee"
     assert rice["method"] == "ricepo"
     assert grpo["method"] == "grpo"

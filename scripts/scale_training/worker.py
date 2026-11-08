@@ -10,14 +10,15 @@ def main(args):
     from ricepo.audit import fingerprint
     from ricepo.config import load_config,resolve
     from ricepo.hf_runtime import run
-    from ricepo.scale_training import request_stop,run_tag
+    from ricepo.scale_training import request_stop,run_tag,KIND,V2
     torch.set_float32_matmul_precision('highest');torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
     if torch.cuda.device_count()!=2:raise ValueError('two Slurm-assigned GPUs required')
     if os.environ.get('TORCH_ALLOW_TF32_CUBLAS_OVERRIDE')=='1':raise ValueError('TF32 override in HF parent')
     signal.signal(signal.SIGUSR1,lambda *_:request_stop())
     R=Path(os.environ['RICE_PROJECT_ROOT']);source=Path(os.environ['RICE_SOURCE_ROOT'])
     plan_path=Path(os.environ['RICE_SCALE_PLAN']);frozen=json.loads(plan_path.read_text())
-    tag=run_tag(args.stage,args.method)
+    systems_variant=os.environ.get('RICE_SYSTEMS_VARIANT',KIND)
+    tag=run_tag(args.stage,args.method,systems_variant)
     root=R/'runs'/tag
     if args.resume:
         from ricepo.scale_training import preserve_unpersisted_tail
@@ -49,8 +50,26 @@ def main(args):
                 qualification_result_path=str(qualification),qualification_result_sha256=file_sha256(qualification))
             dep['completed_credit_recovery']=dict(run=os.environ['RICE_CREDIT_RECOVERY_RUN'],source=os.environ['RICE_CREDIT_RECOVERY_SOURCE'])
         Path(dep['checkpoint_staging_root']).mkdir(parents=True,exist_ok=True)
-        stage='capacity' if args.stage=='capacity' else 'training'
-        config=load_config(source/f'configs/biology_scale_v1_{stage}_{args.method}.json')
+        if systems_variant==V2:
+            if args.stage not in ('smoke','training'):raise ValueError('v2 supports smoke or training stages')
+            config=load_config(source/f'configs/biology_scale_v2_{args.method}.json')
+            requirements=config['deployment_requirements']
+            dep.update(systems_variant=systems_variant,hf_data_parallel=requirements['hf_data_parallel'],
+                original_probability_mode=requirements['original_probability_mode'],
+                hf_projection_mode=requirements['hf_projection_mode'],
+                hf_matmul_precision=requirements['hf_matmul_precision'],
+                retrieval_process=requirements['retrieval_process'],
+                retrieval_hf_residency=requirements['retrieval_hf_residency'],
+                retrieval_ranking_impl=requirements['retrieval_ranking_impl'],
+                vllm_secondary_runtime={**requirements['vllm_secondary_runtime'],"enforce_eager":False,
+                    "enable_prefix_caching":True,"enable_chunked_prefill":True,"attention_backend":"TRITON_ATTN"})
+            dep['vllm_runtime'].update(requirements['vllm_primary_runtime'])
+            if args.stage=='smoke':
+                config['runtime_bindings'].update(total_updates=1,queries_per_update=4,
+                    optimizer_minibatch_size=16,gradient_accumulation=16)
+        else:
+            stage='capacity' if args.stage=='capacity' else 'training'
+            config=load_config(source/f'configs/biology_scale_v1_{stage}_{args.method}.json')
         config['runtime_bindings'].update(train_split_manifest=dep['train_manifest_path'],development_split_manifest=dep['development_manifest_path'])
         config['execution']['enabled']=True
     resolved=resolve(config,'train')
@@ -82,6 +101,7 @@ def main(args):
         print('SCALE_RUNTIME_RETURN',tag,json.dumps(result),flush=True)
         if result.get('status')=='stopped_at_persistent_checkpoint':return 75
         if args.stage=='capacity' and result.get('status')!='capacity_update_complete':raise ValueError('capacity did not pass')
+        if args.stage=='smoke' and result.get('status')!='smoke_update_complete':raise ValueError('smoke did not pass')
         if args.stage=='training' and result.get('completed_updates')!=10:raise ValueError('ten updates not completed')
         return 0
     finally:
@@ -92,5 +112,5 @@ def main(args):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('stage',choices=['capacity','initial','training']);p.add_argument('method',choices=['ricepo','grpo']);p.add_argument('--resume',action='store_true')
+    p=argparse.ArgumentParser();p.add_argument('stage',choices=['capacity','initial','smoke','training']);p.add_argument('method',choices=['ricepo','grpo']);p.add_argument('--resume',action='store_true')
     raise SystemExit(main(p.parse_args()))

@@ -34,4 +34,12 @@ CPU-only Slurm job 177208 completed before those two corrections: 10 HF-DP tests
 
 No production configuration is recommended or activated. The next decision is how to reduce GPU1 residency or backward peak without changing the mathematical objective; this report does not silently move Diver, shorten the history or retry another configuration. Per the user's OOM stop condition, GPU expansion and automatic scale launch stop here.
 
+## Phase-residency correction (source and CPU validation only)
+
+The requested correction is now implemented as a new, still-unrun execution path: the isolated Diver worker accepts explicit `generation` and `hf` residency transitions; it moves its fixed encoder to CPU and clears CUDA cache before rank-1 HF construction, then restores the same encoder to GPU only for generation/retrieval. The transition response includes the observed device and transfer duration. During HF scoring/update, any history selected for `cpu_exact_v1` (horizon above 5,535 or action tokens above 1,889) is deterministically pinned to rank 0; other histories remain greedily length-balanced.
+
+This is a system-layout change only: retrieval weights, precision, encoder inputs, scoring, PPO objective, reward, and the fail-closed OOM behavior are unchanged. The v2 launcher now has a separate four-query `smoke` namespace, so a diagnostic run cannot be mistaken for the 128-query lineage.
+
+CPU-only Slurm validation completed in job 177337 (12 HF-DP tests, 7 scheduling tests, and both v2 recipe expansions). It exercised the new residency RPC boundary, the explicit CPU-residency topology guard, long-history rank-0 placement, and smoke run namespace; it did not load a model or execute a GPU operation. Two preceding test jobs, 177287 and 177335, correctly stopped on newly introduced launcher syntax/interface defects; the terminal source was then corrected before job 177337. The next unrun validation is the requested two-GPU longest-history preflight with Diver moved to CPU.
+
 Old GRPO retains computed/persisted 2/2; old RICE retains 1/0 and an Actor-only P1 snapshot, which is not a complete Adam/RNG recovery point. These progress counts come from the preserved prior evidence. Current sacct confirms both old jobs CANCELLED; squeue access was denied, so no broader queue-visibility claim is made.
