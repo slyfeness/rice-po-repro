@@ -336,14 +336,30 @@ def run(config, deployment, *, resume=False):
     require_slurm()
     from .modeling import _validate_projection
     _validate_projection(deployment.get('hf_projection_mode','full_sequence'))
-    if 'hf_matmul_precision' in deployment:
-        raise ValueError('HF precision is benchmark-only; HF TF32 failed numerical acceptance. Keep the existing IEEE training path.')
+    if 'hf_matmul_precision' in deployment and not deployment.get('hf_data_parallel'):
+        raise ValueError('HF precision override requires explicit HF data parallel deployment')
     if int(os.environ.get("WORLD_SIZE","1")) != 1 or deployment.get("runtime") != "single_process_hf_reference":
         raise ValueError("only the one-process reference backend is supported")
     root = require_cluster_storage(deployment["output_root"])
     from contextlib import ExitStack
     with writer(root,resume=resume), attempt(root,recovery=resume) as attempt_dir, ExitStack() as cleanup:
         return _train(config,deployment,root,attempt_dir,resume,cleanup=cleanup)
+
+
+def _validate_hf_dp_resource_topology(deployment, actor_device, retriever_device):
+    """Fail closed for the observed DP/Diver GPU1 collision.
+
+    This DP implementation assigns rank 1 to ``retriever_device``.  With an
+    isolated Diver child, that is the exact longest-history backward topology
+    that OOMed in the v2 preflight.  It remains unavailable until a distinct,
+    separately implemented resource mapping is qualified.
+    """
+    if (deployment.get('hf_data_parallel') is not None
+            and deployment.get('retrieval_process') == 'isolated_v1'):
+        raise ValueError(
+            'HF DP rank 1 shares retriever_device with isolated Diver; the '
+            'known longest-history OOM topology is fail-closed pending a '
+            'separately implemented and qualified resource mapping')
 
 
 def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
@@ -354,6 +370,13 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
     pilot=pilot_settings(deployment,plan)
     validation=bool(pilot and pilot.get('kind')=='tf32_gemm_training_validation_v1')
     scale=bool(pilot and pilot.get('kind')=='biology_scale_training_v1')
+    dp_spec=deployment.get('hf_data_parallel')
+    if dp_spec is not None:
+        from .hf_data_parallel import validate_spec
+        validate_spec(dp_spec)
+        if not scale:raise ValueError('HF DP requires explicit scale deployment')
+        if deployment.get('original_probability_mode')!='fused_actor_v1':raise ValueError('HF DP requires full-batch fused original probability gate')
+        if deployment.get('hf_matmul_precision','ieee') not in ('ieee','tf32'):raise ValueError('unsupported HF matrix precision')
     memory_repair=deployment.get('hf_memory_repair')
     if memory_repair is not None:
         if not scale or pilot['stage']!='training':raise ValueError('memory repair is an explicit scale-training choice only')
@@ -421,7 +444,8 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                 or retriever_device.index is None or actor_device == retriever_device
                 or max(actor_device.index,retriever_device.index) >= torch.cuda.device_count()):
             raise ValueError("two distinct visible CUDA devices required")
-        if (validation or scale) and (torch.get_float32_matmul_precision()!='highest' or torch.backends.cuda.matmul.allow_tf32
+        _validate_hf_dp_resource_topology(deployment,actor_device,retriever_device)
+        if (validation or (scale and not dp_spec)) and (torch.get_float32_matmul_precision()!='highest' or torch.backends.cuda.matmul.allow_tf32
                 or torch.backends.cudnn.allow_tf32 or os.environ.get('TORCH_ALLOW_TF32_CUBLAS_OVERRIDE')=='1'):
             raise ValueError('paired validation HF process must remain IEEE FP32')
         precision = deployment.get('actor_precision',deployment['dtype'])
@@ -443,13 +467,21 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             raise ValueError("missing actor EOS token")
         renderer = PromptRenderer(tokenizer,prompt_path.read_text("utf8"),observation_top_k=plan["observation_top_k"],
                                   observation_token_limit=plan["observation_token_limit"],prefill_think=True)
-        encoder = DiverEncoder.from_local(deployment)
-        model_sources = {"actor_model_path":actor_source,"retriever_model_path":encoder.identity["assets"]}
         examples, qrels = {**train,**dev},{**train_qrels,**dev_qrels}
-        retrievers, sources = {},{}
-        for domain,spec in domain_specs.items():
-            retrievers[domain],sources[domain] = _domain_retriever(domain,spec,deployment,plan,config["model"],
-                                                                 encoder,renderer,examples,qrels)
+        if deployment.get('retrieval_process')=='isolated_v1':
+            from .remote_retrieval import RemoteRetrievalService
+            retrieval_service=RemoteRetrievalService(deployment,plan,config['model'],examples,qrels,prompt_path)
+            cleanup.callback(retrieval_service.close)
+            retrievers,sources=retrieval_service.retrievers,retrieval_service.sources
+            encoder_identity=retrieval_service.encoder_identity
+        else:
+            encoder = DiverEncoder.from_local(deployment)
+            encoder_identity=encoder.identity
+            retrievers, sources = {},{}
+            for domain,spec in domain_specs.items():
+                retrievers[domain],sources[domain] = _domain_retriever(domain,spec,deployment,plan,config["model"],
+                                                                     encoder,renderer,examples,qrels)
+        model_sources = {"actor_model_path":actor_source,"retriever_model_path":encoder_identity["assets"]}
     seed = plan["training_seeds"][0]
     generation_seed=stable_seed(seed,"biology_scale_generation","capacity" if pilot["stage"]=="capacity" else "training") if scale else seed
     binding = dict(schema_version=2,config_sha256=fingerprint(config),recipe_fingerprint=resolved["fingerprint"],
@@ -564,6 +596,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
     opt = plan["optimizer_hyperparameters"]
     optimizer = torch.optim.AdamW(actor.parameters(),lr=plan["actor_learning_rate"],betas=tuple(opt["betas"]),
                                   eps=opt["eps"],weight_decay=opt["weight_decay"])
+    rank1_rng=None
     loading = restored or (parent['saved'] if parent else None)
     if loading:
         loading_cp = cp if restored else parent['checkpoint']
@@ -586,6 +619,8 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             global_completed_updates=(global_start+loading['iteration']+1) if restored else global_start,
             optimizer_sha256=state_digest(state['optimizer']),rng_probe=rng_probe(state,actor_device),
             optimizer_steps=sorted({int(v['step'].item()) for v in state['optimizer']['state'].values() if 'step' in v})))
+        rank1_rng=state.get('hf_rank1_rng')
+        if dp_spec and rank1_rng is None:raise ValueError('HF DP checkpoint lacks rank1 RNG')
         del state
     behavior = binding["behavior"]
     live_validation={}
@@ -611,13 +646,33 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             qualification_sha256=memory_repair['qualification_result_sha256']))
     if loading and version["value"] != loading["policy_version"]:
         raise ValueError("restored live policy differs from committed behavior identity")
+    dp=None
+    scoring_options=dict(logit_chunk_size=deployment['logit_chunk_size'],max_context_tokens=plan['max_context_tokens'],
+        projection_mode=deployment.get('hf_projection_mode','full_sequence'),
+        saved_tensor_policy='cpu_exact_v1' if memory_repair or dp_spec else 'device')
+    if dp_spec:
+        from .hf_data_parallel import HFDataParallel
+        from .checkpoint_io import state_digest
+        if deployment.get('original_probability_mode')=='fused_actor_v1' and scoring_options['projection_mode']=='action_positions_v1':
+            scoring_options.update(saved_tensor_policy='cpu_above_budget_v1',device_residency_budget={'horizon':5535,'action_tokens':1889})
+        canonical_optimizer=optimizer.state_dict()
+        # Resume loads rank1 from the same verified checkpoint instead of copying
+        # gigabytes of Adam tensors through multiprocessing shared memory.
+        optimizer_source=({'optimizer_path':str(loading_cp/'optimizer-and-rng.pt')} if loading else {'optimizer':canonical_optimizer})
+        dp=HFDataParallel(actor=actor,reference=reference,optimizer=optimizer,device=actor_device,spec=dp_spec,
+            worker_spec=dict(device=str(retriever_device),actor_path=str(actor_load),reference_path=str(actor_path),
+                **optimizer_source,optimizer_sha256=state_digest(canonical_optimizer),
+                rng=rank1_rng or dict(cpu_rng=torch.random.get_rng_state(),cuda_rng=torch.cuda.get_rng_state(retriever_device))),
+            rpc_root=require_cluster_storage(deployment['vllm_rpc_root']),precision=deployment.get('hf_matmul_precision','ieee'),
+            scoring_options=scoring_options,recipe=plan,behavior=behavior)
+        cleanup.callback(dp.close)
     if scale and not resume and pilot['stage']!='initial':
         if completed_credit_recovery:completed_credit_recovery.restore_initial(optimizer,version['value'])
         from .scale_training import publish_initial_state
         publish_initial_state(root,dict(optimizer=optimizer.state_dict(),iteration=-1,seed=seed,binding=bound,
             policy_version=version['value'],cpu_rng=torch.random.get_rng_state(),cuda_rng=torch.cuda.get_rng_state(actor_device),
             cuda_rng_all=torch.cuda.get_rng_state_all(),global_update_index=-1,query_schedule_position=0,
-            query_schedule_sha256=fingerprint(frozen_schedule)))
+            query_schedule_sha256=fingerprint(frozen_schedule),**({'hf_rank1_rng':dp.rng_state()} if dp else {})))
     generator = HFNativeGenerator(model=actor,tokenizer=tokenizer,device=actor_device,
         policy_version_getter=lambda:version["value"],max_new_tokens=plan["max_new_tokens_per_step"],
         max_context_tokens=plan["max_context_tokens"],prefilled_think=True,precision_context=autocast,
@@ -638,7 +693,9 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             vllm_runtime=effective_generation['vllm_runtime'],numeric_mode=pilot['numeric_mode'] if pilot else 'ieee_fp32',
             reuse_verified_assets=scale,validated_policy_getter=(lambda:live_validation) if scale else None,
             response_timeout_seconds=43200 if scale else 1800,
-            defer_optimizer_residency=bool(memory_repair),isolate_training_allocator=bool(memory_repair))
+            defer_optimizer_residency=bool(memory_repair or dp),isolate_training_allocator=bool(memory_repair or dp),
+            dual_runtime=deployment.get('vllm_secondary_runtime'),cache_root=Path(cache)/'generation-workers',
+            phase_callback=dp.phase_callback if dp else None)
         cleanup.callback(generator.close)
     reward = PyTrecReward(qrels)
     runners = {domain:RolloutRunner(generator=generator,retriever=backend,reward_scorer=reward,
@@ -669,10 +726,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         baseline=Path(pilot["common_initial_root"])
         initial_policy=read_json(baseline/"initial-evaluation-complete.json")["policy_version"] if resume else version["value"]
         bind_initial(root,baseline,binding,initial_policy,actor_path)
-    scoring = make_forward(reference_model=reference,device=actor_device,logit_chunk_size=deployment["logit_chunk_size"],
-                           max_context_tokens=plan["max_context_tokens"],policy_call_kwargs={},reference_call_kwargs={},
-                           projection_mode=deployment.get("hf_projection_mode","full_sequence"),
-                           saved_tensor_policy='cpu_exact_v1' if memory_repair else 'device')
+    scoring = make_forward(reference_model=reference,device=actor_device,policy_call_kwargs={},reference_call_kwargs={},**scoring_options)
     def forward(model,item):
         length = max(i for i,masked in enumerate(item.generated_mask) if masked)
         with operation("update_forward",input_tokens=length,model_passes=2,scored_tokens=sum(item.generated_mask)), autocast():
@@ -687,8 +741,10 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             def policy_version(self):
                 return provider.policy_version
             def token_entropies(self,t):
-                with autocast():
-                    return provider.token_entropies(t)
+                if dp:
+                    from .hf_data_parallel import hf_precision
+                    with hf_precision('ieee'):return provider.token_entropies(t)
+                with autocast():return provider.token_entropies(t)
         entropy = ConditionalEntropy()
 
     def rollout_batch(i,policy_version):
@@ -818,9 +874,13 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                 if not fused and not risk_screen(original_pilot,outside_max=outside_max):
                     raise ValueError("scale original probability risk failed; no branch dilution and no optimizer step")
             else:outside_max=update_risk_limit(index) if validation else (.01 if index==0 else .02)
+            branch_scores={}
             with torch.no_grad(),autocast():
                 def pilot_branch_score(t):
-                    scored=sampled_old_log_probs(actor,t.token_ids,t.generated_mask,device=actor_device,
+                    if dp and t.trajectory_id not in branch_scores:
+                        # First missing request is the existing full-audit expansion.
+                        branch_scores.update(dp.score_many([b for b in sampled_branches if b.trajectory_id not in branch_scores]))
+                    scored=branch_scores[t.trajectory_id] if dp else sampled_old_log_probs(actor,t.token_ids,t.generated_mask,device=actor_device,
                         logit_chunk_size=deployment['logit_chunk_size'],max_context_tokens=plan['max_context_tokens'],policy_call_kwargs={},projection_mode=deployment.get("hf_projection_mode","full_sequence"))[0].cpu().tolist()
                     q=trajectory_behavior_log_probs(t)
                     qr=[v for v,m in zip(q,t.generated_mask,strict=True) if m]
@@ -832,6 +892,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                     from .branch_audit import select_branch_checks,branch_check_plan,execute_branch_checks
                     options=dict(update_index=index,policy=deployment['branch_probability_audit'])
                     selected=select_branch_checks(sampled_branches,**options)
+                    if dp and selected:branch_scores.update(dp.score_many(selected))
                     atomic_json(directory/'branch-probability-plan.json',branch_check_plan(sampled_branches,**options))
                     def save_check(t,check,expanded):
                         folder='pilot-expanded-probability-checks' if expanded else 'pilot-branch-probability-checks'
@@ -906,16 +967,17 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
                 from .credit_gradient import prepare_comparison
                 observer,comparison=prepare_comparison(actor,optimizer,originals,items,
                     forward=forward,device=actor_device,recipe=plan)
-            if memory_repair:
+            if memory_repair or dp:
                 previous_observer=observer
                 def residency_observer(stage):
                     if stage=='before_clip':generator.prepare_optimizer_step()
                     if previous_observer:previous_observer(stage)
                 observer=residency_observer
-            diagnostics = ppo_plan_update(actor,optimizer,items,policy_version=old_version,forward=forward,
-                                          device=actor_device,recipe=plan,step_observer=observer,probability_guard=probability_guard)
+            diagnostics = (dp.update(items,policy_version=old_version,probability_guard=probability_guard,step_observer=observer) if dp else
+                ppo_plan_update(actor,optimizer,items,policy_version=old_version,forward=forward,
+                                device=actor_device,recipe=plan,step_observer=observer,probability_guard=probability_guard))
             if fused:sampled_branches.clear()
-            if validation or scale:
+            if validation or (scale and not dp):
                 diagnostics['hf_precision']=dict(matmul_precision=torch.get_float32_matmul_precision(),
                     matmul_allow_tf32=torch.backends.cuda.matmul.allow_tf32,cudnn_allow_tf32=torch.backends.cudnn.allow_tf32)
                 if diagnostics['hf_precision']!={'matmul_precision':'highest','matmul_allow_tf32':False,'cudnn_allow_tf32':False}:
@@ -944,7 +1006,8 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
         torch.cuda.synchronize(retriever_device)
 
     components = IterationComponents(rollout_batch,entropy,collect_branches if entropy else None,update,barrier,
-        collect_branches_batch=collect_branches_batch if is_vllm and entropy else None)
+        collect_branches_batch=collect_branches_batch if is_vllm and entropy else None,
+        entropy_batch=dp.token_entropies_many if dp and entropy else None)
     def finish(i, *, recovered=False):
         directory = root/f"iteration-{i:06d}"
         current = version["value"]
@@ -963,6 +1026,7 @@ def _train(config,deployment,root,attempt_dir,resume,*,cleanup):
             payload=dict(optimizer=optimizer.state_dict(),iteration=i,seed=seed,policy_version=current,
                 binding=bound,cpu_rng=torch.random.get_rng_state(),cuda_rng=torch.cuda.get_rng_state(actor_device),
                 global_update_index=global_start+i)
+            if dp:payload['hf_rank1_rng']=dp.rng_state()
             if scale:payload.update(cuda_rng_all=torch.cuda.get_rng_state_all(),query_schedule_position=i+1,query_schedule_sha256=fingerprint(frozen_schedule))
             expected_digest=state_digest(payload) if checkpoint_io=='local_verified_v1' else None
             def write_local(folder):

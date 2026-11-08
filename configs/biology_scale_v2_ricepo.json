@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "extends": "biology_scale_v1_training_ricepo.json",
+  "systems_variant": "biology_scale_training_v2",
+  "execution": {
+    "enabled": false,
+    "runtime_validated": false,
+    "four_gpu_validated": false
+  },
+  "deployment_requirements": {
+    "hf_data_parallel": {
+      "world_size": 2,
+      "partition": "length_greedy_v1",
+      "grad_reduce": "manual_allreduce_sum"
+    },
+    "original_probability_mode": "fused_actor_v1",
+    "hf_projection_mode": "action_positions_v1",
+    "hf_saved_tensor_policy": "cpu_above_budget_v1",
+    "hf_device_residency_budget": {
+      "horizon": 5535,
+      "action_tokens": 1889
+    },
+    "hf_matmul_precision": "tf32",
+    "entropy_matmul_precision": "ieee",
+    "vllm_numeric_mode": "tf32_gemm_pilot",
+    "vllm_primary_runtime": {
+      "max_num_seqs": 144,
+      "max_num_batched_tokens": 32768,
+      "gpu_memory_utilization": 0.9
+    },
+    "vllm_secondary_runtime": {
+      "max_num_seqs": 64,
+      "max_num_batched_tokens": 16384,
+      "gpu_memory_utilization": 0.45
+    },
+    "retrieval_process": "isolated_v1",
+    "retrieval_ranking_impl": "array_minmax_v1"
+  },
+  "implementation_note": "Independent system lineage. The scientific recipe is inherited unchanged from biology_scale_v1_training_ricepo.json. The separate GPU1 longest-history preflight must succeed before this configuration may be enabled."
+}

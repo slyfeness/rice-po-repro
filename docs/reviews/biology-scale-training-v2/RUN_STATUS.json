@@ -34,9 +34,33 @@
       "exit_code": "1:0",
       "elapsed_seconds": 149,
       "gpus": 2
+    },
+    {
+      "job_id": "177205",
+      "purpose": "CPU-only source-test wrapper attempt",
+      "state": "FAILED",
+      "exit_code": "127:0",
+      "elapsed_seconds": 5,
+      "gpus": 0,
+      "project_tests_executed": false,
+      "failure": "python executable absent from batch PATH"
+    },
+    {
+      "job_id": "177208",
+      "purpose": "CPU-only source-test and v2 static recipe expansion",
+      "state": "COMPLETED",
+      "exit_code": "0:0",
+      "elapsed_seconds": 6,
+      "gpus": 0,
+      "tests": {
+        "hf_data_parallel": "10 passed",
+        "dual_engine_prefix_affinity": "3 passed",
+        "v2_config_expansion": "2 configs expanded"
+      },
+      "scope": "No model, retrieval, rollout, optimizer step, or GPU execution."
     }
   ],
   "queue_visibility": "squeue returned permission denied; terminal states established by sacct.",
   "automatic_restart": false,
-  "implementation_status": "Draft two-rank HF/dual-engine integration remains local and unvalidated online; it is not enabled by this result."
+  "implementation_status": "Two-rank HF/dual-engine source integration is present, but online NCCL, model residency and dual-engine validation are unrun. The known DP-rank1/isolated-Diver GPU1 collision fails closed; v2 recipe declarations are not connected to a runnable scale launcher. Job 177208 predates the post-review entropy-identity and fail-closed guard corrections, whose test source is present but unexecuted."
 }

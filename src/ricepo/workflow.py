@@ -26,6 +26,7 @@ class IterationComponents:
     # Scientific branch construction remains the responsibility of the normal
     # callback; this hook only coalesces actions that are already ready.
     collect_branches_batch: Callable[[Sequence[tuple[Trajectory, Anchor]]], Sequence[BranchRollouts]] | None = None
+    entropy_batch: Callable[[Sequence[Trajectory]], dict] | None = None
 
 
 def _validate_branch_trace(trace: Trajectory, source: Trajectory, anchor: Anchor) -> None:
@@ -110,13 +111,19 @@ def _collect_credit(components, grouped, originals, root, policy_version, recipe
     entropy, anchors, summaries = {}, [], []
     provider = components.entropy_provider
     components.phase_barrier("rollout", "entropy")
+    if components.entropy_batch is not None:
+        eligible=[t for group in grouped.values() for t in group if not (zero and not t.steps)]
+        if provider.policy_version != policy_version:raise ValueError('entropy provider policy changed')
+        entropy.update(components.entropy_batch(eligible))
+        if set(entropy)!={t.trajectory_id for t in eligible}:raise ValueError('batched entropy coverage differs')
+        if provider.policy_version != policy_version:raise ValueError('entropy provider policy changed')
     for q, group in grouped.items():
         for t in group:
             if provider.policy_version != policy_version:
                 raise ValueError("entropy provider changed policy within the iteration")
             if zero and not t.steps:
                 entropy[t.trajectory_id] = (float("nan"),)*len(t.token_ids)
-            else:
+            elif t.trajectory_id not in entropy:
                 with operation("entropy", query=q, trajectory=t.trajectory_id, input_tokens=len(t.token_ids)-1, model_passes=1):
                     entropy[t.trajectory_id] = tuple(provider.token_entropies(t))
             if provider.policy_version != policy_version:

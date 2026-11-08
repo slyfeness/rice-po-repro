@@ -28,6 +28,10 @@ python scripts/biology_v2_memory.py --plan "$PRIVATE_SAVED_PLAN" \
   --assets "$PRIVATE_ASSET_PLAN" --output "$NEW_PRIVATE_OUTPUT"
 ```
 
-New two-rank HF and dual-engine integration edits are preserved locally but have not completed online validation. No production configuration is recommended or activated. The next decision is how to reduce GPU1 residency or backward peak without changing the mathematical objective; this report does not silently move Diver, shorten the history or retry another configuration. Per the user's OOM stop condition, GPU expansion and automatic scale launch stop here.
+The two-rank HF update, dual-engine dispatch and v2 recipe declarations are source-only additions in this review branch. A post-review correction makes DP entropy use the actual frozen behavior-policy identity; its added regression test is not yet executed. A second post-review correction makes the known DP-rank1/isolated-Diver GPU1 placement fail closed before model loading. The v2 recipe declarations are not wired to a runnable scale launcher, deliberately: the required four-device mapping and a safe resource topology do not exist in this implementation.
+
+CPU-only Slurm job 177208 completed before those two corrections: 10 HF-DP tests, 3 prefix-affinity tests and both static v2 recipe expansions passed. It does not validate NCCL, model residency, vLLM, the post-review corrections, or the OOM-prone GPU topology. The preceding CPU job 177205 failed before importing project code because `python` was absent from the job path; the corrected job explicitly used the existing project interpreter.
+
+No production configuration is recommended or activated. The next decision is how to reduce GPU1 residency or backward peak without changing the mathematical objective; this report does not silently move Diver, shorten the history or retry another configuration. Per the user's OOM stop condition, GPU expansion and automatic scale launch stop here.
 
 Old GRPO retains computed/persisted 2/2; old RICE retains 1/0 and an Actor-only P1 snapshot, which is not a complete Adam/RNG recovery point. These progress counts come from the preserved prior evidence. Current sacct confirms both old jobs CANCELLED; squeue access was denied, so no broader queue-visibility claim is made.

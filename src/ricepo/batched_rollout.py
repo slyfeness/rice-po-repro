@@ -69,7 +69,8 @@ def continue_many(runner,states):
         saved_item('batch_requests',identities,identities)
         kind='original_generation_batch' if states[active[0]]['honor_stop'] else 'branch_generation_batch'
         with operation(kind,requests=identities,input_tokens=sum(map(len,prefixes))):
-            generations=owner.generate_many(prefixes,seeds)
+            generations=(owner.generate_many_with_identities(prefixes,seeds,identities)
+                         if hasattr(owner,'generate_many_with_identities') else owner.generate_many(prefixes,seeds))
         if len(generations)!=len(active):raise ValueError('batch omitted a scheduled action')
         retrievals={}
         if hasattr(runner.retriever,'retrieve_many'):

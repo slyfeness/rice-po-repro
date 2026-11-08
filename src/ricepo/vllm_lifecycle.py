@@ -41,6 +41,9 @@ def _worker(connection,spec):
     # The HF capacity repair must not change the frozen sampling allocator.
     isolate_hf_allocator(spec.get('isolate_training_allocator'))
     os.environ['CUDA_VISIBLE_DEVICES']=spec['cuda_mask']
+    if spec.get('cache_root'):
+        from .environment import configure_caches
+        configure_caches(spec['cache_root'])
     numeric_mode=spec.get('numeric_mode','ieee_fp32')
     os.environ['TRITON_F32_DEFAULT']='tf32' if numeric_mode in ('tf32_pilot','tf32_gemm_pilot','tf32_gemm_control') else 'ieee'
     if numeric_mode=='tf32_gemm_pilot':
@@ -64,7 +67,7 @@ def _worker(connection,spec):
             tok=AutoTokenizer.from_pretrained(spec['model'],local_files_only=True,trust_remote_code=False)
             inspection={'worker_extension_cls':'ricepo.gemm_diagnostic.GemmInspection'} if numeric_mode in ('tf32_gemm_pilot','tf32_gemm_control') else {}
             engine=VLLMEngine(spec['model'],tok,spec['policy'],max_context_tokens=spec['context'],
-                              runtime_options=spec['runtime_options'],numeric_mode=numeric_mode,**inspection)
+                              runtime_options=spec['runtime_options'],numeric_mode=numeric_mode,co_resident=spec.get('co_resident',False),**inspection)
             gemm_state=engine.llm.collective_rpc('gemm_state') if inspection else None
             expected='high' if numeric_mode=='tf32_gemm_pilot' else 'highest'
             if inspection and not all(s['matmul_allow_tf32']==(expected=='high') and s['torch_float32_matmul_precision']==expected for s in gemm_state):
@@ -90,7 +93,7 @@ def _worker(connection,spec):
         finally:connection.close()
 
 class WorkerTransport:
-    def __init__(self,spec):
+    def __init__(self,spec,*,wait=True):
         response_timeout_seconds=spec.get('response_timeout_seconds',1800)
         if type(response_timeout_seconds) is not int or not 0<response_timeout_seconds<=172800:
             raise ValueError('invalid bounded worker response wait')
@@ -98,10 +101,13 @@ class WorkerTransport:
         ctx=multiprocessing.get_context('spawn');self.connection,child=ctx.Pipe()
         self.process=ctx.Process(target=_worker,args=(child,spec));self.closed=False
         self.process.start();child.close()
+        self.steady_timeout=response_timeout_seconds
+        if wait:self.wait_ready()
+    def wait_ready(self):
         try:
             kind,self.ready=self.receive()
             if kind!='ready':raise RuntimeError('worker did not acknowledge immutable policy')
-            self.response_timeout_seconds=response_timeout_seconds
+            self.response_timeout_seconds=self.steady_timeout
         except BaseException:
             self._abort()
             raise
@@ -129,6 +135,12 @@ class WorkerTransport:
         kind,value=self.connection.recv()
         if kind=='error':raise RuntimeError('vLLM worker failure: '+str(value))
         return kind,value
+    def start_sample(self,requests,stage,policy):
+        self.connection.send(('sample',requests,stage,policy))
+    def finish_sample(self):
+        kind,result=self.receive()
+        if kind!='result':raise RuntimeError('worker response mismatch')
+        return result
     def sample(self,requests,stage,policy):
         try:
             self.connection.send(('sample',requests,stage,policy));kind,result=self.receive()
@@ -152,7 +164,8 @@ class PhaseSeparatedGenerator:
     def __init__(self,*,actor,reference,optimizer,tokenizer,version,behavior,device,root,rpc_root,
                  max_new_tokens=4096,max_context_tokens=32768,vllm_runtime=None,numeric_mode='ieee_fp32',
                  reuse_verified_assets=False,validated_policy_getter=None,response_timeout_seconds=1800,
-                 defer_optimizer_residency=False,isolate_training_allocator=False):
+                 defer_optimizer_residency=False,isolate_training_allocator=False,
+                 dual_runtime=None,cache_root=None,phase_callback=None):
         if type(defer_optimizer_residency) is not bool or type(isolate_training_allocator) is not bool:
             raise ValueError('residency controls must be explicit booleans')
         self.actor,self.reference,self.optimizer=actor,reference,optimizer
@@ -161,6 +174,12 @@ class PhaseSeparatedGenerator:
         self.root.mkdir(parents=True,exist_ok=False);self.rpc_root.mkdir(parents=True,exist_ok=True)
         masks=os.environ['CUDA_VISIBLE_DEVICES'].split(',');self.cuda_mask=masks[device.index]
         self.worker=None;self.sampler=None;self.serial=0;self.snapshots={};self.moves=[]
+        self.phase_callback=phase_callback
+        self.cache_root=Path(cache_root) if cache_root else None
+        self.secondary_mask=masks[1] if dual_runtime is not None else None
+        self.dual_runtime=vllm_runtime_options(dual_runtime,numeric_mode=numeric_mode,allow_low_memory=True) if dual_runtime is not None else None
+        self.affinity={}
+        self.current_group_keys=None
         self.max_new_tokens=max_new_tokens;self.max_context_tokens=max_context_tokens
         self.numeric_mode=numeric_mode
         self.reuse_verified_assets=reuse_verified_assets;self.validated_policy_getter=validated_policy_getter
@@ -196,6 +215,7 @@ class PhaseSeparatedGenerator:
         import torch
         start=time.monotonic();version=self.policy_version
         self._offload()
+        if self.phase_callback:self.phase_callback('generation')
         released=release_residency_cache(self.device)
         event('generation_residency_released',policy_version=version,**released)
         if self.actor.training:raise ValueError('behavior identity requires eval mode')
@@ -220,7 +240,14 @@ class PhaseSeparatedGenerator:
             runtime_options=self.vllm_runtime,numeric_mode=self.numeric_mode,reuse_verified_assets=self.reuse_verified_assets,
             response_timeout_seconds=self.response_timeout_seconds,
             rpc_path=str(fresh_rpc_path(self.rpc_root)),evidence=str(self.root/('worker-'+str(self.serial))))
-        self.worker=WorkerTransport(spec)
+        if self.cache_root:spec['cache_root']=str(self.cache_root/('primary-'+str(self.serial)))
+        if self.dual_runtime is None:self.worker=WorkerTransport(spec)
+        else:
+            secondary={**spec,'cuda_mask':self.secondary_mask,'runtime_options':self.dual_runtime,'co_resident':True,
+                'rpc_path':str(fresh_rpc_path(self.rpc_root)),
+                'evidence':str(self.root/('secondary-'+str(self.serial)))}
+            if self.cache_root:secondary['cache_root']=str(self.cache_root/('secondary-'+str(self.serial)))
+            self.worker=DualTransport([spec,secondary],self.affinity,self)
         self.sampler=VLLMTwoStage(self.worker,self.tokenizer,self.version,self.max_new_tokens,self.max_context_tokens,
             backend=BACKEND if self.numeric_mode=='ieee_fp32' else 'vllm_mixed_precision_pilot_v1')
         atomic_json(self.root/('worker-'+str(self.serial)+'-ready.json'),dict(policy=version,assets=assets,
@@ -235,15 +262,90 @@ class PhaseSeparatedGenerator:
         if self.worker is not None:
             self.worker.close();self.worker=None;self.sampler=None
         self.actor.to(self.device);self.reference.to(self.device)
+        if self.phase_callback:self.phase_callback('scoring')
         if getattr(self,'defer_optimizer_residency',False):return
         self.prepare_optimizer_step()
     def prepare_optimizer_step(self):
         """Moments are unused by forward/backward; restore exact values for Adam."""
         if self.worker is not None:raise RuntimeError('cannot restore optimizer while sampling is active')
+        if self.phase_callback:self.phase_callback('optimizer')
         for state,key,device in self.moves:state[key]=state[key].to(device)
         self.moves=[]
     def generate_many(self,prefixes,seeds):
         self.prepare_generation();return self.sampler.generate_many(prefixes,seeds)
+    def generate_many_with_identities(self,prefixes,seeds,identities):
+        if len(identities)!=len(prefixes):raise ValueError('missing scheduling identities')
+        self.current_group_keys=[affinity_key(i) for i in identities]
+        try:return self.generate_many(prefixes,seeds)
+        finally:self.current_group_keys=None
     def generate(self,prefix,*,seed):return self.generate_many([prefix],[seed])[0]
     def close(self):
         if self.worker is not None:self.worker.close();self.worker=None
+
+
+def affinity_key(identity):
+    """All originals of a query or all alternatives of an anchor stay together."""
+    import re
+    t=identity['trajectory_id']
+    match=re.fullmatch(r'(.*-d[0-9]+)-b[0-9]+',t)
+    return 'anchor:'+match.group(1) if match else 'query:'+identity['query_id']
+
+
+def affine_partitions(requests,keys,affinity,workers=2):
+    if len(requests)!=len(keys):raise ValueError('misaligned affinity identities')
+    groups={}
+    for i,key in enumerate(keys):groups.setdefault(key,[]).append(i)
+    loads=[0]*workers;bins=[[] for _ in range(workers)]
+    # Fixed prior ownership is preserved; new groups use full native input+budget cost.
+    costs={key:sum(len(requests[i]['prefix'])+requests[i]['budget'] for i in ids) for key,ids in groups.items()}
+    for key,ids in groups.items():
+        if key in affinity:
+            worker=affinity[key];bins[worker].extend(ids);loads[worker]+=costs[key]
+    for key in sorted((k for k in groups if k not in affinity),key=lambda k:(-costs[k],k)):
+        worker=min(range(workers),key=lambda i:(loads[i],i));affinity[key]=worker
+        bins[worker].extend(groups[key]);loads[worker]+=costs[key]
+    if sorted(i for b in bins for i in b)!=list(range(len(requests))):raise ValueError('scheduler lost/duplicated request')
+    return bins
+
+
+class DualTransport:
+    def __init__(self,specs,affinity,owner):
+        self.workers=[];self.affinity=affinity;self.owner=owner
+        try:
+            for spec in specs:
+                self.workers.append(WorkerTransport(spec,wait=False))
+            for w in self.workers:w.wait_ready()
+            first=self.workers[0].ready
+            if any(w.ready['policy']!=first['policy'] or w.ready['assets']!=first['assets'] for w in self.workers):
+                raise ValueError('dual engines differ in immutable weight identity')
+            self.ready={**first,'workers':[w.ready for w in self.workers]}
+        except BaseException:
+            for w in self.workers:w._abort()
+            raise
+    def sample(self,requests,stage,policy):
+        keys=[self.owner.current_group_keys[r['request_slot']] if self.owner.current_group_keys is not None
+              else 'prefix:'+fingerprint(r['prefix']) for r in requests]
+        bins=affine_partitions(requests,keys,self.affinity)
+        results=[None]*len(requests)
+        try:
+            for w,ids in zip(self.workers,bins,strict=True):
+                if ids:w.start_sample([requests[i] for i in ids],stage,policy)
+            for w,ids in zip(self.workers,bins,strict=True):
+                if not ids:continue
+                values=w.finish_sample()
+                if len(values)!=len(ids):raise ValueError('dual worker lost request')
+                for i,value in zip(ids,values,strict=True):results[i]=value
+            if any(r is None for r in results):raise ValueError('dual response incomplete')
+            event('dual_engine_dispatch',stage_name=stage,policy_version=policy,
+                request_counts=[len(x) for x in bins],group_keys_sha256=fingerprint(keys),
+                input_tokens=[sum(len(requests[i]['prefix']) for i in ids) for ids in bins])
+            return results
+        except BaseException:
+            for w in self.workers:w._abort()
+            raise
+    def close(self):
+        errors=[]
+        for w in self.workers:
+            try:w.close()
+            except BaseException as exc:errors.append(exc)
+        if errors:raise errors[0]

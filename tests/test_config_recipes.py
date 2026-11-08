@@ -149,3 +149,24 @@ def test_candidate128_configs_pre_register_common_budget_and_multisample_evaluat
         assert plan["execution"]["enabled"] is False
     assert rice["values"]["total_branches_including_original"] == 6
     assert "total_branches_including_original" not in grpo["values"]
+
+
+def test_biology_v2_configs_keep_the_frozen_scientific_recipe_and_declare_system_choices():
+    rice = configured("biology_scale_v2_ricepo")
+    grpo = configured("biology_scale_v2_grpo")
+    for config in (rice, grpo):
+        plan = resolve(config, "train")
+        assert plan["values"]["queries_per_update"] == 128
+        assert plan["values"]["trajectories_per_query"] == 4
+        assert plan["values"]["total_updates"] == 10
+        assert plan["values"]["optimizer_minibatch_size"] == 512
+        assert plan["values"]["microbatch_size"] == 1
+        assert plan["values"]["gradient_accumulation"] == 512
+        assert plan["values"]["rollout_depth"] == 5
+        assert plan["execution"]["enabled"] is False
+        assert config["systems_variant"] == "biology_scale_training_v2"
+        assert config["deployment_requirements"]["hf_data_parallel"]["grad_reduce"] == "manual_allreduce_sum"
+        assert config["deployment_requirements"]["hf_projection_mode"] == "action_positions_v1"
+        assert config["deployment_requirements"]["entropy_matmul_precision"] == "ieee"
+    assert rice["method"] == "ricepo"
+    assert grpo["method"] == "grpo"
